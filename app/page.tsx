@@ -163,10 +163,10 @@ export default function Home() {
       return <MasterTimeline students={allStudents} onSelectStudent={setSelectedStudent} onNavigate={setView} />;
     }
     if (role === "staff" && view === "caseload") {
-      return <Caseload students={allStudents} onSelectStudent={setSelectedStudent} onNavigate={setView} />;
+      return <Caseload students={allStudents} onSelectStudent={setSelectedStudent} onNavigate={setView} onRefresh={loadData} />;
     }
     if (role === "staff" && view === "detail" && selectedStudent) {
-      return <StudentDetail student={selectedStudent} onBack={() => setView("caseload")} />;
+      return <StudentDetail student={selectedStudent} onBack={() => setView("caseload")} onRefresh={loadData} />;
     }
     if (role === "staff" && view === "analytics") {
       return <Analytics students={allStudents} onSelectStudent={setSelectedStudent} onNavigate={setView} />;

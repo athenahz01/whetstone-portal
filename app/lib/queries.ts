@@ -106,3 +106,105 @@ export async function fetchAllStudents(): Promise<Student[]> {
 
   return students;
 }
+
+//change student
+export async function addStudent(data: {
+  name: string;
+  grade: number;
+  gpa: number;
+  sat: number | null;
+  counselor: string;
+  school: string;
+  gradYear: number;
+}): Promise<number | null> {
+  const { data: result, error } = await supabase
+    .from("students")
+    .insert({
+      name: data.name,
+      grade: data.grade,
+      gpa: data.gpa,
+      sat: data.sat,
+      counselor: data.counselor,
+      status: "on-track",
+      avatar: data.name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2),
+      school: data.school,
+      grad_year: data.gradYear,
+      last_login: "Never",
+      engagement: 0,
+    })
+    .select("id")
+    .single();
+
+  if (error) {
+    console.error("Error adding student:", error);
+    return null;
+  }
+  return result.id;
+}
+
+export async function updateStudent(
+  id: number,
+  data: {
+    name?: string;
+    grade?: number;
+    gpa?: number;
+    sat?: number | null;
+    school?: string;
+    gradYear?: number;
+    status?: string;
+    engagement?: number;
+  }
+): Promise<boolean> {
+  const updateData: Record<string, unknown> = {};
+  if (data.name !== undefined) updateData.name = data.name;
+  if (data.grade !== undefined) updateData.grade = data.grade;
+  if (data.gpa !== undefined) updateData.gpa = data.gpa;
+  if (data.sat !== undefined) updateData.sat = data.sat;
+  if (data.school !== undefined) updateData.school = data.school;
+  if (data.gradYear !== undefined) updateData.grad_year = data.gradYear;
+  if (data.status !== undefined) updateData.status = data.status;
+  if (data.engagement !== undefined) updateData.engagement = data.engagement;
+
+  // Update avatar if name changed
+  if (data.name) {
+    updateData.avatar = data.name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+  }
+
+  const { error } = await supabase.from("students").update(updateData).eq("id", id);
+  if (error) {
+    console.error("Error updating student:", error);
+    return false;
+  }
+  return true;
+}
+
+export async function deleteStudent(id: number): Promise<boolean> {
+  // Cascade delete handles child records automatically
+  const { error } = await supabase.from("students").delete().eq("id", id);
+  if (error) {
+    console.error("Error deleting student:", error);
+    return false;
+  }
+  return true;
+}
+
+export async function addDeadline(studentId: number, data: {
+  title: string; due: string; category: string; status: string; days: number;
+}): Promise<boolean> {
+  const { error } = await supabase.from("deadlines").insert({
+    student_id: studentId, title: data.title, due: data.due,
+    category: data.category, status: data.status, days: data.days,
+  });
+  if (error) { console.error("Error adding deadline:", error); return false; }
+  return true;
+}
+
+export async function addSession(studentId: number, data: {
+  date: string; notes: string; action: string;
+}): Promise<boolean> {
+  const { error } = await supabase.from("sessions").insert({
+    student_id: studentId, date: data.date, notes: data.notes, action: data.action,
+  });
+  if (error) { console.error("Error adding session:", error); return false; }
+  return true;
+}
