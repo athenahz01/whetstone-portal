@@ -1,26 +1,44 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-bg: #f4f5f7;
+  --color-white: #ffffff;
+  --color-raised: #f8f9fb;
+  --color-mist: #eef0f4;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-navy: #0f172a;
+  --color-navy-mid: #1e293b;
+  --color-navy-edge: #334155;
+  --color-navy-txt: #94a3b8;
+  --color-navy-hi: #60a5fa;
+
+  --color-heading: #0f172a;
+  --color-body: #334155;
+  --color-sub: #64748b;
+  --color-faint: #94a3b8;
+
+  --color-line: #e2e8f0;
+  --color-line-dk: #cbd5e1;
+
+  --color-accent: #3b82f6;
+  --color-accent-ghost: #eff6ff;
+  --color-accent-ring: #bfdbfe;
+  --color-accent-ink: #1d4ed8;
+
+  --color-danger: #ef4444;
+  --color-danger-ghost: #fef2f2;
+  --color-success: #16a34a;
+  --color-success-ghost: #f0fdf4;
+  --color-warn: #d97706;
+  --color-warn-ghost: #fffbeb;
+  --color-purple: #7c3aed;
+  --color-purple-ghost: #f5f3ff;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-body);
+  font-family: var(--font-sans);
 }
