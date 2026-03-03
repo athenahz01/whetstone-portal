@@ -41,10 +41,10 @@ export function StudentDashboard({ student, goals, onToggleGoal, onNavigate, rea
       <div className="p-6 px-8">
         {/* Metric Cards */}
         <div className="grid grid-cols-4 gap-3.5 mb-5">
-          <MetricCard label="Next Deadline" value="5 days" detail="Research Paper" color="#d97706" />
-          <MetricCard label="Schools" value={student.schools.length} detail="1 submitted" color="#16a34a" />
+          <MetricCard label="Next Deadline" value={urgent.length > 0 ? `${urgent[0].days} days` : "—"} detail={urgent.length > 0 ? urgent[0].title : "No deadlines"} color="#d97706" />
+          <MetricCard label="Schools" value={student.schools.length} detail={`${student.schools.filter((s) => s.status === "Submitted").length} submitted`} color="#16a34a" />
           <MetricCard label="Weekly Goals" value={`${done}/${goals.length}`} color="#7c3aed" />
-          <MetricCard label="Sessions" value="12" detail="Next: Dec 30" color="#3b82f6" />
+          <MetricCard label="Sessions" value={student.sess.length} detail={student.sess.length > 0 ? `Latest: ${student.sess[0].date}` : "None yet"} color="#3b82f6" />
         </div>
 
         <div className="grid gap-3.5" style={{ gridTemplateColumns: "3fr 2fr" }}>
@@ -132,18 +132,22 @@ export function StudentDashboard({ student, goals, onToggleGoal, onNavigate, rea
         {/* Latest Session */}
         <Card className="mt-3.5">
           <h2 className="m-0 mb-3.5 text-lg font-bold text-heading">Latest Session</h2>
-          <div
-            className="p-4 rounded-lg"
-            style={{ background: "#eef0f4", borderLeft: "3px solid #3b82f6" }}
-          >
-            <div className="flex justify-between mb-2">
-              <span className="text-sm text-accent-ink font-semibold">{student.sess[0].date}</span>
-              <span className="text-sm text-sub">with {student.counselor}</span>
+          {student.sess.length > 0 ? (
+            <div
+              className="p-4 rounded-lg"
+              style={{ background: "#eef0f4", borderLeft: "3px solid #3b82f6" }}
+            >
+              <div className="flex justify-between mb-2">
+                <span className="text-sm text-accent-ink font-semibold">{student.sess[0].date}</span>
+                <span className="text-sm text-sub">with {student.counselor}</span>
+              </div>
+              <p className="m-0 mb-2.5 text-sm text-body leading-relaxed">{student.sess[0].notes}</p>
+              <span className="text-xs text-sub">Action: </span>
+              <span className="text-sm text-accent-ink font-semibold">{student.sess[0].action}</span>
             </div>
-            <p className="m-0 mb-2.5 text-sm text-body leading-relaxed">{student.sess[0].notes}</p>
-            <span className="text-xs text-sub">Action: </span>
-            <span className="text-sm text-accent-ink font-semibold">{student.sess[0].action}</span>
-          </div>
+          ) : (
+            <p className="text-sm text-sub">No sessions yet. Your counselor will schedule your first meeting soon.</p>
+          )}
         </Card>
       </div>
     </div>

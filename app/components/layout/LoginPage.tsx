@@ -13,6 +13,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [role, setRole] = useState<"student" | "parent" | "staff">("student");
+  const [childEmail, setChildEmail] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [signupSuccess, setSignupSuccess] = useState(false);
@@ -37,16 +38,28 @@ export function LoginPage({ onLogin }: LoginPageProps) {
 
   const handleSignup = async () => {
     setError("");
+
+    if (role === "parent" && !childEmail.trim()) {
+      setError("Please enter your child's email so we can link your account.");
+      return;
+    }
+
     setLoading(true);
+
+    const metadata: Record<string, string> = {
+      role,
+      display_name: name,
+    };
+
+    if (role === "parent") {
+      metadata.child_email = childEmail.trim();
+    }
 
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: {
-          role: role,
-          display_name: name,
-        },
+        data: metadata,
       },
     });
 
@@ -125,7 +138,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
                   {(["student", "parent", "staff"] as const).map((r) => (
                     <button
                       key={r}
-                      onClick={() => setRole(r)}
+                      onClick={() => { setRole(r); setError(""); }}
                       className="flex-1 py-2.5 rounded-lg cursor-pointer text-sm font-semibold capitalize border"
                       style={{
                         background: role === r ? "#eff6ff" : "#fff",
@@ -138,6 +151,28 @@ export function LoginPage({ onLogin }: LoginPageProps) {
                   ))}
                 </div>
               </div>
+
+              {/* Parent-specific: Child's email */}
+              {role === "parent" && (
+                <div
+                  className="p-4 rounded-xl"
+                  style={{ background: "#eff6ff", border: "1px solid #bfdbfe" }}
+                >
+                  <label className="block text-sm font-semibold mb-1.5" style={{ color: "#1d4ed8" }}>
+                    Your child&apos;s school email
+                  </label>
+                  <input
+                    value={childEmail}
+                    onChange={(e) => setChildEmail(e.target.value)}
+                    type="email"
+                    placeholder="child@email.com"
+                    style={inputStyle}
+                  />
+                  <p className="text-xs mt-2 m-0 leading-relaxed" style={{ color: "#3b82f6" }}>
+                    This should be the email your child&apos;s counselor used when adding them to the system. Your account will be linked to your child&apos;s profile automatically.
+                  </p>
+                </div>
+              )}
             </>
           )}
 

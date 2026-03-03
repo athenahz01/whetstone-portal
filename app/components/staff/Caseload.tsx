@@ -40,10 +40,9 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh }: C
     const f = new FormData(e.target as HTMLFormElement);
     await addStudent({
       name: f.get("name") as string,
+      email: f.get("email") as string,
       grade: Number(f.get("grade")),
       gpa: Number(f.get("gpa")),
-      sat: f.get("sat") ? Number(f.get("sat")) : null,
-      counselor: "Sarah Mitchell",
       school: f.get("school") as string,
       gradYear: Number(f.get("gradYear")),
     });
@@ -115,15 +114,16 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh }: C
         <Modal title="Add New Student" onClose={() => setShowModal(false)}>
           <form onSubmit={handleAdd}>
             <FormField label="Full Name"><input required name="name" placeholder="e.g. Jane Smith" style={inputStyle} /></FormField>
+            <FormField label="Student Email">
+              <input required name="email" type="email" placeholder="e.g. jane@email.com" style={inputStyle} />
+              <div className="text-xs text-sub mt-1">The student will use this email to create their account and log in.</div>
+            </FormField>
             <FormField label="School"><input required name="school" placeholder="e.g. Stuyvesant High School" style={inputStyle} /></FormField>
             <div className="grid grid-cols-2 gap-3">
               <FormField label="Grade"><input required name="grade" type="number" min="9" max="12" placeholder="12" style={inputStyle} /></FormField>
               <FormField label="Graduation Year"><input required name="gradYear" type="number" placeholder="2026" style={inputStyle} /></FormField>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <FormField label="GPA"><input required name="gpa" type="number" step="0.01" min="0" max="5" placeholder="3.85" style={inputStyle} /></FormField>
-              <FormField label="SAT (optional)"><input name="sat" type="number" placeholder="1500" style={inputStyle} /></FormField>
-            </div>
+            <FormField label="GPA"><input required name="gpa" type="number" step="0.01" min="0" max="5" placeholder="3.85" style={inputStyle} /></FormField>
             <div className="flex justify-end gap-2 mt-2">
               <Button onClick={() => setShowModal(false)}>Cancel</Button>
               <Button primary type="submit">{saving ? "Adding..." : "Add Student"}</Button>

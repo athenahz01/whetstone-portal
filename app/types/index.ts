@@ -68,6 +68,7 @@ export interface School {
   export interface Student {
     id: number;
     name: string;
+    email?: string;
     grade: number;
     gpa: number;
     sat: number;

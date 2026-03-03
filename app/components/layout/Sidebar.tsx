@@ -7,9 +7,10 @@ interface SidebarProps {
   collapsed: boolean;
   setCollapsed: (v: boolean) => void;
   onSignOut: () => void;
+  studentName?: string;
 }
 
-export function Sidebar({ role, view, setView, collapsed, setCollapsed, onSignOut }: SidebarProps) {
+export function Sidebar({ role, view, setView, collapsed, setCollapsed, onSignOut, studentName }: SidebarProps) {
   const nav =
     role === "staff"
       ? [
@@ -28,9 +29,11 @@ export function Sidebar({ role, view, setView, collapsed, setCollapsed, onSignOu
           ...(role === "student" ? [["prep", "Session Prep"]] : []),
         ];
 
+  const name = studentName || "User";
+  const initials = name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
   const roleLabel = role === "student" ? "Student" : role === "parent" ? "Parent" : "Staff";
-  const userInitials = role === "staff" ? "SM" : role === "parent" ? "PR" : "AR";
-  const userName = role === "staff" ? "Sarah Mitchell" : role === "parent" ? "Parent of Ananjay" : "Ananjay R.";
+  const userInitials = role === "staff" ? "SM" : initials;
+  const userName = role === "staff" ? "Sarah Mitchell" : role === "parent" ? `Parent of ${name.split(" ")[0]}` : name;
   const userRole = role === "staff" ? "Counselor" : role === "parent" ? "Parent" : "Student";
 
   return (

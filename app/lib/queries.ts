@@ -31,6 +31,7 @@ export async function fetchAllStudents(): Promise<Student[]> {
       return {
         id: s.id,
         name: s.name,
+        email: s.email,
         grade: s.grade,
         gpa: Number(s.gpa),
         sat: s.sat,
@@ -110,10 +111,9 @@ export async function fetchAllStudents(): Promise<Student[]> {
 //change student
 export async function addStudent(data: {
   name: string;
+  email: string;
   grade: number;
   gpa: number;
-  sat: number | null;
-  counselor: string;
   school: string;
   gradYear: number;
 }): Promise<number | null> {
@@ -121,10 +121,11 @@ export async function addStudent(data: {
     .from("students")
     .insert({
       name: data.name,
+      email: data.email,
       grade: data.grade,
       gpa: data.gpa,
-      sat: data.sat,
-      counselor: data.counselor,
+      sat: null,
+      counselor: "Sarah Mitchell",
       status: "on-track",
       avatar: data.name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2),
       school: data.school,

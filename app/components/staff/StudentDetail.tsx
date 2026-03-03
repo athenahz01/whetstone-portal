@@ -94,7 +94,7 @@ export function StudentDetail({ student: s, onBack, onRefresh }: StudentDetailPr
     <div>
       <PageHeader
         title={s.name}
-        sub={`Grade ${s.grade} · ${s.school} · Class of ${s.gradYear}`}
+        sub={`Grade ${s.grade} · ${s.school} · Class of ${s.gradYear}${s.email ? ` · ${s.email}` : ""}`}
         right={
           <div className="flex gap-2">
             <Button onClick={() => setModal("edit")}>Edit Student</Button>
@@ -134,6 +134,7 @@ export function StudentDetail({ student: s, onBack, onRefresh }: StudentDetailPr
                 </Tag>
               </div>
             ))}
+            {s.dl.length === 0 && <p className="text-sm text-sub">No deadlines yet.</p>}
           </Card>
 
           {/* Schools */}
@@ -148,6 +149,7 @@ export function StudentDetail({ student: s, onBack, onRefresh }: StudentDetailPr
                 <div className="text-xs text-sub mt-0.5">{sc.status} · Essay: {sc.essay}</div>
               </div>
             ))}
+            {s.schools.length === 0 && <p className="text-sm text-sub">No schools added yet.</p>}
           </Card>
         </div>
 
@@ -165,6 +167,7 @@ export function StudentDetail({ student: s, onBack, onRefresh }: StudentDetailPr
               <span className="text-sm font-semibold" style={{ color: "#1d4ed8" }}>{ss.action}</span>
             </div>
           ))}
+          {s.sess.length === 0 && <p className="text-sm text-sub">No sessions logged yet.</p>}
         </Card>
       </div>
 
@@ -173,11 +176,15 @@ export function StudentDetail({ student: s, onBack, onRefresh }: StudentDetailPr
         <Modal title="Edit Student" onClose={() => setModal(null)}>
           <form onSubmit={handleEdit}>
             <FormField label="Full Name"><input required name="name" defaultValue={s.name} style={inputStyle} /></FormField>
+            <FormField label="Student Email">
+              <input name="email" type="email" defaultValue={s.email || ""} style={inputStyle} />
+              <div className="text-xs text-sub mt-1">Used for account matching on signup.</div>
+            </FormField>
+            <FormField label="School"><input required name="school" defaultValue={s.school} style={inputStyle} /></FormField>
             <div className="grid grid-cols-2 gap-3">
               <FormField label="Grade"><input required name="grade" type="number" defaultValue={s.grade} style={inputStyle} /></FormField>
               <FormField label="Graduation Year"><input required name="gradYear" type="number" defaultValue={s.gradYear} style={inputStyle} /></FormField>
             </div>
-            <FormField label="School"><input required name="school" defaultValue={s.school} style={inputStyle} /></FormField>
             <div className="grid grid-cols-2 gap-3">
               <FormField label="GPA"><input required name="gpa" type="number" step="0.01" defaultValue={s.gpa} style={inputStyle} /></FormField>
               <FormField label="SAT"><input name="sat" type="number" defaultValue={s.sat || ""} style={inputStyle} /></FormField>

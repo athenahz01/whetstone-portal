@@ -189,6 +189,7 @@ export default function Home() {
         collapsed={!sidebarOpen}
         setCollapsed={() => setSidebarOpen(!sidebarOpen)}
         onSignOut={handleSignOut}
+        studentName={me?.name}
       />
       <main className="flex-1 overflow-auto bg-bg">{renderMain()}</main>
     </div>
