@@ -31,23 +31,19 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/?error=token_failed", request.url));
   }
 
-  // Get the user's Supabase session from cookies
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-  // We need to pass the profile_id via a cookie or state param
-  // For simplicity, we'll use the state parameter
   const state = request.nextUrl.searchParams.get("state");
 
   if (!state) {
     return NextResponse.redirect(new URL("/?error=no_state", request.url));
   }
 
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
   const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
 
-  // Upsert the token
   const { error } = await supabase
     .from("google_tokens")
     .upsert({
