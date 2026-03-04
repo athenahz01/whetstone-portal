@@ -1,5 +1,7 @@
 "use client";
 
+import { getGoogleAuthUrl } from "../../lib/calendar";
+
 interface SidebarProps {
   role: "student" | "staff" | "parent";
   view: string;
@@ -8,9 +10,11 @@ interface SidebarProps {
   setCollapsed: (v: boolean) => void;
   onSignOut: () => void;
   studentName?: string;
+  profileId?: string | null;
+  gcalConnected?: boolean;
 }
 
-export function Sidebar({ role, view, setView, collapsed, setCollapsed, onSignOut, studentName }: SidebarProps) {
+export function Sidebar({ role, view, setView, collapsed, setCollapsed, onSignOut, studentName, profileId, gcalConnected }: SidebarProps) {
   const nav =
     role === "staff"
       ? [
@@ -82,6 +86,28 @@ export function Sidebar({ role, view, setView, collapsed, setCollapsed, onSignOu
           </button>
         ))}
       </nav>
+
+      {/* Google Calendar */}
+      {!collapsed && profileId && (
+        <div className="px-3 mb-2">
+          {gcalConnected ? (
+            <div className="flex items-center gap-2 px-2 py-2 rounded-lg" style={{ background: "rgba(22,163,98,0.1)" }}>
+              <span className="text-xs">📅</span>
+              <span className="text-xs font-medium" style={{ color: "#16a34a" }}>Calendar synced</span>
+            </div>
+          ) : (
+            <button
+              onClick={() => {
+                window.location.href = getGoogleAuthUrl(profileId);
+              }}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer text-xs font-semibold border-none"
+              style={{ background: "rgba(96,165,250,0.1)", color: "#60a5fa" }}
+            >
+              📅 Connect Google Calendar
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Bottom User Area */}
       <div className="p-3 border-t border-navy-edge">

@@ -26,8 +26,10 @@ interface Profile {
 }
 
 export default function Home() {
-  const [session, setSession] = useState<boolean | null>(null); // null = loading
+  const [session, setSession] = useState<boolean | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [profileId, setProfileId] = useState<string | null>(null);
+  const [gcalConnected, setGcalConnected] = useState(false);
   const [view, setView] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
@@ -65,7 +67,16 @@ export default function Home() {
 
     if (data) {
       setProfile(data as Profile);
+      setProfileId(userId);
       loadData();
+
+      // Check if Google Calendar is connected
+      const { data: tokenData } = await supabase
+        .from("google_tokens")
+        .select("id")
+        .eq("profile_id", userId)
+        .single();
+      setGcalConnected(!!tokenData);
     }
   };
 
@@ -88,6 +99,8 @@ export default function Home() {
     await supabase.auth.signOut();
     setSession(false);
     setProfile(null);
+    setProfileId(null);
+    setGcalConnected(false);
     setView("dashboard");
     setSelectedStudent(null);
   };
@@ -117,7 +130,7 @@ export default function Home() {
   }
 
   // Logged in but loading data
-  if (loading || !profile || allStudents.length === 0) {
+  if (loading || !profile) {
     return (
       <div className="flex h-screen items-center justify-center bg-bg">
         <div className="text-center">
@@ -130,11 +143,22 @@ export default function Home() {
   }
 
   const role = profile.role;
-  const me = allStudents[0]; // For student/parent, this will be their linked student
+  const me = allStudents[0];
   const isParent = role === "parent";
   const isStudentOrParent = role === "student" || role === "parent";
 
   const renderMain = () => {
+    // Unlinked student or parent
+    if (isStudentOrParent && allStudents.length === 0) {
+      return (
+        <div className="p-8 text-center">
+          <h1 className="text-2xl font-bold text-heading mb-2">Welcome!</h1>
+          <p className="text-sub">Your account hasn&apos;t been linked to a student profile yet. Please ask your counselor to connect your account.</p>
+        </div>
+      );
+    }
+
+    // Student & Parent views
     if (isStudentOrParent && view === "dashboard") {
       return <StudentDashboard student={me} goals={goals} onToggleGoal={toggleGoal} onNavigate={setView} readOnly={isParent} />;
     }
@@ -156,6 +180,8 @@ export default function Home() {
     if (role === "student" && view === "prep") {
       return <SessionPrep student={me} />;
     }
+
+    // Staff views
     if (role === "staff" && view === "dashboard") {
       return <StaffDashboard students={allStudents} onSelectStudent={setSelectedStudent} onNavigate={setView} />;
     }
@@ -166,7 +192,7 @@ export default function Home() {
       return <Caseload students={allStudents} onSelectStudent={setSelectedStudent} onNavigate={setView} onRefresh={loadData} />;
     }
     if (role === "staff" && view === "detail" && selectedStudent) {
-      return <StudentDetail student={selectedStudent} onBack={() => setView("caseload")} onRefresh={loadData} />;
+      return <StudentDetail student={selectedStudent} onBack={() => setView("caseload")} onRefresh={loadData} profileId={profileId} />;
     }
     if (role === "staff" && view === "analytics") {
       return <Analytics students={allStudents} onSelectStudent={setSelectedStudent} onNavigate={setView} />;
@@ -190,6 +216,8 @@ export default function Home() {
         setCollapsed={() => setSidebarOpen(!sidebarOpen)}
         onSignOut={handleSignOut}
         studentName={me?.name}
+        profileId={profileId}
+        gcalConnected={gcalConnected}
       />
       <main className="flex-1 overflow-auto bg-bg">{renderMain()}</main>
     </div>

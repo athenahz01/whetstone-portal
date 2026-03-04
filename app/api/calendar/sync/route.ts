@@ -1,0 +1,110 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+async function getValidToken(profileId: string) {
+  const { data: tokenData } = await supabase
+    .from("google_tokens")
+    .select("*")
+    .eq("profile_id", profileId)
+    .single();
+
+  if (!tokenData) return null;
+
+  // Check if token is expired
+  if (new Date(tokenData.expires_at) < new Date()) {
+    // Refresh the token
+    const res = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+        refresh_token: tokenData.refresh_token,
+        grant_type: "refresh_token",
+      }),
+    });
+
+    const newTokens = await res.json();
+    if (!newTokens.access_token) return null;
+
+    const expiresAt = new Date(Date.now() + newTokens.expires_in * 1000).toISOString();
+
+    await supabase
+      .from("google_tokens")
+      .update({ access_token: newTokens.access_token, expires_at: expiresAt })
+      .eq("profile_id", profileId);
+
+    return newTokens.access_token;
+  }
+
+  return tokenData.access_token;
+}
+
+// PUSH: Add a deadline to Google Calendar
+export async function POST(request: NextRequest) {
+  const { profileId, title, date, description } = await request.json();
+
+  const token = await getValidToken(profileId);
+  if (!token) {
+    return NextResponse.json({ error: "Not connected to Google Calendar" }, { status: 401 });
+  }
+
+  const event = {
+    summary: `[Whetstone] ${title}`,
+    description: description || "",
+    start: { date },
+    end: { date },
+    reminders: {
+      useDefault: false,
+      overrides: [
+        { method: "popup", minutes: 1440 },
+        { method: "popup", minutes: 60 },
+      ],
+    },
+  };
+
+  const res = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(event),
+  });
+
+  const result = await res.json();
+  return NextResponse.json(result);
+}
+
+// PULL: Get events from Google Calendar
+export async function GET(request: NextRequest) {
+  const profileId = request.nextUrl.searchParams.get("profileId");
+  if (!profileId) {
+    return NextResponse.json({ error: "Missing profileId" }, { status: 400 });
+  }
+
+  const token = await getValidToken(profileId);
+  if (!token) {
+    return NextResponse.json({ error: "Not connected" }, { status: 401 });
+  }
+
+  const now = new Date();
+  const future = new Date();
+  future.setDate(future.getDate() + 60);
+
+  const res = await fetch(
+    `https://www.googleapis.com/calendar/v3/calendars/primary/events?` +
+    `timeMin=${now.toISOString()}&timeMax=${future.toISOString()}&singleEvents=true&orderBy=startTime&maxResults=50`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+
+  const data = await res.json();
+  return NextResponse.json(data);
+}

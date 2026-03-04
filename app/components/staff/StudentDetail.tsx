@@ -10,15 +10,17 @@ import { Modal } from "../ui/Modal";
 import { FormField } from "../ui/FormField";
 import { getCategoryColor, getStatusColor } from "../../lib/colors";
 import { updateStudent, deleteStudent, addDeadline, addSession } from "../../lib/queries";
+import { pushToGoogleCalendar } from "../../lib/calendar";
 import { useState } from "react";
 
 interface StudentDetailProps {
   student: Student;
   onBack: () => void;
   onRefresh: () => void;
+  profileId?: string | null;
 }
 
-export function StudentDetail({ student: s, onBack, onRefresh }: StudentDetailProps) {
+export function StudentDetail({ student: s, onBack, onRefresh, profileId }: StudentDetailProps) {
   const [modal, setModal] = useState<"edit" | "deadline" | "session" | "delete" | null>(null);
   const [saving, setSaving] = useState(false);
   const tc: Record<string, string> = { reach: "#ef4444", match: "#d97706", safety: "#16a34a" };
@@ -61,16 +63,24 @@ export function StudentDetail({ student: s, onBack, onRefresh }: StudentDetailPr
     setSaving(true);
     const f = new FormData(e.target as HTMLFormElement);
     const due = f.get("due") as string;
+    const title = f.get("title") as string;
+    const category = f.get("category") as string;
     const today = new Date();
     const dueDate = new Date(due);
     const days = Math.round((dueDate.getTime() - today.getTime()) / 86400000);
     await addDeadline(s.id, {
-      title: f.get("title") as string,
+      title,
       due,
-      category: f.get("category") as string,
+      category,
       status: days < 0 ? "overdue" : "pending",
       days,
     });
+
+    // Push to Google Calendar if connected
+    if (profileId) {
+      await pushToGoogleCalendar(profileId, title, due, `Student: ${s.name} · Category: ${category}`);
+    }
+
     setSaving(false);
     setModal(null);
     onRefresh();
@@ -85,6 +95,23 @@ export function StudentDetail({ student: s, onBack, onRefresh }: StudentDetailPr
       notes: f.get("notes") as string,
       action: f.get("action") as string,
     });
+
+    // Push session to Google Calendar if connected
+    if (profileId) {
+      const sessionDate = f.get("date") as string;
+      // Try to parse the date for Google Calendar
+      const parsed = new Date(sessionDate);
+      if (!isNaN(parsed.getTime())) {
+        const isoDate = parsed.toISOString().split("T")[0];
+        await pushToGoogleCalendar(
+          profileId,
+          `Session: ${s.name}`,
+          isoDate,
+          `Notes: ${f.get("notes")}\nAction: ${f.get("action")}`
+        );
+      }
+    }
+
     setSaving(false);
     setModal(null);
     onRefresh();
