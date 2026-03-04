@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/?error=no_code", request.url));
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const siteUrl = request.nextUrl.origin;
   const redirectUri = `${siteUrl}/api/auth/google/callback`;
 
   // Exchange code for tokens
