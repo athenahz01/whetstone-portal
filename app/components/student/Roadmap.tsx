@@ -87,7 +87,7 @@ export function Roadmap({ tasks, setTasks, readOnly, studentId }: RoadmapProps) 
       })),
     },
     ...(counselorEvents.length > 0 ? [{
-      id: "counselor",
+      id: "strategist",
       name: "From Strategist",
       subtitle: `${counselorEvents.length} events`,
       avatar: "📅",

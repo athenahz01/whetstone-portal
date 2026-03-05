@@ -192,7 +192,7 @@ export function StudentDashboard({ student, goals, onToggleGoal, onNavigate, rea
               <span className="text-sm text-accent-ink font-semibold">{student.sess[0].action}</span>
             </div>
           ) : (
-            <p className="text-sm text-sub">No sessions yet. Your counselor will schedule your first meeting soon.</p>
+            <p className="text-sm text-sub">No sessions yet. Your strategist will schedule your first meeting soon.</p>
           )}
         </Card>
       </div>

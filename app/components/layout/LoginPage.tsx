@@ -146,7 +146,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
                         color: role === r ? "#1d4ed8" : "#64748b",
                       }}
                     >
-                      {r === "strategist" ? "Counselor" : r}
+                      {r === "strategist" ? "Strategist" : r}
                     </button>
                   ))}
                 </div>
@@ -169,7 +169,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
                     style={inputStyle}
                   />
                   <p className="text-xs mt-2 m-0 leading-relaxed" style={{ color: "#3b82f6" }}>
-                    This should be the email your child&apos;s counselor used when adding them to the system. Your account will be linked to your child&apos;s profile automatically.
+                    This should be the email your child&apos;s strategist used when adding them to the system. Your account will be linked to your child&apos;s profile automatically.
                   </p>
                 </div>
               )}

@@ -14,7 +14,7 @@ interface StaffDashboardProps {
   counselorName?: string;
 }
 
-export function StaffDashboard({ students, onSelectStudent, onNavigate, counselorName = "Counselor" }: StaffDashboardProps) {
+export function StaffDashboard({ students, onSelectStudent, onNavigate, counselorName = "Strategist" }: StaffDashboardProps) {
   const all = students.flatMap((s) => s.dl.map((d) => ({ ...d, sn: s.name })));
   const ov = all.filter((d) => d.status === "overdue");
   const wk = all.filter((d) => d.days >= 0 && d.days <= 7 && d.status !== "completed");

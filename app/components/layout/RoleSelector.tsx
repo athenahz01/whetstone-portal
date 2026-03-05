@@ -18,7 +18,7 @@ export function RoleSelector({ onSelect }: RoleSelectorProps) {
         {[
           { role: "student" as const, label: "Student", desc: "Timeline, academics, session tools" },
           { role: "parent" as const, label: "Parent", desc: "View-only access to your child's progress" },
-          { role: "strategist" as const, label: "Counselor", desc: "Master timeline, caseload, analytics" },
+          { role: "strategist" as const, label: "Strategist", desc: "Master timeline, caseload, analytics" },
         ].map((r) => (
           <button
             key={r.role}

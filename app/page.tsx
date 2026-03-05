@@ -169,7 +169,7 @@ export default function Home() {
       return (
         <div className="p-8 text-center">
           <h1 className="text-2xl font-bold text-heading mb-2">Welcome!</h1>
-          <p className="text-sub">Your account hasn&apos;t been linked to a student profile yet. Please ask your counselor to connect your account.</p>
+          <p className="text-sub">Your account hasn&apos;t been linked to a student profile yet. Please ask your strategist to connect your account.</p>
         </div>
       );
     }
@@ -199,7 +199,7 @@ export default function Home() {
 
     // strategist views
     if (role === "strategist" && view === "dashboard") {
-      return <StaffDashboard students={allStudents} onSelectStudent={setSelectedStudent} onNavigate={setView} counselorName={profile?.display_name || "Counselor"} />;
+      return <StaffDashboard students={allStudents} onSelectStudent={setSelectedStudent} onNavigate={setView} counselorName={profile?.display_name || "Strategist"} />;
     }
     if (role === "strategist" && view === "master") {
       return <MasterTimeline students={allStudents} onSelectStudent={setSelectedStudent} onNavigate={setView} profileId={profileId} />;
@@ -231,7 +231,7 @@ export default function Home() {
         collapsed={!sidebarOpen}
         setCollapsed={() => setSidebarOpen(!sidebarOpen)}
         onSignOut={handleSignOut}
-        studentName={role === "strategist" ? (profile?.display_name || "Counselor") : me?.name}
+        studentName={role === "strategist" ? (profile?.display_name || "Strategist") : me?.name}
         profileId={profileId}
         gcalConnected={gcalConnected}
         timezone={profile?.timezone || "America/New_York"}

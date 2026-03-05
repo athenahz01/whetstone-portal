@@ -135,7 +135,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
         bgColor: "#eff6ff",
         borderColor: "#3b82f6",
         textColor: "#1d4ed8",
-        label: "counselor",
+        label: "strategist",
         onClick: () => {
           if (confirm(`Delete event "${ce.title}"?`)) handleDeleteEvent(ce.id);
         },

@@ -58,7 +58,7 @@ export function Sidebar({ role, view, setView, collapsed, setCollapsed, onSignOu
   const initials = name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
   const userInitials = role === "strategist" ? name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2) : initials;
   const userName = role === "strategist" ? name : role === "parent" ? `Parent of ${name.split(" ")[0]}` : name;
-  const userRole = role === "strategist" ? "Counselor" : role === "parent" ? "Parent" : "Student";
+  const userRole = role === "strategist" ? "Strategist" : role === "parent" ? "Parent" : "Student";
 
   const currentTzLabel = TIMEZONES.find((t) => t.value === timezone)?.label || timezone || "Eastern (ET)";
 
