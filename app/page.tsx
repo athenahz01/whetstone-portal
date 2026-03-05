@@ -184,7 +184,7 @@ export default function Home() {
 
     // Staff views
     if (role === "staff" && view === "dashboard") {
-      return <StaffDashboard students={allStudents} onSelectStudent={setSelectedStudent} onNavigate={setView} />;
+      return <StaffDashboard students={allStudents} onSelectStudent={setSelectedStudent} onNavigate={setView} counselorName={profile?.display_name || "Counselor"} />;
     }
     if (role === "staff" && view === "master") {
       return <MasterTimeline students={allStudents} onSelectStudent={setSelectedStudent} onNavigate={setView} />;
@@ -216,7 +216,7 @@ export default function Home() {
         collapsed={!sidebarOpen}
         setCollapsed={() => setSidebarOpen(!sidebarOpen)}
         onSignOut={handleSignOut}
-        studentName={me?.name}
+        studentName={role === "staff" ? (profile?.display_name || "Counselor") : me?.name}
         profileId={profileId}
         gcalConnected={gcalConnected}
         timezone={profile?.timezone || "America/New_York"}

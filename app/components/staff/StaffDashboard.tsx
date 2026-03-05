@@ -11,9 +11,10 @@ interface StaffDashboardProps {
   students: Student[];
   onSelectStudent: (s: Student) => void;
   onNavigate: (view: string) => void;
+  counselorName?: string;
 }
 
-export function StaffDashboard({ students, onSelectStudent, onNavigate }: StaffDashboardProps) {
+export function StaffDashboard({ students, onSelectStudent, onNavigate, counselorName = "Counselor" }: StaffDashboardProps) {
   const all = students.flatMap((s) => s.dl.map((d) => ({ ...d, sn: s.name })));
   const ov = all.filter((d) => d.status === "overdue");
   const wk = all.filter((d) => d.days >= 0 && d.days <= 7 && d.status !== "completed");
@@ -21,7 +22,7 @@ export function StaffDashboard({ students, onSelectStudent, onNavigate }: StaffD
 
   return (
     <div>
-      <PageHeader title="Dashboard" sub="Sarah Mitchell — 4 active students" />
+      <PageHeader title="Dashboard" sub={`${counselorName} — ${students.length} active students`} />
       <div className="p-6 px-8">
         <div className="grid grid-cols-4 gap-3.5 mb-5">
           <MetricCard label="Students" value={students.length} color="#3b82f6" />
