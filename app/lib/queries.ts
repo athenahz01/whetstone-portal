@@ -83,6 +83,8 @@ export async function fetchAllStudents(): Promise<Student[]> {
           total: t.total,
           bd: t.breakdown,
           v: t.verified,
+          mathScore: t.math_score || null,
+          englishScore: t.english_score || null,
         })),
         acts: (actsRes.data || []).map((a) => ({
           id: a.id,

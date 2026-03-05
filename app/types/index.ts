@@ -43,6 +43,8 @@ export interface School {
     total: number;
     bd: string;
     v: boolean;
+    mathScore?: number | null;
+    englishScore?: number | null;
   }
   
   export interface Activity {
