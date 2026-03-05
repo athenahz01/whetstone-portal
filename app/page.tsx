@@ -23,6 +23,7 @@ interface Profile {
   role: "student" | "parent" | "staff";
   display_name: string;
   student_id: number | null;
+  timezone: string;
 }
 
 export default function Home() {
@@ -61,7 +62,7 @@ export default function Home() {
   const loadProfile = async (userId: string) => {
     const { data } = await supabase
       .from("profiles")
-      .select("role, display_name, student_id")
+      .select("role, display_name, student_id, timezone")
       .eq("id", userId)
       .single();
 
@@ -160,7 +161,7 @@ export default function Home() {
 
     // Student & Parent views
     if (isStudentOrParent && view === "dashboard") {
-      return <StudentDashboard student={me} goals={goals} onToggleGoal={toggleGoal} onNavigate={setView} readOnly={isParent} />;
+      return <StudentDashboard student={me} goals={goals} onToggleGoal={toggleGoal} onNavigate={setView} readOnly={isParent} timezone={profile?.timezone || "America/New_York"} />;
     }
     if (isStudentOrParent && view === "roadmap") {
       return <Roadmap tasks={tasks} setTasks={setTasks} readOnly={isParent} />;
@@ -218,6 +219,13 @@ export default function Home() {
         studentName={me?.name}
         profileId={profileId}
         gcalConnected={gcalConnected}
+        timezone={profile?.timezone || "America/New_York"}
+        onTimezoneChange={async (tz: string) => {
+          if (profileId) {
+            await supabase.from("profiles").update({ timezone: tz }).eq("id", profileId);
+            setProfile((prev) => prev ? { ...prev, timezone: tz } : prev);
+          }
+        }}
       />
       <main className="flex-1 overflow-auto bg-bg">{renderMain()}</main>
     </div>

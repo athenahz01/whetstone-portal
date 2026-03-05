@@ -14,9 +14,10 @@ interface StudentDashboardProps {
   onToggleGoal: (index: number) => void;
   onNavigate: (view: string) => void;
   readOnly?: boolean;
+  timezone?: string;
 }
 
-export function StudentDashboard({ student, goals, onToggleGoal, onNavigate, readOnly = false }: StudentDashboardProps) {
+export function StudentDashboard({ student, goals, onToggleGoal, onNavigate, readOnly = false, timezone = "America/New_York" }: StudentDashboardProps) {
   const urgent = student.dl
     .filter((d) => d.status !== "completed")
     .sort((a, b) => a.days - b.days)
@@ -27,7 +28,7 @@ export function StudentDashboard({ student, goals, onToggleGoal, onNavigate, rea
     <div>
       <PageHeader
         title={readOnly ? `${student.name.split(" ")[0]}'s Dashboard` : `Welcome back, ${student.name.split(" ")[0]}`}
-        sub="Tuesday, December 23, 2025"
+        sub={new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric", timeZone: timezone })}
         right={
           readOnly ? (
             <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "#eff6ff", color: "#1d4ed8" }}>

@@ -1,6 +1,22 @@
 "use client";
 
 import { getGoogleAuthUrl } from "../../lib/calendar";
+import { useState } from "react";
+
+const TIMEZONES = [
+  { label: "Eastern (ET)", value: "America/New_York" },
+  { label: "Central (CT)", value: "America/Chicago" },
+  { label: "Mountain (MT)", value: "America/Denver" },
+  { label: "Pacific (PT)", value: "America/Los_Angeles" },
+  { label: "Alaska (AKT)", value: "America/Anchorage" },
+  { label: "Hawaii (HT)", value: "America/Honolulu" },
+  { label: "China (CST)", value: "Asia/Shanghai" },
+  { label: "Japan (JST)", value: "Asia/Tokyo" },
+  { label: "UK (GMT/BST)", value: "Europe/London" },
+  { label: "Central EU (CET)", value: "Europe/Berlin" },
+  { label: "India (IST)", value: "Asia/Kolkata" },
+  { label: "Australia (AEST)", value: "Australia/Sydney" },
+];
 
 interface SidebarProps {
   role: "student" | "staff" | "parent";
@@ -12,9 +28,13 @@ interface SidebarProps {
   studentName?: string;
   profileId?: string | null;
   gcalConnected?: boolean;
+  timezone?: string;
+  onTimezoneChange?: (tz: string) => void;
 }
 
-export function Sidebar({ role, view, setView, collapsed, setCollapsed, onSignOut, studentName, profileId, gcalConnected }: SidebarProps) {
+export function Sidebar({ role, view, setView, collapsed, setCollapsed, onSignOut, studentName, profileId, gcalConnected, timezone, onTimezoneChange }: SidebarProps) {
+  const [showTz, setShowTz] = useState(false);
+
   const nav =
     role === "staff"
       ? [
@@ -35,10 +55,11 @@ export function Sidebar({ role, view, setView, collapsed, setCollapsed, onSignOu
 
   const name = studentName || "User";
   const initials = name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
-  const roleLabel = role === "student" ? "Student" : role === "parent" ? "Parent" : "Staff";
   const userInitials = role === "staff" ? "SM" : initials;
   const userName = role === "staff" ? "Sarah Mitchell" : role === "parent" ? `Parent of ${name.split(" ")[0]}` : name;
   const userRole = role === "staff" ? "Counselor" : role === "parent" ? "Parent" : "Student";
+
+  const currentTzLabel = TIMEZONES.find((t) => t.value === timezone)?.label || timezone || "Eastern (ET)";
 
   return (
     <aside
@@ -59,7 +80,7 @@ export function Sidebar({ role, view, setView, collapsed, setCollapsed, onSignOu
       {/* Role Label */}
       {!collapsed && (
         <div className="px-4 pt-3.5 pb-1 text-[10px] text-navy-hi uppercase tracking-widest font-bold">
-          {roleLabel}
+          {role === "student" ? "Student" : role === "parent" ? "Parent" : "Staff"}
           {role === "parent" && (
             <span className="ml-1.5 text-[9px] opacity-60 normal-case tracking-normal">(view only)</span>
           )}
@@ -105,6 +126,40 @@ export function Sidebar({ role, view, setView, collapsed, setCollapsed, onSignOu
             >
               📅 Connect Google Calendar
             </button>
+          )}
+        </div>
+      )}
+
+      {/* Timezone Selector */}
+      {!collapsed && (
+        <div className="px-3 mb-2">
+          <button
+            onClick={() => setShowTz(!showTz)}
+            className="w-full flex items-center justify-between px-2 py-2 rounded-lg cursor-pointer text-xs border-none"
+            style={{ background: "rgba(96,165,250,0.06)", color: "#94a3b8" }}
+          >
+            <span>🕐 {currentTzLabel}</span>
+            <span style={{ fontSize: 10 }}>{showTz ? "▲" : "▼"}</span>
+          </button>
+          {showTz && (
+            <div className="mt-1 rounded-lg overflow-hidden" style={{ background: "#1e293b", maxHeight: 200, overflowY: "auto" }}>
+              {TIMEZONES.map((tz) => (
+                <button
+                  key={tz.value}
+                  onClick={() => {
+                    onTimezoneChange?.(tz.value);
+                    setShowTz(false);
+                  }}
+                  className="w-full text-left px-3 py-2 border-none cursor-pointer text-xs"
+                  style={{
+                    background: timezone === tz.value ? "rgba(96,165,250,0.15)" : "transparent",
+                    color: timezone === tz.value ? "#60a5fa" : "#94a3b8",
+                  }}
+                >
+                  {tz.label}
+                </button>
+              ))}
+            </div>
           )}
         </div>
       )}
