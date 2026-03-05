@@ -7,6 +7,8 @@ import { Tag } from "../ui/Tag";
 import { MetricCard } from "../ui/MetricCard";
 import { PageHeader } from "../ui/PageHeader";
 import { getCategoryColor, getStatusColor } from "../../lib/colors";
+import { fetchCounselorEventsForStudent } from "../../lib/queries";
+import { useState, useEffect } from "react";
 
 interface StudentDashboardProps {
   student: Student;
@@ -23,6 +25,14 @@ export function StudentDashboard({ student, goals, onToggleGoal, onNavigate, rea
     .sort((a, b) => a.days - b.days)
     .slice(0, 4);
   const done = goals.filter((g) => g.done).length;
+
+  const [counselorEvents, setCounselorEvents] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (student.id) {
+      fetchCounselorEventsForStudent(student.id).then(setCounselorEvents);
+    }
+  }, [student.id]);
 
   return (
     <div>
@@ -81,6 +91,23 @@ export function StudentDashboard({ student, goals, onToggleGoal, onNavigate, rea
               </div>
             ))}
           </Card>
+
+          {/* Counselor Events */}
+          {counselorEvents.length > 0 && (
+            <Card className="mt-3.5">
+              <h2 className="m-0 mb-3.5 text-lg font-bold text-heading">From Your Counselor</h2>
+              {counselorEvents.map((ce) => (
+                <div key={ce.id} className="flex justify-between items-center p-3 rounded-lg mb-1.5" style={{ background: "#eff6ff", borderLeft: "3px solid #3b82f6" }}>
+                  <div>
+                    <div className="text-sm font-medium text-heading">{ce.title}</div>
+                    <span className="text-xs" style={{ color: "#3b82f6" }}>{ce.category} · {new Date(ce.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                    {ce.notes && <p className="text-xs text-sub mt-1 m-0">{ce.notes}</p>}
+                  </div>
+                </div>
+              ))}
+            </Card>
+          )}
+
 
           {/* Weekly Goals */}
           <Card>

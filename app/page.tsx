@@ -187,7 +187,7 @@ export default function Home() {
       return <StaffDashboard students={allStudents} onSelectStudent={setSelectedStudent} onNavigate={setView} counselorName={profile?.display_name || "Counselor"} />;
     }
     if (role === "staff" && view === "master") {
-      return <MasterTimeline students={allStudents} onSelectStudent={setSelectedStudent} onNavigate={setView} />;
+      return <MasterTimeline students={allStudents} onSelectStudent={setSelectedStudent} onNavigate={setView} profileId={profileId} />;
     }
     if (role === "staff" && view === "caseload") {
       return <Caseload students={allStudents} onSelectStudent={setSelectedStudent} onNavigate={setView} onRefresh={loadData} />;

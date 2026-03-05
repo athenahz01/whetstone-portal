@@ -209,3 +209,99 @@ export async function addSession(studentId: number, data: {
   if (error) { console.error("Error adding session:", error); return false; }
   return true;
 }
+
+// === COUNSELOR EVENTS ===
+
+export async function addCounselorEvent(data: {
+  title: string;
+  date: string;
+  category: string;
+  notes: string;
+  createdBy: string;
+  studentIds: number[];
+}): Promise<boolean> {
+  const { data: event, error } = await supabase
+    .from("counselor_events")
+    .insert({
+      title: data.title,
+      date: data.date,
+      category: data.category,
+      notes: data.notes,
+      created_by: data.createdBy,
+    })
+    .select("id")
+    .single();
+
+  if (error || !event) {
+    console.error("Error creating counselor event:", error);
+    return false;
+  }
+
+  // Link students to event
+  const links = data.studentIds.map((sid) => ({
+    event_id: event.id,
+    student_id: sid,
+  }));
+
+  const { error: linkError } = await supabase
+    .from("counselor_event_students")
+    .insert(links);
+
+  if (linkError) {
+    console.error("Error linking students:", linkError);
+    return false;
+  }
+
+  return true;
+}
+
+export async function fetchCounselorEvents(): Promise<any[]> {
+  const { data: events, error } = await supabase
+    .from("counselor_events")
+    .select("*")
+    .order("date", { ascending: true });
+
+  if (error || !events) return [];
+
+  // Fetch student links for each event
+  const eventIds = events.map((e) => e.id);
+  const { data: links } = await supabase
+    .from("counselor_event_students")
+    .select("event_id, student_id")
+    .in("event_id", eventIds);
+
+  return events.map((e) => ({
+    ...e,
+    studentIds: (links || []).filter((l) => l.event_id === e.id).map((l) => l.student_id),
+  }));
+}
+
+export async function fetchCounselorEventsForStudent(studentId: number): Promise<any[]> {
+  const { data: links } = await supabase
+    .from("counselor_event_students")
+    .select("event_id")
+    .eq("student_id", studentId);
+
+  if (!links || links.length === 0) return [];
+
+  const eventIds = links.map((l) => l.event_id);
+  const { data: events } = await supabase
+    .from("counselor_events")
+    .select("*")
+    .in("id", eventIds)
+    .order("date", { ascending: true });
+
+  return events || [];
+}
+
+export async function deleteCounselorEvent(eventId: number): Promise<boolean> {
+  const { error } = await supabase
+    .from("counselor_events")
+    .delete()
+    .eq("id", eventId);
+  if (error) {
+    console.error("Error deleting event:", error);
+    return false;
+  }
+  return true;
+}
