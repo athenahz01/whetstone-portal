@@ -88,7 +88,7 @@ export function Roadmap({ tasks, setTasks, readOnly, studentId }: RoadmapProps) 
     },
     ...(counselorEvents.length > 0 ? [{
       id: "counselor",
-      name: "From Counselor",
+      name: "From Strategist",
       subtitle: `${counselorEvents.length} events`,
       avatar: "📅",
       avatarBg: "#eff6ff",
@@ -171,7 +171,7 @@ export function Roadmap({ tasks, setTasks, readOnly, studentId }: RoadmapProps) 
             {/* Counselor Events in List View */}
             {counselorEvents.length > 0 && (
               <div className="mt-3.5 p-4 rounded-xl" style={{ background: "#eff6ff", border: "1px solid #bfdbfe" }}>
-                <h3 className="m-0 mb-3 text-sm font-bold" style={{ color: "#1d4ed8" }}>From Your Counselor</h3>
+                <h3 className="m-0 mb-3 text-sm font-bold" style={{ color: "#1d4ed8" }}>From Your Strategist</h3>
                 {counselorEvents.map((ce: any) => (
                   <div key={ce.id} className="flex justify-between items-center p-2.5 px-3 rounded-lg mb-1.5 bg-white" style={{ borderLeft: "3px solid #3b82f6" }}>
                     <div>

@@ -98,7 +98,7 @@ export function StudentDashboard({ student, goals, onToggleGoal, onNavigate, rea
           {/* Counselor Events */}
           {counselorEvents.length > 0 && (
             <Card className="mt-3.5">
-              <h2 className="m-0 mb-3.5 text-lg font-bold text-heading">From Your Counselor</h2>
+              <h2 className="m-0 mb-3.5 text-lg font-bold text-heading">From Your Strategist</h2>
               {counselorEvents.map((ce) => (
                 <div key={ce.id} className="flex justify-between items-center p-3 rounded-lg mb-1.5" style={{ background: "#eff6ff", borderLeft: "3px solid #3b82f6" }}>
                   <div>
@@ -130,7 +130,7 @@ export function StudentDashboard({ student, goals, onToggleGoal, onNavigate, rea
           {/* Weekly Goals */}
           <Card>
             <h2 className="m-0 mb-1 text-lg font-bold text-heading">This Week</h2>
-            <p className="m-0 mb-3.5 text-sm text-sub">Goals from counselor · {(() => { const now = new Date(); const sun = new Date(now); sun.setDate(now.getDate() - now.getDay()); const sat = new Date(sun); sat.setDate(sun.getDate() + 6); return `${sun.toLocaleDateString("en-US", { month: "short", day: "numeric" })}–${sat.getDate()}`; })()}</p>
+            <p className="m-0 mb-3.5 text-sm text-sub">Goals from strategist · {(() => { const now = new Date(); const sun = new Date(now); sun.setDate(now.getDate() - now.getDay()); const sat = new Date(sun); sat.setDate(sun.getDate() + 6); return `${sun.toLocaleDateString("en-US", { month: "short", day: "numeric" })}–${sat.getDate()}`; })()}</p>
             {goals.map((g, i) => (
               <div
                 key={i}

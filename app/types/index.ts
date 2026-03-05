@@ -13,6 +13,7 @@ export interface School {
     cat: string;
     status: "overdue" | "in-progress" | "pending" | "completed";
     days: number;
+    specialist?: string;
   }
   
   export interface Task {
@@ -23,6 +24,7 @@ export interface School {
     d: string;
     st: string;
     team: string[];
+    specialist?: string;
   }
   
   export interface Course {

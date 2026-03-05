@@ -21,7 +21,7 @@ import { pullFromGoogleCalendar, syncAllDeadlinesToGoogle, syncAllCounselorEvent
 import { Goal, Task, Course, Test, Activity, Student } from "./types";
 
 interface Profile {
-  role: "student" | "parent" | "staff";
+  role: "student" | "parent" | "strategist";
   display_name: string;
   student_id: number | null;
   timezone: string;
@@ -197,20 +197,20 @@ export default function Home() {
       return <SessionPrep student={me} />;
     }
 
-    // Staff views
-    if (role === "staff" && view === "dashboard") {
+    // strategist views
+    if (role === "strategist" && view === "dashboard") {
       return <StaffDashboard students={allStudents} onSelectStudent={setSelectedStudent} onNavigate={setView} counselorName={profile?.display_name || "Counselor"} />;
     }
-    if (role === "staff" && view === "master") {
+    if (role === "strategist" && view === "master") {
       return <MasterTimeline students={allStudents} onSelectStudent={setSelectedStudent} onNavigate={setView} profileId={profileId} />;
     }
-    if (role === "staff" && view === "caseload") {
+    if (role === "strategist" && view === "caseload") {
       return <Caseload students={allStudents} onSelectStudent={setSelectedStudent} onNavigate={setView} onRefresh={loadData} />;
     }
-    if (role === "staff" && view === "detail" && selectedStudent) {
+    if (role === "strategist" && view === "detail" && selectedStudent) {
       return <StudentDetail student={selectedStudent} onBack={() => setView("caseload")} onRefresh={loadData} profileId={profileId} />;
     }
-    if (role === "staff" && view === "analytics") {
+    if (role === "strategist" && view === "analytics") {
       return <Analytics students={allStudents} onSelectStudent={setSelectedStudent} onNavigate={setView} />;
     }
 
@@ -231,7 +231,7 @@ export default function Home() {
         collapsed={!sidebarOpen}
         setCollapsed={() => setSidebarOpen(!sidebarOpen)}
         onSignOut={handleSignOut}
-        studentName={role === "staff" ? (profile?.display_name || "Counselor") : me?.name}
+        studentName={role === "strategist" ? (profile?.display_name || "Counselor") : me?.name}
         profileId={profileId}
         gcalConnected={gcalConnected}
         timezone={profile?.timezone || "America/New_York"}

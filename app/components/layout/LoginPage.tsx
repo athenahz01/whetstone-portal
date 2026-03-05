@@ -12,7 +12,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [role, setRole] = useState<"student" | "parent" | "staff">("student");
+  const [role, setRole] = useState<"student" | "parent" | "strategist">("student");
   const [childEmail, setChildEmail] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -135,7 +135,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
               <div>
                 <label className="block text-sm font-semibold text-body mb-1.5">I am a...</label>
                 <div className="flex gap-2">
-                  {(["student", "parent", "staff"] as const).map((r) => (
+                  {(["student", "parent", "strategist"] as const).map((r) => (
                     <button
                       key={r}
                       onClick={() => { setRole(r); setError(""); }}
@@ -146,7 +146,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
                         color: role === r ? "#1d4ed8" : "#64748b",
                       }}
                     >
-                      {r === "staff" ? "Counselor" : r}
+                      {r === "strategist" ? "Counselor" : r}
                     </button>
                   ))}
                 </div>

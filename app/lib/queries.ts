@@ -56,6 +56,7 @@ export async function fetchAllStudents(): Promise<Student[]> {
           cat: d.category,
           status: d.status as "overdue" | "in-progress" | "pending" | "completed",
           days: d.days,
+          specialist: d.specialist || "",
         })),
         tasks: (tasksRes.data || []).map((t) => ({
           id: t.id,
@@ -65,6 +66,7 @@ export async function fetchAllStudents(): Promise<Student[]> {
           d: t.due_date,
           st: t.status,
           team: t.team || [],
+          specialist: t.specialist || "",
         })),
         courses: (coursesRes.data || []).map((c) => ({
           id: c.id,

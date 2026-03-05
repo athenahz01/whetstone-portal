@@ -19,7 +19,7 @@ const TIMEZONES = [
 ];
 
 interface SidebarProps {
-  role: "student" | "staff" | "parent";
+  role: "student" | "strategist" | "parent";
   view: string;
   setView: (v: string) => void;
   collapsed: boolean;
@@ -37,7 +37,7 @@ export function Sidebar({ role, view, setView, collapsed, setCollapsed, onSignOu
   const [showTz, setShowTz] = useState(false);
 
   const nav =
-    role === "staff"
+    role === "strategist"
       ? [
           ["dashboard", "Dashboard"],
           ["master", "Master Timeline"],
@@ -56,9 +56,9 @@ export function Sidebar({ role, view, setView, collapsed, setCollapsed, onSignOu
 
   const name = studentName || "User";
   const initials = name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
-  const userInitials = role === "staff" ? name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2) : initials;
-  const userName = role === "staff" ? name : role === "parent" ? `Parent of ${name.split(" ")[0]}` : name;
-  const userRole = role === "staff" ? "Counselor" : role === "parent" ? "Parent" : "Student";
+  const userInitials = role === "strategist" ? name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2) : initials;
+  const userName = role === "strategist" ? name : role === "parent" ? `Parent of ${name.split(" ")[0]}` : name;
+  const userRole = role === "strategist" ? "Counselor" : role === "parent" ? "Parent" : "Student";
 
   const currentTzLabel = TIMEZONES.find((t) => t.value === timezone)?.label || timezone || "Eastern (ET)";
 
@@ -81,7 +81,7 @@ export function Sidebar({ role, view, setView, collapsed, setCollapsed, onSignOu
       {/* Role Label */}
       {!collapsed && (
         <div className="px-4 pt-3.5 pb-1 text-[10px] text-navy-hi uppercase tracking-widest font-bold">
-          {role === "student" ? "Student" : role === "parent" ? "Parent" : "Staff"}
+          {role === "student" ? "Student" : role === "parent" ? "Parent" : "strategist"}
           {role === "parent" && (
             <span className="ml-1.5 text-[9px] opacity-60 normal-case tracking-normal">(view only)</span>
           )}
