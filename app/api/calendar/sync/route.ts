@@ -106,5 +106,29 @@ export async function GET(request: NextRequest) {
   );
 
   const data = await res.json();
-  return NextResponse.json(data);
+
+  const events = (data.items || []).map((e: any) => {
+    let date = "";
+    if (e.start?.date) {
+      // All-day event
+      date = e.start.date;
+    } else if (e.start?.dateTime) {
+      // Timed event - extract date from the ISO string directly
+      // e.start.dateTime looks like "2026-03-06T10:00:00-05:00"
+      // Take the first 10 characters to get the local date
+      date = e.start.dateTime.substring(0, 10);
+    }
+
+    return {
+      id: e.id,
+      title: e.summary || "Untitled",
+      date,
+      source: "google",
+      attendees: (e.attendees || []).map((a: any) => a.email?.toLowerCase()).filter(Boolean),
+      meetingLink: e.hangoutLink || e.conferenceData?.entryPoints?.[0]?.uri || "",
+      location: e.location || "",
+    };
+  });
+
+  return NextResponse.json({ events });
 }

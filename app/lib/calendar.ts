@@ -39,14 +39,92 @@ export function getGoogleAuthUrl(profileId: string) {
       const res = await fetch(`/api/calendar/sync?profileId=${profileId}`);
       if (!res.ok) return [];
       const data = await res.json();
-      return (data.items || []).map((e: any) => ({
-        id: e.id,
-        title: e.summary || "Untitled",
-        date: e.start?.date || e.start?.dateTime?.split("T")[0] || "",
-        source: "google" as const,
-      }));
+      return (data.events || [])
+        .filter((e: any) => !e.title?.startsWith("[Whetstone]"))
+        .map((e: any) => ({
+          id: e.id,
+          title: e.title || "Untitled",
+          date: e.date || "",
+          source: "google" as const,
+          attendees: e.attendees || [],
+          meetingLink: e.meetingLink || "",
+          location: e.location || "",
+        }));
     } catch (err) {
       console.error("Failed to pull from Google Calendar:", err);
       return [];
     }
+  }
+
+  export async function syncAllDeadlinesToGoogle(profileId: string, students: any[]) {
+    // First, pull existing Google Calendar events to check for duplicates
+    const existing = await pullExistingWhetstoneEvents(profileId);
+    const existingTitles = new Set(existing.map((e: any) => e.title));
+  
+    const results = [];
+    for (const student of students) {
+      for (const dl of student.dl || []) {
+        if (dl.due && dl.status !== "completed") {
+          const eventTitle = `${dl.title} (${student.name})`;
+          // Skip if already synced
+          if (existingTitles.has(`[Whetstone] ${eventTitle}`)) continue;
+  
+          const result = await pushToGoogleCalendar(
+            profileId,
+            eventTitle,
+            dl.due,
+            `Student: ${student.name}\nCategory: ${dl.cat}\nStatus: ${dl.status}`
+          );
+          results.push(result);
+        }
+      }
+    }
+    return results;
+  }
+  
+  export async function syncAllCounselorEventsToGoogle(profileId: string, events: any[], students: any[]) {
+    const existing = await pullExistingWhetstoneEvents(profileId);
+    const existingTitles = new Set(existing.map((e: any) => e.title));
+  
+    const results = [];
+    for (const event of events) {
+      // Skip if already synced
+      if (existingTitles.has(`[Whetstone] ${event.title}`)) continue;
+  
+      const studentNames = students
+        .filter((s: any) => event.studentIds?.includes(s.id))
+        .map((s: any) => s.name)
+        .join(", ");
+      const result = await pushToGoogleCalendar(
+        profileId,
+        event.title,
+        event.date,
+        `Students: ${studentNames}\n${event.notes || ""}`
+      );
+      results.push(result);
+    }
+    return results;
+  }
+
+  async function pullExistingWhetstoneEvents(profileId: string) {
+    try {
+      const res = await fetch(`/api/calendar/sync?profileId=${profileId}`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return (data.events || [])
+        .filter((e: any) => e.title?.startsWith("[Whetstone]"))
+        .map((e: any) => ({
+          title: e.title,
+          date: e.date,
+        }));
+    } catch {
+      return [];
+    }
+  }
+
+  export async function pullGoogleEventsForStudent(profileId: string, studentEmail: string) {
+    const allEvents = await pullFromGoogleCalendar(profileId);
+    return allEvents.filter((e: any) =>
+      e.attendees && e.attendees.includes(studentEmail.toLowerCase())
+    );
   }

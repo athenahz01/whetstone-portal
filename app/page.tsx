@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "./lib/supabase";
-import { fetchAllStudents } from "./lib/queries";
+import { fetchAllStudents, fetchCounselorEvents } from "./lib/queries";
 import { LoginPage } from "./components/layout/LoginPage";
 import { Sidebar } from "./components/layout/Sidebar";
 import { StudentDashboard } from "./components/student/StudentDashboard";
@@ -17,6 +17,7 @@ import { Caseload } from "./components/staff/Caseload";
 import { StudentDetail } from "./components/staff/StudentDetail";
 import { Analytics } from "./components/staff/Analytics";
 import { MasterTimeline } from "./components/staff/MasterTimeline";
+import { pullFromGoogleCalendar, syncAllDeadlinesToGoogle, syncAllCounselorEventsToGoogle } from "./lib/calendar";
 import { Goal, Task, Course, Test, Activity, Student } from "./types";
 
 interface Profile {
@@ -42,6 +43,7 @@ export default function Home() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [tests, setTests] = useState<Test[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [studentGoogleEvents, setStudentGoogleEvents] = useState<any[]>([]);
 
   // Check auth state
   useEffect(() => {
@@ -58,6 +60,19 @@ export default function Home() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Pull Google Calendar events for student
+  useEffect(() => {
+    if (gcalConnected && profileId && allStudents.length > 0 && allStudents[0]?.email) {
+      pullFromGoogleCalendar(profileId).then((events) => {
+        const studentEmail = allStudents[0].email?.toLowerCase();
+        const forStudent = events.filter((e: any) =>
+          e.attendees && e.attendees.includes(studentEmail)
+        );
+        setStudentGoogleEvents(forStudent);
+      });
+    }
+  }, [gcalConnected, profileId, allStudents]);
 
   const loadProfile = async (userId: string) => {
     const { data } = await supabase
@@ -161,10 +176,10 @@ export default function Home() {
 
     // Student & Parent views
     if (isStudentOrParent && view === "dashboard") {
-      return <StudentDashboard student={me} goals={goals} onToggleGoal={toggleGoal} onNavigate={setView} readOnly={isParent} timezone={profile?.timezone || "America/New_York"} />;
+      return <StudentDashboard student={me} goals={goals} onToggleGoal={toggleGoal} onNavigate={setView} readOnly={isParent} timezone={profile?.timezone || "America/New_York"} googleEvents={studentGoogleEvents} />;
     }
     if (isStudentOrParent && view === "roadmap") {
-      return <Roadmap tasks={tasks} setTasks={setTasks} readOnly={isParent} />;
+      return <Roadmap tasks={tasks} setTasks={setTasks} readOnly={isParent} studentId={me?.id} />;
     }
     if (isStudentOrParent && view === "academics") {
       return <Academics student={me} courses={courses} setCourses={setCourses} readOnly={isParent} />;
@@ -225,6 +240,14 @@ export default function Home() {
             await supabase.from("profiles").update({ timezone: tz }).eq("id", profileId);
             setProfile((prev) => prev ? { ...prev, timezone: tz } : prev);
           }
+        }}
+        onSyncCalendar={async () => {
+          if (!profileId) return;
+          alert("Syncing to Google Calendar...");
+          await syncAllDeadlinesToGoogle(profileId, allStudents);
+          const events = await fetchCounselorEvents();
+          await syncAllCounselorEventsToGoogle(profileId, events, allStudents);
+          alert("Sync complete! Check your Google Calendar.");
         }}
       />
       <main className="flex-1 overflow-auto bg-bg">{renderMain()}</main>

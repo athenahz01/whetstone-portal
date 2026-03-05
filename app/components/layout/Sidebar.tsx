@@ -30,9 +30,10 @@ interface SidebarProps {
   gcalConnected?: boolean;
   timezone?: string;
   onTimezoneChange?: (tz: string) => void;
+  onSyncCalendar?: () => Promise<void>;
 }
 
-export function Sidebar({ role, view, setView, collapsed, setCollapsed, onSignOut, studentName, profileId, gcalConnected, timezone, onTimezoneChange }: SidebarProps) {
+export function Sidebar({ role, view, setView, collapsed, setCollapsed, onSignOut, studentName, profileId, gcalConnected, timezone, onTimezoneChange, onSyncCalendar }: SidebarProps) {
   const [showTz, setShowTz] = useState(false);
 
   const nav =
@@ -112,9 +113,22 @@ export function Sidebar({ role, view, setView, collapsed, setCollapsed, onSignOu
       {!collapsed && profileId && (
         <div className="px-3 mb-2">
           {gcalConnected ? (
-            <div className="flex items-center gap-2 px-2 py-2 rounded-lg" style={{ background: "rgba(22,163,98,0.1)" }}>
-              <span className="text-xs">📅</span>
-              <span className="text-xs font-medium" style={{ color: "#16a34a" }}>Calendar synced</span>
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2 px-2 py-2 rounded-lg" style={{ background: "rgba(22,163,98,0.1)" }}>
+                <span className="text-xs">📅</span>
+                <span className="text-xs font-medium" style={{ color: "#16a34a" }}>Calendar synced</span>
+              </div>
+              <button
+                onClick={async () => {
+                  if (onSyncCalendar) {
+                    await onSyncCalendar();
+                  }
+                }}
+                className="w-full px-2 py-1.5 rounded-lg cursor-pointer text-[10px] font-semibold border-none"
+                style={{ background: "rgba(96,165,250,0.1)", color: "#60a5fa" }}
+              >
+                🔄 Sync Now
+              </button>
             </div>
           ) : (
             <button

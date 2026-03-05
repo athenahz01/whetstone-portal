@@ -17,9 +17,10 @@ interface StudentDashboardProps {
   onNavigate: (view: string) => void;
   readOnly?: boolean;
   timezone?: string;
+  googleEvents?: any[];
 }
 
-export function StudentDashboard({ student, goals, onToggleGoal, onNavigate, readOnly = false, timezone = "America/New_York" }: StudentDashboardProps) {
+export function StudentDashboard({ student, goals, onToggleGoal, onNavigate, readOnly = false, timezone = "America/New_York", googleEvents = [] }: StudentDashboardProps) {
   const urgent = student.dl
     .filter((d) => d.status !== "completed")
     .sort((a, b) => a.days - b.days)
@@ -27,6 +28,8 @@ export function StudentDashboard({ student, goals, onToggleGoal, onNavigate, rea
   const done = goals.filter((g) => g.done).length;
 
   const [counselorEvents, setCounselorEvents] = useState<any[]>([]);
+  const [googleCalEvents, setGoogleCalEvents] = useState<any[]>([]);
+
 
   useEffect(() => {
     if (student.id) {
@@ -102,6 +105,21 @@ export function StudentDashboard({ student, goals, onToggleGoal, onNavigate, rea
                     <div className="text-sm font-medium text-heading">{ce.title}</div>
                     <span className="text-xs" style={{ color: "#3b82f6" }}>{ce.category} · {new Date(ce.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
                     {ce.notes && <p className="text-xs text-sub mt-1 m-0">{ce.notes}</p>}
+                  </div>
+                </div>
+              ))}
+            </Card>
+          )}
+
+          {/* Google Calendar Events */}
+          {googleEvents.length > 0 && (
+            <Card className="mt-3.5">
+              <h2 className="m-0 mb-3.5 text-lg font-bold text-heading">Upcoming (Google Calendar)</h2>
+              {googleEvents.map((ge) => (
+                <div key={ge.id} className="flex justify-between items-center p-3 rounded-lg mb-1.5" style={{ background: "#eff6ff", borderLeft: "3px solid #60a5fa" }}>
+                  <div>
+                    <div className="text-sm font-medium text-heading">{ge.title}</div>
+                    <span className="text-xs" style={{ color: "#3b82f6" }}>{new Date(ge.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
                   </div>
                 </div>
               ))}
