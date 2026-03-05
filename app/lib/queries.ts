@@ -57,6 +57,7 @@ export async function fetchAllStudents(): Promise<Student[]> {
           status: d.status as "overdue" | "in-progress" | "pending" | "completed",
           days: d.days,
           specialist: d.specialist || "",
+          googleDocLink: d.google_doc_link || "",
         })),
         tasks: (tasksRes.data || []).map((t) => ({
           id: t.id,
@@ -115,7 +116,7 @@ export async function addStudent(data: {
   name: string;
   email: string;
   grade: number;
-  gpa: number;
+  gpa: number | null;
   school: string;
   gradYear: number;
 }): Promise<number | null> {
@@ -303,6 +304,25 @@ export async function deleteCounselorEvent(eventId: number): Promise<boolean> {
     .eq("id", eventId);
   if (error) {
     console.error("Error deleting event:", error);
+    return false;
+  }
+  return true;
+}
+
+export async function updateDeadline(deadlineId: number, data: {
+  title?: string;
+  due?: string;
+  category?: string;
+  status?: string;
+  specialist?: string;
+  google_doc_link?: string;
+}): Promise<boolean> {
+  const { error } = await supabase
+    .from("deadlines")
+    .update(data)
+    .eq("id", deadlineId);
+  if (error) {
+    console.error("Error updating deadline:", error);
     return false;
   }
   return true;

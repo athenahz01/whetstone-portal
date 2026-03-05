@@ -14,6 +14,7 @@ export interface School {
     status: "overdue" | "in-progress" | "pending" | "completed";
     days: number;
     specialist?: string;
+    googleDocLink?: string;
   }
   
   export interface Task {
@@ -72,8 +73,10 @@ export interface School {
     name: string;
     email?: string;
     grade: number;
-    gpa: number;
-    sat: number;
+    gpa?: number | null;
+    gpaWeighted?: number | null;
+    gpaUnweighted?: number | null;
+    sat?: number | null;
     counselor: string;
     status: "on-track" | "needs-attention";
     av: string;

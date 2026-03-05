@@ -44,7 +44,8 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
       />
       <div className="p-6 px-8">
         <div className="grid grid-cols-3 gap-3.5 mb-5">
-          <MetricCard label="GPA" value={student.gpa} color="#16a34a" />
+          <MetricCard label="GPA (UW)" value={student.gpaUnweighted || student.gpa || "—"} color="#16a34a" />
+          <MetricCard label="GPA (W)" value={student.gpaUnweighted || student.gpa || "—"} color="#3b82f6" />
           <MetricCard label="Class Rank" value="Top 5%" color="#3b82f6" />
           <MetricCard label="AP Courses" value={courses.length} color="#7c3aed" />
         </div>
