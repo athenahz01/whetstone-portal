@@ -1,7 +1,7 @@
 export function getGoogleAuthUrl(profileId: string) {
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!;
-  const origin = window.location.origin;
-  const redirectUri = `${origin}/api/auth/google/callback`;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+  const redirectUri = `${siteUrl}/api/auth/google/callback`;
 
   const scopes = [
     "https://www.googleapis.com/auth/calendar.events",
