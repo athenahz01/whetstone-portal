@@ -29,6 +29,8 @@ export function Activities({ activities, setActivities, readOnly = false }: Acti
     fontSize: 14, outline: "none", boxSizing: "border-box",
   };
 
+  const [descText, setDescText] = useState("");
+
   return (
     <div>
       <PageHeader
@@ -91,7 +93,7 @@ export function Activities({ activities, setActivities, readOnly = false }: Acti
       </div>
 
       {showModal && (
-        <Modal title="Add Activity" onClose={() => { setShowModal(false); setSelectedGrades([]); }}>
+        <Modal title="Add Activity" onClose={() => { setShowModal(false); setSelectedGrades([]); setDescText("");}}>
           <form onSubmit={(e) => {
             e.preventDefault();
             const f = new FormData(e.target as HTMLFormElement);
@@ -103,6 +105,7 @@ export function Activities({ activities, setActivities, readOnly = false }: Acti
             }]);
             setShowModal(false);
             setSelectedGrades([]);
+            setDescText("");
           }}>
             <FormField label="Organization Name"><input required name="org" style={inputStyle} /></FormField>
             <FormField label="Position / Leadership"><input required name="pos" style={inputStyle} /></FormField>
@@ -131,8 +134,25 @@ export function Activities({ activities, setActivities, readOnly = false }: Acti
               </select>
             </FormField>
             <FormField label="Description">
-              <textarea required name="desc" rows={3} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} />
-              <div className="text-xs text-faint mt-1">150 word limit on Common App</div>
+            <textarea
+                required
+                name="desc"
+                rows={3}
+                style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
+                value={descText}
+                onChange={(e) => setDescText(e.target.value)}
+              />
+              <div className="flex justify-between mt-1">
+                <div className="text-xs text-faint">150 word limit on Common App</div>
+                <div
+                  className="text-xs font-semibold"
+                  style={{
+                    color: descText.trim().split(/\s+/).filter(Boolean).length > 150 ? "#ef4444" : "#64748b",
+                  }}
+                >
+                  {descText.trim() ? descText.trim().split(/\s+/).filter(Boolean).length : 0}/150 words
+                </div>
+              </div>
             </FormField>
             <div className="grid grid-cols-2 gap-3">
               <FormField label="Hours / Week"><input required name="hrs" type="number" style={inputStyle} /></FormField>
