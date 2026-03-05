@@ -14,7 +14,7 @@ interface MasterTimelineProps {
 export function MasterTimeline({ students, onSelectStudent, onNavigate }: MasterTimelineProps) {
   const [filter, setFilter] = useState("all");
 
-  const today = new Date("2025-12-23");
+  const today = new Date();
   const days = 45;
   const dw = 28;
 

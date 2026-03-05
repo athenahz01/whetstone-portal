@@ -26,7 +26,7 @@ export function SessionPrep({ student }: SessionPrepProps) {
       <div className="p-6 px-8" style={{ maxWidth: 680 }}>
         <Card className="mb-3.5">
           <div className="text-xs uppercase tracking-widest font-bold mb-1" style={{ color: "#1d4ed8" }}>Next Session</div>
-          <div className="text-2xl font-bold text-heading">December 30, 2025 — 4:00 PM</div>
+          <div className="text-2xl font-bold text-heading">{new Date(Date.now() + 7 * 86400000).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} — 4:00 PM</div>
           <div className="text-sm text-sub mt-0.5">with {student.counselor}</div>
         </Card>
         {[["What did you accomplish since last session?", "did"], ["What do you need help with?", "need"]].map(([label, key]) => (

@@ -85,7 +85,7 @@ export function StudentDashboard({ student, goals, onToggleGoal, onNavigate, rea
           {/* Weekly Goals */}
           <Card>
             <h2 className="m-0 mb-1 text-lg font-bold text-heading">This Week</h2>
-            <p className="m-0 mb-3.5 text-sm text-sub">Goals from counselor · Dec 23–29</p>
+            <p className="m-0 mb-3.5 text-sm text-sub">Goals from counselor · {(() => { const now = new Date(); const sun = new Date(now); sun.setDate(now.getDate() - now.getDay()); const sat = new Date(sun); sat.setDate(sun.getDate() + 6); return `${sun.toLocaleDateString("en-US", { month: "short", day: "numeric" })}–${sat.getDate()}`; })()}</p>
             {goals.map((g, i) => (
               <div
                 key={i}
