@@ -70,13 +70,12 @@ function charCount(val: string, max: number) {
 }
 
 export function Activities({ activities, setActivities, readOnly = false, studentId }: ActivitiesProps) {
-  // openSlot: which accordion index is open (-1 = none)
   const [openSlot, setOpenSlot] = useState<number>(-1);
-  // localEdits: track edits per slot before saving
   const [saving, setSaving] = useState(false);
+  const [extraSlots, setExtraSlots] = useState(0);
 
-  // Build 10 slots — fill from activities array, rest are empty
-  const slots: (Activity | null)[] = Array.from({ length: TOTAL_SLOTS }, (_, i) =>
+  const totalSlots = Math.max(TOTAL_SLOTS, activities.length) + extraSlots;
+  const slots: (Activity | null)[] = Array.from({ length: totalSlots }, (_, i) =>
     activities[i] ?? null
   );
 
@@ -103,22 +102,18 @@ export function Activities({ activities, setActivities, readOnly = false, studen
     if (index < newActivities.length) {
       newActivities[index] = updated;
     } else {
-      // Fill gaps with nulls then set
       while (newActivities.length < index) newActivities.push(null as any);
       newActivities[index] = updated;
     }
 
-    // Persist to Supabase if studentId available
     if (studentId) {
       if (activities[index]?.id && activities[index].id < 1e12) {
-        // Update existing
         await supabase.from("activities").update({
           type: updated.type, position: updated.pos, organization: updated.org,
           description: updated.desc, grades: updated.gr, timing: updated.timing,
           hours_per_week: updated.hrs, weeks_per_year: updated.wks,
         }).eq("id", updated.id);
       } else {
-        // Insert new
         const { data } = await supabase.from("activities").insert({
           student_id: studentId, type: updated.type, position: updated.pos,
           organization: updated.org, description: updated.desc, grades: updated.gr,
@@ -148,7 +143,7 @@ export function Activities({ activities, setActivities, readOnly = false, studen
     <div>
       <PageHeader
         title="Activities"
-        sub={`Common App format · ${activities.length}/${TOTAL_SLOTS} filled`}
+        sub={`Common App format · ${activities.length}/${totalSlots} filled`}
         right={
           readOnly ? (
             <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "#eff6ff", color: "#1d4ed8" }}>
@@ -175,7 +170,6 @@ export function Activities({ activities, setActivities, readOnly = false, studen
                   style={{ background: isOpen ? "#f8f9fb" : "white", border: "none", cursor: "pointer" }}
                 >
                   <div className="flex items-center gap-3">
-                    {/* Status indicator */}
                     <div
                       className="w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0"
                       style={{
@@ -204,7 +198,6 @@ export function Activities({ activities, setActivities, readOnly = false, studen
                 {isOpen && (
                   <div className="px-5 pb-5 pt-2" style={{ background: "#fafbfc" }}>
                     {readOnly ? (
-                      /* Read-only display */
                       isEmpty ? (
                         <p className="text-sm text-sub italic py-4 text-center">This slot is empty.</p>
                       ) : (
@@ -220,7 +213,6 @@ export function Activities({ activities, setActivities, readOnly = false, studen
                         </div>
                       )
                     ) : (
-                      /* Editable form */
                       <ActivityForm
                         act={act}
                         index={i}
@@ -235,6 +227,19 @@ export function Activities({ activities, setActivities, readOnly = false, studen
             );
           })}
         </div>
+
+        {!readOnly && (
+          <button
+            onClick={() => {
+              setExtraSlots((n) => n + 1);
+              setOpenSlot(totalSlots);
+            }}
+            className="mt-3 flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg border border-dashed"
+            style={{ color: "#3b82f6", borderColor: "#93c5fd", background: "#eff6ff", cursor: "pointer" }}
+          >
+            + Add Another Activity
+          </button>
+        )}
       </div>
     </div>
   );

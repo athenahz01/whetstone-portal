@@ -37,7 +37,9 @@ export function Honors({ honors, setHonors, readOnly = false, studentId }: Honor
   const [openSlot, setOpenSlot] = useState<number>(-1);
   const [saving, setSaving] = useState(false);
 
-  const slots: (Honor | null)[] = Array.from({ length: TOTAL_SLOTS }, (_, i) =>
+  const [extraSlots, setExtraSlots] = useState(0);
+  const totalSlots = Math.max(TOTAL_SLOTS, honors.length) + extraSlots;
+  const slots: (Honor | null)[] = Array.from({ length: totalSlots }, (_, i) =>
     honors[i] ?? null
   );
 
@@ -100,7 +102,7 @@ export function Honors({ honors, setHonors, readOnly = false, studentId }: Honor
     <div>
       <PageHeader
         title="Honors"
-        sub={`Common App format · ${honors.length}/${TOTAL_SLOTS} filled · 100 characters per title`}
+        sub={`Common App format · ${honors.length}/${totalSlots} filled · 100 characters per title`}
         right={
           readOnly ? (
             <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "#eff6ff", color: "#1d4ed8" }}>
@@ -189,6 +191,19 @@ export function Honors({ honors, setHonors, readOnly = false, studentId }: Honor
             );
           })}
         </div>
+
+        {!readOnly && (
+          <button
+            onClick={() => {
+              setExtraSlots((n) => n + 1);
+              setOpenSlot(totalSlots);
+            }}
+            className="mt-3 flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg border border-dashed"
+            style={{ color: "#3b82f6", borderColor: "#93c5fd", background: "#eff6ff", cursor: "pointer" }}
+          >
+            + Add Another Honor
+          </button>
+        )}
       </div>
     </div>
   );
