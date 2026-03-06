@@ -1,6 +1,6 @@
 "use client";
 
-import { Task } from "../../types";
+import { Task, Deadline } from "../../types";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Tag } from "../ui/Tag";
@@ -8,6 +8,7 @@ import { PageHeader } from "../ui/PageHeader";
 import { Modal } from "../ui/Modal";
 import { FormField } from "../ui/FormField";
 import { WeeklyCalendar } from "../ui/WeeklyCalendar";
+import { StudentDeadlines } from "./StudentDeadlines";
 import { getCategoryColor, getStatusColor } from "../../lib/colors";
 import { fetchCounselorEventsForStudent } from "../../lib/queries";
 import { useState, useMemo, useEffect } from "react";
@@ -15,8 +16,10 @@ import { useState, useMemo, useEffect } from "react";
 interface RoadmapProps {
   tasks: Task[];
   setTasks: (t: Task[]) => void;
-  readOnly?: boolean;
+  deadlines?: Deadline[];
   studentId?: number;
+  onRefresh?: () => void;
+  readOnly?: boolean;
 }
 
 const inputStyle: React.CSSProperties = {
@@ -25,16 +28,7 @@ const inputStyle: React.CSSProperties = {
   fontSize: 14, outline: "none", boxSizing: "border-box",
 };
 
-function getWeekRange(): string {
-  const now = new Date();
-  const sun = new Date(now);
-  sun.setDate(now.getDate() - now.getDay());
-  const sat = new Date(sun);
-  sat.setDate(sun.getDate() + 6);
-  return `${sun.toLocaleDateString("en-US", { month: "short", day: "numeric" })}–${sat.toLocaleDateString("en-US", { day: "numeric" })}`;
-}
-
-export function Roadmap({ tasks, setTasks, readOnly, studentId }: RoadmapProps) {
+export function Roadmap({ tasks, setTasks, deadlines = [], studentId, onRefresh, readOnly }: RoadmapProps) {
   const [showModal, setShowModal] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "timeline" | "calendar">("list");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
@@ -62,11 +56,17 @@ export function Roadmap({ tasks, setTasks, readOnly, studentId }: RoadmapProps) 
     [tasks]
   );
 
-  // Timeline calculations
+  // ── Timeline date range: tasks + deadlines + counselor events ─────────────
+  // Requires at least tasks OR deadlines to have data (not just counselor events alone,
+  // since those are point-in-time and showed the confusing FEB26/MAR26 when alone)
   const tl = useMemo(() => {
+    const hasContent = tasks.length > 0 || deadlines.length > 0;
+    if (!hasContent) return null;
+
     const taskDates = tasks.flatMap((t) => [new Date(t.s), new Date(t.d)]).filter((d) => !isNaN(d.getTime()));
+    const dlDates = deadlines.map((d) => new Date(d.due)).filter((d) => !isNaN(d.getTime()));
     const eventDates = counselorEvents.map((ce: any) => new Date(ce.date)).filter((d) => !isNaN(d.getTime()));
-    const allDates = [...taskDates, ...eventDates];
+    const allDates = [...taskDates, ...dlDates, ...eventDates];
     if (!allDates.length) return null;
 
     const mn = new Date(Math.min(...allDates.map((d) => d.getTime())));
@@ -83,9 +83,9 @@ export function Roadmap({ tasks, setTasks, readOnly, studentId }: RoadmapProps) 
       c.setMonth(c.getMonth() + 1);
     }
     return { mn, mx, ms, mo };
-  }, [tasks, counselorEvents]);
+  }, [tasks, deadlines, counselorEvents]);
 
-  // Calendar rows for WeeklyCalendar view
+  // ── Calendar rows: tasks + deadlines + counselor events ───────────────────
   const calendarRows = [
     {
       id: "tasks",
@@ -103,6 +103,26 @@ export function Roadmap({ tasks, setTasks, readOnly, studentId }: RoadmapProps) 
         textColor: t.st === "Completed" ? "#16a34a" : getCategoryColor(t.cat),
       })),
     },
+    // ── Deadlines row ──────────────────────────────────────────────────────
+    ...(deadlines.length > 0
+      ? [{
+          id: "deadlines",
+          name: "Deadlines",
+          subtitle: `${deadlines.length} deadline${deadlines.length !== 1 ? "s" : ""}`,
+          avatar: "⏰",
+          avatarBg: "#fef2f2",
+          avatarColor: "#ef4444",
+          events: deadlines.map((d) => ({
+            id: d.id,
+            title: d.title,
+            date: d.due,
+            bgColor: d.status === "overdue" ? "#fef2f2" : d.createdBy === "student" ? "#f5f3ff" : "#fefce8",
+            borderColor: d.status === "overdue" ? "#ef4444" : d.createdBy === "student" ? "#7c3aed" : "#d97706",
+            textColor: d.status === "overdue" ? "#ef4444" : d.createdBy === "student" ? "#7c3aed" : "#d97706",
+          })),
+        }]
+      : []),
+    // ── Counselor events row ───────────────────────────────────────────────
     ...(counselorEvents.length > 0
       ? [{
           id: "strategist",
@@ -127,13 +147,10 @@ export function Roadmap({ tasks, setTasks, readOnly, studentId }: RoadmapProps) 
     <div>
       <PageHeader
         title="Roadmap"
-        sub="Track timelines and manage tasks."
+        sub="Track timelines, tasks, and deadlines."
         right={
           readOnly ? (
-            <span
-              className="text-xs px-3 py-1.5 rounded-md font-semibold"
-              style={{ background: "#eff6ff", color: "#1d4ed8" }}
-            >
+            <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "#eff6ff", color: "#1d4ed8" }}>
               View Only
             </span>
           ) : (
@@ -149,7 +166,7 @@ export function Roadmap({ tasks, setTasks, readOnly, studentId }: RoadmapProps) 
             <button
               key={id}
               onClick={() => setViewMode(id)}
-              className="px-5 py-2 rounded-lg border-none cursor-pointer text-sm font-semibold capitalize"
+              className="px-5 py-2 rounded-lg border-none cursor-pointer text-sm font-semibold"
               style={{
                 background: viewMode === id ? "#3b82f6" : "transparent",
                 color: viewMode === id ? "#fff" : "#64748b",
@@ -162,16 +179,15 @@ export function Roadmap({ tasks, setTasks, readOnly, studentId }: RoadmapProps) 
 
         {/* ── LIST VIEW ─────────────────────────────────────────────────── */}
         {viewMode === "list" && (
-          <>
+          <div className="flex flex-col gap-3.5">
             {tasks.length === 0 ? (
               <Card>
-                <p className="text-sm text-sub py-6 text-center">
+                <p className="text-sm text-sub py-4 text-center">
                   No tasks yet.{!readOnly && " Click \"+ New Task\" to add one."}
                 </p>
               </Card>
             ) : (
               <Card noPadding style={{ overflow: "hidden" }}>
-                {/* Header row */}
                 <div
                   className="grid px-6 py-2.5 border-b border-line"
                   style={{ gridTemplateColumns: "5fr 2fr 2fr 2fr", background: "#f8f9fb" }}
@@ -186,8 +202,6 @@ export function Roadmap({ tasks, setTasks, readOnly, studentId }: RoadmapProps) 
                     </div>
                   ))}
                 </div>
-
-                {/* Grouped task rows */}
                 {Object.entries(grouped).map(([cat, ts]) => (
                   <div key={cat}>
                     <div
@@ -247,12 +261,17 @@ export function Roadmap({ tasks, setTasks, readOnly, studentId }: RoadmapProps) 
               </Card>
             )}
 
-            {/* Counselor events in list view */}
+            {/* Deadlines — full add/edit/delete for student-owned ones */}
+            <StudentDeadlines
+              deadlines={deadlines}
+              studentId={studentId ?? 0}
+              onRefresh={onRefresh}
+              readOnly={readOnly}
+            />
+
+            {/* Counselor events */}
             {counselorEvents.length > 0 && (
-              <div
-                className="mt-3.5 p-4 rounded-xl"
-                style={{ background: "#eff6ff", border: "1px solid #bfdbfe" }}
-              >
+              <div className="p-4 rounded-xl" style={{ background: "#eff6ff", border: "1px solid #bfdbfe" }}>
                 <h3 className="m-0 mb-3 text-sm font-bold" style={{ color: "#1d4ed8" }}>
                   From Your Strategist
                 </h3>
@@ -273,7 +292,7 @@ export function Roadmap({ tasks, setTasks, readOnly, studentId }: RoadmapProps) 
                 ))}
               </div>
             )}
-          </>
+          </div>
         )}
 
         {/* ── TIMELINE (GANTT) VIEW ─────────────────────────────────────── */}
@@ -281,15 +300,19 @@ export function Roadmap({ tasks, setTasks, readOnly, studentId }: RoadmapProps) 
           <>
             {!tl ? (
               <Card>
-                <p className="text-sm text-sub py-6 text-center">No tasks to display on the timeline.</p>
+                <p className="text-sm text-sub py-8 text-center">
+                  No tasks or deadlines yet — add some to see the timeline.
+                </p>
               </Card>
             ) : (
               <Card noPadding style={{ overflow: "hidden", display: "flex" }}>
                 {/* Left: labels */}
                 <div className="flex-shrink-0 border-r border-line" style={{ width: 220, background: "#f8f9fb" }}>
                   <div className="h-10 border-b border-line px-3.5 flex items-center text-xs text-sub font-semibold">
-                    Tasks
+                    Items
                   </div>
+
+                  {/* Task category groups */}
                   {Object.entries(grouped).map(([cat, ts]) => (
                     <div key={cat}>
                       <div
@@ -329,7 +352,36 @@ export function Roadmap({ tasks, setTasks, readOnly, studentId }: RoadmapProps) 
                     </div>
                   ))}
 
-                  {/* Counselor events sidebar */}
+                  {/* Deadlines group */}
+                  {deadlines.length > 0 && (
+                    <>
+                      <div
+                        className="flex items-center gap-1.5 px-3.5 py-2 border-b border-line text-xs font-bold"
+                        style={{ color: "#d97706", background: "#fefce8" }}
+                      >
+                        ⏰ Deadlines
+                      </div>
+                      {deadlines.sort((a, b) => a.days - b.days).map((d) => (
+                        <div
+                          key={`dl-side-${d.id}`}
+                          className="flex items-center gap-1.5 border-b border-line"
+                          style={{ paddingLeft: 14, height: 42, background: "#fffbeb" }}
+                        >
+                          <span className="text-xs flex-shrink-0" style={{ color: d.createdBy === "student" ? "#7c3aed" : "#94a3b8" }}>
+                            {d.createdBy === "student" ? "●" : "🔒"}
+                          </span>
+                          <span
+                            className="text-sm overflow-hidden text-ellipsis whitespace-nowrap"
+                            style={{ color: d.status === "overdue" ? "#ef4444" : "#92400e" }}
+                          >
+                            {d.title}
+                          </span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  {/* Counselor events group */}
                   {counselorEvents.length > 0 && (
                     <>
                       <div
@@ -385,10 +437,8 @@ export function Roadmap({ tasks, setTasks, readOnly, studentId }: RoadmapProps) 
                                 style={{
                                   left: `${l}%`, width: `${w}%`, height: 26,
                                   background: getCategoryColor(cat),
-                                  borderRadius: 13,
-                                  opacity: t.st === "Completed" ? 0.3 : 0.85,
-                                  paddingLeft: 12,
-                                  minWidth: 20,
+                                  borderRadius: 13, opacity: t.st === "Completed" ? 0.3 : 0.85,
+                                  paddingLeft: 12, minWidth: 20,
                                 }}
                               >
                                 {t.title}
@@ -398,6 +448,42 @@ export function Roadmap({ tasks, setTasks, readOnly, studentId }: RoadmapProps) 
                         })}
                       </div>
                     ))}
+
+                    {/* Deadline bars — point-in-time markers */}
+                    {deadlines.length > 0 && (
+                      <div>
+                        <div style={{ height: 35 }} />
+                        {deadlines.sort((a, b) => a.days - b.days).map((d) => {
+                          const due = new Date(d.due);
+                          if (isNaN(due.getTime())) return null;
+                          // Position: center the marker on the due date
+                          const l = Math.max(0, ((due.getTime() - tl.mn.getTime()) / tl.ms) * 100);
+                          // Width: 3 days wide so it's visible
+                          const threeDayMs = 1000 * 60 * 60 * 24 * 3;
+                          const w = Math.max(2, (threeDayMs / tl.ms) * 100);
+                          const color = d.status === "overdue"
+                            ? "#ef4444"
+                            : d.createdBy === "student"
+                            ? "#7c3aed"
+                            : "#d97706";
+                          return (
+                            <div key={`dl-bar-${d.id}`} className="relative flex items-center" style={{ height: 42 }}>
+                              <div
+                                className="absolute flex items-center text-xs text-white font-semibold overflow-hidden whitespace-nowrap"
+                                style={{
+                                  left: `${l}%`, width: `${w}%`, height: 26,
+                                  background: color,
+                                  borderRadius: 13, opacity: 0.9,
+                                  paddingLeft: 8, minWidth: 60,
+                                }}
+                              >
+                                ⏰ {d.title}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
 
                     {/* Counselor event bars */}
                     {counselorEvents.length > 0 && (
@@ -416,11 +502,8 @@ export function Roadmap({ tasks, setTasks, readOnly, studentId }: RoadmapProps) 
                                 className="absolute flex items-center text-xs text-white font-semibold overflow-hidden whitespace-nowrap"
                                 style={{
                                   left: `${l}%`, width: `${w}%`, height: 26,
-                                  background: "#3b82f6",
-                                  borderRadius: 13,
-                                  opacity: 0.85,
-                                  paddingLeft: 12,
-                                  minWidth: 20,
+                                  background: "#3b82f6", borderRadius: 13, opacity: 0.85,
+                                  paddingLeft: 12, minWidth: 20,
                                 }}
                               >
                                 📅 {ce.title}

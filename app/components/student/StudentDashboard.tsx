@@ -3,10 +3,9 @@
 import { Student, Goal } from "../../types";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
-import { Tag } from "../ui/Tag";
 import { MetricCard } from "../ui/MetricCard";
 import { PageHeader } from "../ui/PageHeader";
-import { getCategoryColor, getStatusColor } from "../../lib/colors";
+import { StudentDeadlines } from "./StudentDeadlines";
 import { fetchCounselorEventsForStudent } from "../../lib/queries";
 import { useState, useEffect } from "react";
 
@@ -15,21 +14,28 @@ interface StudentDashboardProps {
   goals: Goal[];
   onToggleGoal: (index: number) => void;
   onNavigate: (view: string) => void;
+  onRefresh?: () => void;
   readOnly?: boolean;
   timezone?: string;
   googleEvents?: any[];
 }
 
-export function StudentDashboard({ student, goals, onToggleGoal, onNavigate, readOnly = false, timezone = "America/New_York", googleEvents = [] }: StudentDashboardProps) {
-  const urgent = student.dl
-    .filter((d) => d.status !== "completed")
-    .sort((a, b) => a.days - b.days)
-    .slice(0, 4);
+export function StudentDashboard({
+  student,
+  goals,
+  onToggleGoal,
+  onNavigate,
+  onRefresh,
+  readOnly = false,
+  timezone = "America/New_York",
+  googleEvents = [],
+}: StudentDashboardProps) {
   const done = goals.filter((g) => g.done).length;
+  const nextDeadline = student.dl
+    .filter((d) => d.status !== "completed")
+    .sort((a, b) => a.days - b.days)[0];
 
   const [counselorEvents, setCounselorEvents] = useState<any[]>([]);
-  const [googleCalEvents, setGoogleCalEvents] = useState<any[]>([]);
-
 
   useEffect(() => {
     if (student.id) {
@@ -41,7 +47,9 @@ export function StudentDashboard({ student, goals, onToggleGoal, onNavigate, rea
     <div>
       <PageHeader
         title={readOnly ? `${student.name.split(" ")[0]}'s Dashboard` : `Welcome back, ${student.name.split(" ")[0]}`}
-        sub={new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric", timeZone: timezone })}
+        sub={new Date().toLocaleDateString("en-US", {
+          weekday: "long", month: "long", day: "numeric", year: "numeric", timeZone: timezone,
+        })}
         right={
           readOnly ? (
             <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "#eff6ff", color: "#1d4ed8" }}>
@@ -52,137 +60,158 @@ export function StudentDashboard({ student, goals, onToggleGoal, onNavigate, rea
           )
         }
       />
+
       <div className="p-6 px-8">
-        {/* Metric Cards */}
+        {/* ── Metric Cards ─────────────────────────────────────────────── */}
         <div className="grid grid-cols-4 gap-3.5 mb-5">
-          <MetricCard label="Next Deadline" value={urgent.length > 0 ? `${urgent[0].days} days` : "—"} detail={urgent.length > 0 ? urgent[0].title : "No deadlines"} color="#d97706" />
-          <MetricCard label="Schools" value={student.schools.length} detail={`${student.schools.filter((s) => s.status === "Submitted").length} submitted`} color="#16a34a" />
-          <MetricCard label="Weekly Goals" value={`${done}/${goals.length}`} color="#7c3aed" />
-          <MetricCard label="Sessions" value={student.sess.length} detail={student.sess.length > 0 ? `Latest: ${student.sess[0].date}` : "None yet"} color="#3b82f6" />
+          <MetricCard
+            label="Next Deadline"
+            value={nextDeadline ? `${nextDeadline.days}d` : "—"}
+            detail={nextDeadline ? nextDeadline.title : "No deadlines"}
+            color="#d97706"
+          />
+          <MetricCard
+            label="Schools"
+            value={student.schools.length}
+            detail={`${student.schools.filter((s) => s.status === "Submitted").length} submitted`}
+            color="#16a34a"
+          />
+          <MetricCard
+            label="Weekly Goals"
+            value={`${done}/${goals.length}`}
+            color="#7c3aed"
+          />
+          <MetricCard
+            label="Sessions"
+            value={student.sess.length}
+            detail={student.sess.length > 0 ? `Latest: ${student.sess[0].date}` : "None yet"}
+            color="#3b82f6"
+          />
         </div>
 
         <div className="grid gap-3.5" style={{ gridTemplateColumns: "3fr 2fr" }}>
-          {/* Coming Up */}
-          <Card>
-            <div className="flex justify-between mb-4">
-              <h2 className="m-0 text-lg font-bold text-heading">Coming Up</h2>
-              <button
-                onClick={() => onNavigate("roadmap")}
-                className="bg-transparent border-none text-accent-ink cursor-pointer text-sm font-semibold"
-              >
-                View roadmap →
-              </button>
-            </div>
-            {urgent.map((d) => (
-              <div
-                key={d.id}
-                className="flex justify-between items-center p-3 rounded-lg mb-1.5"
-                style={{
-                  background: d.status === "overdue" ? "#fef2f2" : "#eef0f4",
-                  borderLeft: `3px solid ${d.status === "overdue" ? "#ef4444" : getCategoryColor(d.cat)}`,
-                }}
-              >
-                <div>
-                  <div className="text-sm font-medium text-heading mb-0.5">{d.title}</div>
-                  <span className="text-xs text-sub">
-                    {d.cat} · {d.due}
+          {/* ── Deadlines (replaces old Coming Up card) ───────────────── */}
+          {/*
+            StudentDeadlines handles:
+            - Showing ALL deadlines (strategist + student-created)
+            - Students can add their own deadlines
+            - Students can edit/delete only their own (createdBy === "student")
+            - Strategist-created deadlines show 🔒 and are not clickable
+            - readOnly=true for parent view disables add/edit/delete
+          */}
+          <StudentDeadlines
+            deadlines={student.dl}
+            studentId={student.id}
+            onRefresh={onRefresh}
+            readOnly={readOnly}
+          />
+
+          {/* ── Right column ─────────────────────────────────────────── */}
+          <div className="flex flex-col gap-3.5">
+            {/* From Strategist */}
+            {counselorEvents.length > 0 && (
+              <Card>
+                <h2 className="m-0 mb-3.5 text-lg font-bold text-heading">From Your Strategist</h2>
+                {counselorEvents.map((ce) => (
+                  <div
+                    key={ce.id}
+                    className="flex justify-between items-start p-3 rounded-lg mb-1.5"
+                    style={{ background: "#eff6ff", borderLeft: "3px solid #3b82f6" }}
+                  >
+                    <div>
+                      <div className="text-sm font-medium text-heading">{ce.title}</div>
+                      <span className="text-xs" style={{ color: "#3b82f6" }}>
+                        {ce.category} · {new Date(ce.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      </span>
+                      {ce.notes && <p className="text-xs text-sub mt-1 m-0">{ce.notes}</p>}
+                    </div>
+                  </div>
+                ))}
+              </Card>
+            )}
+
+            {/* Google Calendar Events */}
+            {googleEvents.length > 0 && (
+              <Card>
+                <h2 className="m-0 mb-3.5 text-lg font-bold text-heading">Upcoming (Google Calendar)</h2>
+                {googleEvents.map((ge) => (
+                  <div
+                    key={ge.id}
+                    className="flex justify-between items-center p-3 rounded-lg mb-1.5"
+                    style={{ background: "#eff6ff", borderLeft: "3px solid #60a5fa" }}
+                  >
+                    <div>
+                      <div className="text-sm font-medium text-heading">{ge.title}</div>
+                      <span className="text-xs" style={{ color: "#3b82f6" }}>
+                        {new Date(ge.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </Card>
+            )}
+
+            {/* Weekly Goals */}
+            <Card>
+              <h2 className="m-0 mb-1 text-lg font-bold text-heading">This Week</h2>
+              <p className="m-0 mb-3.5 text-sm text-sub">
+                Goals from strategist · {getWeekRange()}
+              </p>
+              {goals.length === 0 && (
+                <p className="text-sm text-sub py-2">No goals set yet.</p>
+              )}
+              {goals.map((g, i) => (
+                <div
+                  key={i}
+                  onClick={() => !readOnly && onToggleGoal(i)}
+                  className={`flex items-center gap-2.5 py-2.5 ${readOnly ? "" : "cursor-pointer"}`}
+                  style={{ borderBottom: i < goals.length - 1 ? "1px solid #e2e8f0" : "none" }}
+                >
+                  <div
+                    className="w-5 h-5 rounded-md flex-shrink-0 flex items-center justify-center text-white text-xs"
+                    style={{
+                      border: g.done ? "none" : "2px solid #cbd5e1",
+                      background: g.done ? "#3b82f6" : "transparent",
+                    }}
+                  >
+                    {g.done && "✓"}
+                  </div>
+                  <span
+                    className="text-sm"
+                    style={{
+                      color: g.done ? "#94a3b8" : "#0f172a",
+                      textDecoration: g.done ? "line-through" : "none",
+                    }}
+                  >
+                    {g.t}
                   </span>
                 </div>
-                <Tag color={getStatusColor(d.status)}>
-                  {d.days < 0 ? `${Math.abs(d.days)}d overdue` : d.days === 0 ? "Today" : `${d.days}d left`}
-                </Tag>
-              </div>
-            ))}
-          </Card>
-
-          {/* Counselor Events */}
-          {counselorEvents.length > 0 && (
-            <Card className="mt-3.5">
-              <h2 className="m-0 mb-3.5 text-lg font-bold text-heading">From Your Strategist</h2>
-              {counselorEvents.map((ce) => (
-                <div key={ce.id} className="flex justify-between items-center p-3 rounded-lg mb-1.5" style={{ background: "#eff6ff", borderLeft: "3px solid #3b82f6" }}>
-                  <div>
-                    <div className="text-sm font-medium text-heading">{ce.title}</div>
-                    <span className="text-xs" style={{ color: "#3b82f6" }}>{ce.category} · {new Date(ce.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
-                    {ce.notes && <p className="text-xs text-sub mt-1 m-0">{ce.notes}</p>}
+              ))}
+              {goals.length > 0 && (
+                <div className="mt-3.5">
+                  <div className="flex justify-between mb-1">
+                    <span className="text-xs text-sub">Progress</span>
+                    <span className="text-xs text-accent-ink font-semibold">
+                      {goals.length > 0 ? Math.round((done / goals.length) * 100) : 0}%
+                    </span>
+                  </div>
+                  <div className="h-1.5 bg-mist rounded-sm">
+                    <div
+                      className="h-full bg-accent rounded-sm transition-all duration-300"
+                      style={{ width: `${goals.length > 0 ? (done / goals.length) * 100 : 0}%` }}
+                    />
                   </div>
                 </div>
-              ))}
+              )}
             </Card>
-          )}
-
-          {/* Google Calendar Events */}
-          {googleEvents.length > 0 && (
-            <Card className="mt-3.5">
-              <h2 className="m-0 mb-3.5 text-lg font-bold text-heading">Upcoming (Google Calendar)</h2>
-              {googleEvents.map((ge) => (
-                <div key={ge.id} className="flex justify-between items-center p-3 rounded-lg mb-1.5" style={{ background: "#eff6ff", borderLeft: "3px solid #60a5fa" }}>
-                  <div>
-                    <div className="text-sm font-medium text-heading">{ge.title}</div>
-                    <span className="text-xs" style={{ color: "#3b82f6" }}>{new Date(ge.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
-                  </div>
-                </div>
-              ))}
-            </Card>
-          )}
-
-
-          {/* Weekly Goals */}
-          <Card>
-            <h2 className="m-0 mb-1 text-lg font-bold text-heading">This Week</h2>
-            <p className="m-0 mb-3.5 text-sm text-sub">Goals from strategist · {(() => { const now = new Date(); const sun = new Date(now); sun.setDate(now.getDate() - now.getDay()); const sat = new Date(sun); sat.setDate(sun.getDate() + 6); return `${sun.toLocaleDateString("en-US", { month: "short", day: "numeric" })}–${sat.getDate()}`; })()}</p>
-            {goals.map((g, i) => (
-              <div
-                key={i}
-                onClick={() => !readOnly && onToggleGoal(i)}
-                className={`flex items-center gap-2.5 py-2.5 ${readOnly ? "" : "cursor-pointer"}`}
-                style={{ borderBottom: i < goals.length - 1 ? "1px solid #e2e8f0" : "none" }}
-              >
-                <div
-                  className="w-5 h-5 rounded-md flex-shrink-0 flex items-center justify-center text-white text-xs"
-                  style={{
-                    border: g.done ? "none" : "2px solid #cbd5e1",
-                    background: g.done ? "#3b82f6" : "transparent",
-                  }}
-                >
-                  {g.done && "✓"}
-                </div>
-                <span
-                  className="text-sm"
-                  style={{
-                    color: g.done ? "#94a3b8" : "#0f172a",
-                    textDecoration: g.done ? "line-through" : "none",
-                  }}
-                >
-                  {g.t}
-                </span>
-              </div>
-            ))}
-            <div className="mt-3.5">
-              <div className="flex justify-between mb-1">
-                <span className="text-xs text-sub">Progress</span>
-                <span className="text-xs text-accent-ink font-semibold">
-                  {Math.round((done / goals.length) * 100)}%
-                </span>
-              </div>
-              <div className="h-1.5 bg-mist rounded-sm">
-                <div
-                  className="h-full bg-accent rounded-sm transition-all duration-300"
-                  style={{ width: `${(done / goals.length) * 100}%` }}
-                />
-              </div>
-            </div>
-          </Card>
+          </div>
         </div>
 
-        {/* Latest Session */}
+        {/* ── Latest Session ───────────────────────────────────────────── */}
         <Card className="mt-3.5">
           <h2 className="m-0 mb-3.5 text-lg font-bold text-heading">Latest Session</h2>
           {student.sess.length > 0 ? (
-            <div
-              className="p-4 rounded-lg"
-              style={{ background: "#eef0f4", borderLeft: "3px solid #3b82f6" }}
-            >
+            <div className="p-4 rounded-lg" style={{ background: "#eef0f4", borderLeft: "3px solid #3b82f6" }}>
               <div className="flex justify-between mb-2">
                 <span className="text-sm text-accent-ink font-semibold">{student.sess[0].date}</span>
                 <span className="text-sm text-sub">with {student.counselor}</span>
@@ -192,10 +221,21 @@ export function StudentDashboard({ student, goals, onToggleGoal, onNavigate, rea
               <span className="text-sm text-accent-ink font-semibold">{student.sess[0].action}</span>
             </div>
           ) : (
-            <p className="text-sm text-sub">No sessions yet. Your strategist will schedule your first meeting soon.</p>
+            <p className="text-sm text-sub">
+              No sessions yet. Your strategist will schedule your first meeting soon.
+            </p>
           )}
         </Card>
       </div>
     </div>
   );
+}
+
+function getWeekRange(): string {
+  const now = new Date();
+  const sun = new Date(now);
+  sun.setDate(now.getDate() - now.getDay());
+  const sat = new Date(sun);
+  sat.setDate(sun.getDate() + 6);
+  return `${sun.toLocaleDateString("en-US", { month: "short", day: "numeric" })}–${sat.toLocaleDateString("en-US", { day: "numeric" })}`;
 }

@@ -225,9 +225,17 @@ export default function Home() {
         />
       );
     }
-    if (isStudentOrParent && view === "roadmap") {
-      return <Roadmap tasks={tasks} setTasks={setTasks} readOnly={isParent} studentId={me?.id} />;
-    }
+    if (isStudentOrParent && view === "roadmap")
+      return (
+        <Roadmap
+          tasks={tasks}
+          setTasks={setTasks}
+          deadlines={me?.dl}          // ← pass student's deadlines
+          studentId={me?.id}
+          onRefresh={handleRefresh}   // ← so add/edit/delete triggers a data reload
+          readOnly={isParent}
+        />
+      );
     if (isStudentOrParent && view === "academics") {
       return <Academics student={me} courses={courses} setCourses={setCourses} readOnly={isParent} />;
     }
