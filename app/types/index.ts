@@ -95,3 +95,12 @@ export interface School {
     goals: Goal[];
     sess: Session[];
   }
+
+  export interface InactiveStudent {
+    id: string
+    first_name: string
+    last_name: string
+    profiles: {
+      last_login: string | null
+    }
+  }

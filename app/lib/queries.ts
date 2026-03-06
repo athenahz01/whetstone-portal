@@ -2,7 +2,6 @@ import { supabase } from "./supabase";
 import { Student } from "../types";
 
 export async function fetchAllStudents(): Promise<Student[]> {
-  // Fetch students
   const { data: studentsRaw, error } = await supabase
     .from("students")
     .select("*")
@@ -13,7 +12,6 @@ export async function fetchAllStudents(): Promise<Student[]> {
     return [];
   }
 
-  // For each student, fetch all related data
   const students: Student[] = await Promise.all(
     studentsRaw.map(async (s) => {
       const [schoolsRes, dlRes, tasksRes, coursesRes, testsRes, actsRes, goalsRes, sessRes] =
@@ -40,7 +38,8 @@ export async function fetchAllStudents(): Promise<Student[]> {
         av: s.avatar,
         school: s.school,
         gradYear: s.grad_year,
-        lastLogin: s.last_login,
+        // Normalize: null → null, "Never" string (legacy) → null, real timestamp → keep
+        lastLogin: (!s.last_login || s.last_login === "Never") ? null : s.last_login,
         engagement: s.engagement,
         schools: (schoolsRes.data || []).map((sc) => ({
           name: sc.name,
@@ -113,7 +112,6 @@ export async function fetchAllStudents(): Promise<Student[]> {
   return students;
 }
 
-//change student
 export async function addStudent(data: {
   name: string;
   email: string;
@@ -135,7 +133,7 @@ export async function addStudent(data: {
       avatar: data.name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2),
       school: data.school,
       grad_year: data.gradYear,
-      last_login: "Never",
+      last_login: null, // null = never logged in; trigger will update on first login
       engagement: 0,
     })
     .select("id")
@@ -171,7 +169,6 @@ export async function updateStudent(
   if (data.status !== undefined) updateData.status = data.status;
   if (data.engagement !== undefined) updateData.engagement = data.engagement;
 
-  // Update avatar if name changed
   if (data.name) {
     updateData.avatar = data.name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
   }
@@ -185,7 +182,6 @@ export async function updateStudent(
 }
 
 export async function deleteStudent(id: number): Promise<boolean> {
-  // Cascade delete handles child records automatically
   const { error } = await supabase.from("students").delete().eq("id", id);
   if (error) {
     console.error("Error deleting student:", error);
@@ -242,7 +238,6 @@ export async function addCounselorEvent(data: {
     return false;
   }
 
-  // Link students to event
   const links = data.studentIds.map((sid) => ({
     event_id: event.id,
     student_id: sid,
@@ -268,7 +263,6 @@ export async function fetchCounselorEvents(): Promise<any[]> {
 
   if (error || !events) return [];
 
-  // Fetch student links for each event
   const eventIds = events.map((e) => e.id);
   const { data: links } = await supabase
     .from("counselor_event_students")
