@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { Student } from "../types";
+import { Student, Honor } from "../types";
 
 export async function fetchAllStudents(): Promise<Student[]> {
   const { data: studentsRaw, error } = await supabase
@@ -361,4 +361,26 @@ export async function deleteCounselorEvent(eventId: number): Promise<boolean> {
     return false;
   }
   return true;
+}
+
+// ── Honors ─────────────────────────────────────────────────────────────────
+
+export async function fetchHonors(studentId: number): Promise<Honor[]> {
+  const { data, error } = await supabase
+    .from("honors")
+    .select("*")
+    .eq("student_id", studentId)
+    .order("id", { ascending: true });
+
+  if (error || !data) {
+    console.error("Error fetching honors:", error);
+    return [];
+  }
+
+  return data.map((h) => ({
+    id: h.id,
+    title: h.title,
+    grades: h.grades || [],
+    recognition: h.recognition || [],
+  }));
 }

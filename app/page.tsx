@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "./lib/supabase";
-import { fetchAllStudents, fetchCounselorEvents } from "./lib/queries";
+import { fetchAllStudents, fetchCounselorEvents, fetchHonors } from "./lib/queries";
 import { LoginPage } from "./components/layout/LoginPage";
 import { Sidebar } from "./components/layout/Sidebar";
 import { StudentDashboard } from "./components/student/StudentDashboard";
@@ -18,7 +18,9 @@ import { StudentDetail } from "./components/staff/StudentDetail";
 import { Analytics } from "./components/staff/Analytics";
 import { MasterTimeline } from "./components/staff/MasterTimeline";
 import { pullFromGoogleCalendar, syncAllDeadlinesToGoogle, syncAllCounselorEventsToGoogle } from "./lib/calendar";
-import { Goal, Task, Course, Test, Activity, Student } from "./types";
+import { Goal, Task, Course, Test, Activity, Student, Honor } from "./types";
+import { Honors } from "./components/student/Honors";
+
 
 interface Profile {
   role: "student" | "parent" | "strategist";
@@ -44,6 +46,7 @@ export default function Home() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [tests, setTests] = useState<Test[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [honors, setHonors] = useState<Honor[]>([]);
   const [studentGoogleEvents, setStudentGoogleEvents] = useState<any[]>([]);
 
   // ── Core data loader — wrapped in useCallback so it's stable as a dep ──
@@ -61,6 +64,12 @@ export default function Home() {
       setCourses(me.courses);
       setTests(me.tests);
       setActivities(me.acts);
+
+      // Fetch honors for the linked student
+      if (me.id) {
+        const honorsData = await fetchHonors(me.id);
+        setHonors(honorsData);
+      }
     }
 
     if (!silent) setLoading(false);
@@ -230,9 +239,9 @@ export default function Home() {
         <Roadmap
           tasks={tasks}
           setTasks={setTasks}
-          deadlines={me?.dl}          // ← pass student's deadlines
+          deadlines={me?.dl}
           studentId={me?.id}
-          onRefresh={handleRefresh}   // ← so add/edit/delete triggers a data reload
+          onRefresh={handleRefresh}
           readOnly={isParent}
         />
       );
@@ -244,6 +253,16 @@ export default function Home() {
     }
     if (isStudentOrParent && view === "activities") {
       return <Activities activities={activities} setActivities={setActivities} readOnly={isParent} />;
+    }
+    if (isStudentOrParent && view === "honors") {
+      return (
+        <Honors
+          honors={honors}
+          setHonors={setHonors}
+          studentId={me?.id}
+          readOnly={isParent}
+        />
+      );
     }
     if (isStudentOrParent && view === "schools") {
       return <Schools student={me} readOnly={isParent} />;

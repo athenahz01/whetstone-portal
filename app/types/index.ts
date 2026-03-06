@@ -87,6 +87,7 @@ export interface Student {
   gradYear: number;
   lastLogin: string | null;
   engagement: number;
+  honors?: Honor[];
   schools: School[];
   dl: Deadline[];
   tasks: Task[];
@@ -104,4 +105,11 @@ export interface InactiveStudent {
   profiles: {
     last_login: string | null;
   };
+}
+
+export interface Honor {
+  id: number;
+  title: string;
+  grades: number[];
+  recognition: string[];
 }
