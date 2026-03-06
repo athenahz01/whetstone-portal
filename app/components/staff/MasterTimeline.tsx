@@ -10,7 +10,7 @@ import { WeeklyCalendar } from "../ui/WeeklyCalendar";
 import { getCategoryColor, getStatusColor } from "../../lib/colors";
 import { addCounselorEvent, fetchCounselorEvents, deleteCounselorEvent } from "../../lib/queries";
 import { pushToGoogleCalendar, pullFromGoogleCalendar } from "../../lib/calendar";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 
 interface MasterTimelineProps {
   students: Student[];
@@ -22,8 +22,187 @@ interface MasterTimelineProps {
 type SortField = "due" | "title" | "category" | "student" | "status" | "specialist";
 type SortDir = "asc" | "desc";
 
+interface ColumnFilters {
+  student: string[];
+  category: string[];
+  status: string[];
+  specialist: string[];
+}
+
+// ── Dropdown filter component ──────────────────────────────────────────────
+function FilterDropdown({
+  label,
+  options,
+  selected,
+  onChange,
+  sortField,
+  field,
+  sortDir,
+  onSort,
+}: {
+  label: string;
+  options: string[];
+  selected: string[];
+  onChange: (vals: string[]) => void;
+  sortField: SortField;
+  field: SortField;
+  sortDir: SortDir;
+  onSort: (f: SortField) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const isFiltered = selected.length > 0 && selected.length < options.length;
+  const isSorted = sortField === field;
+
+  const toggleAll = () => {
+    if (selected.length === options.length) onChange([]);
+    else onChange([...options]);
+  };
+
+  const toggleOne = (val: string) => {
+    if (selected.includes(val)) onChange(selected.filter((v) => v !== val));
+    else onChange([...selected, val]);
+  };
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <div
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-1 cursor-pointer select-none group"
+        style={{ userSelect: "none" }}
+      >
+        <span
+          className="text-xs uppercase tracking-widest font-semibold"
+          style={{ color: isFiltered || isSorted ? "#3b82f6" : "#64748b" }}
+        >
+          {label}
+        </span>
+        <span style={{ fontSize: 10, color: isFiltered || isSorted ? "#3b82f6" : "#94a3b8" }}>
+          {isSorted ? (sortDir === "asc" ? "▲" : "▼") : "▾"}
+        </span>
+        {isFiltered && (
+          <span
+            className="text-[9px] font-bold px-1 rounded"
+            style={{ background: "#3b82f6", color: "#fff", lineHeight: "14px" }}
+          >
+            {selected.length}
+          </span>
+        )}
+      </div>
+
+      {open && (
+        <div
+          className="absolute z-50 rounded-xl shadow-lg border border-line bg-white"
+          style={{ top: "calc(100% + 6px)", left: 0, minWidth: 180, maxHeight: 280, overflowY: "auto" }}
+        >
+          {/* Sort options */}
+          <div className="px-3 py-2 border-b border-line">
+            <div className="text-[10px] text-sub uppercase font-bold mb-1.5 tracking-widest">Sort</div>
+            <div className="flex gap-1.5">
+              <button
+                onClick={() => { onSort(field); setOpen(false); }}
+                className="flex-1 py-1 rounded text-xs font-semibold border-none cursor-pointer"
+                style={{
+                  background: isSorted && sortDir === "asc" ? "#eff6ff" : "#f1f5f9",
+                  color: isSorted && sortDir === "asc" ? "#1d4ed8" : "#64748b",
+                }}
+              >
+                ▲ A→Z
+              </button>
+              <button
+                onClick={() => { onSort(field); setOpen(false); }}
+                className="flex-1 py-1 rounded text-xs font-semibold border-none cursor-pointer"
+                style={{
+                  background: isSorted && sortDir === "desc" ? "#eff6ff" : "#f1f5f9",
+                  color: isSorted && sortDir === "desc" ? "#1d4ed8" : "#64748b",
+                }}
+              >
+                ▼ Z→A
+              </button>
+            </div>
+          </div>
+
+          {/* Filter options */}
+          <div className="px-3 py-2">
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="text-[10px] text-sub uppercase font-bold tracking-widest">Filter</div>
+              <button
+                onClick={toggleAll}
+                className="text-[10px] text-accent-ink cursor-pointer border-none bg-transparent font-semibold"
+                style={{ color: "#3b82f6" }}
+              >
+                {selected.length === options.length ? "Clear all" : "Select all"}
+              </button>
+            </div>
+            <div className="flex flex-col gap-1">
+              {options.map((opt) => (
+                <label key={opt} className="flex items-center gap-2 cursor-pointer py-0.5">
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(opt)}
+                    onChange={() => toggleOne(opt)}
+                    className="w-3.5 h-3.5 rounded"
+                    style={{ accentColor: "#3b82f6" }}
+                  />
+                  <span className="text-xs text-body capitalize">{opt || "—"}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Clear button */}
+          {isFiltered && (
+            <div className="px-3 pb-2">
+              <button
+                onClick={() => { onChange([]); setOpen(false); }}
+                className="w-full py-1.5 rounded-lg text-xs font-semibold cursor-pointer border-none"
+                style={{ background: "#fef2f2", color: "#ef4444" }}
+              >
+                Clear filter
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Simple sort-only header (for Due Date, Title) ──────────────────────────
+function SortOnlyHeader({
+  field, label, sortField, sortDir, onSort,
+}: {
+  field: SortField; label: string; sortField: SortField; sortDir: SortDir; onSort: (f: SortField) => void;
+}) {
+  const active = sortField === field;
+  return (
+    <div
+      onClick={() => onSort(field)}
+      className="flex items-center gap-1 cursor-pointer select-none"
+    >
+      <span
+        className="text-xs uppercase tracking-widest font-semibold"
+        style={{ color: active ? "#3b82f6" : "#64748b" }}
+      >
+        {label}
+      </span>
+      <span style={{ fontSize: 10, color: active ? "#3b82f6" : "#94a3b8" }}>
+        {active ? (sortDir === "asc" ? "▲" : "▼") : "▾"}
+      </span>
+    </div>
+  );
+}
+
 export function MasterTimeline({ students, onSelectStudent, onNavigate, profileId }: MasterTimelineProps) {
-  const [filter, setFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"calendar" | "table">("calendar");
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -32,7 +211,16 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
   const [sortField, setSortField] = useState<SortField>("due");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
-  const cats = ["all", ...Array.from(new Set(students.flatMap((s) => s.dl.map((d) => d.cat))))];
+  // Per-column filters — empty array = show all
+  const [colFilters, setColFilters] = useState<ColumnFilters>({
+    student: [],
+    category: [],
+    status: [],
+    specialist: [],
+  });
+
+  // Calendar view still uses a single category filter
+  const [calFilter, setCalFilter] = useState("all");
 
   useEffect(() => {
     fetchCounselorEvents().then(setCounselorEvents);
@@ -87,7 +275,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
     setCounselorEvents(updated);
   };
 
-  // ======= TABLE VIEW DATA =======
+  // ── All deadlines flattened ──
   const allDeadlines = useMemo(() => {
     const items = students.flatMap((s) =>
       s.dl.map((d) => ({
@@ -99,7 +287,6 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
       }))
     );
 
-    // Add counselor events as deadline-like items
     const ceItems = counselorEvents.map((ce: any) => ({
       id: ce.id,
       title: ce.title,
@@ -121,60 +308,58 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
     return [...items, ...ceItems];
   }, [students, counselorEvents]);
 
+  // ── Unique options for each filterable column ──
+  const filterOptions = useMemo(() => ({
+    student: Array.from(new Set(allDeadlines.map((d) => d.studentName))).sort(),
+    category: Array.from(new Set(allDeadlines.map((d) => d.cat))).sort(),
+    status: Array.from(new Set(allDeadlines.map((d) => d.status))).sort(),
+    specialist: Array.from(new Set(allDeadlines.map((d) => d.specialist || "—"))).sort(),
+  }), [allDeadlines]);
+
+  // ── Filtered + sorted deadlines ──
   const filteredDeadlines = useMemo(() => {
     let items = allDeadlines;
-    if (filter !== "all") {
-      items = items.filter((d) => d.cat === filter);
-    }
-    items.sort((a, b) => {
+
+    if (colFilters.student.length > 0)
+      items = items.filter((d) => colFilters.student.includes(d.studentName));
+    if (colFilters.category.length > 0)
+      items = items.filter((d) => colFilters.category.includes(d.cat));
+    if (colFilters.status.length > 0)
+      items = items.filter((d) => colFilters.status.includes(d.status));
+    if (colFilters.specialist.length > 0)
+      items = items.filter((d) => colFilters.specialist.includes(d.specialist || "—"));
+
+    items = [...items].sort((a, b) => {
       let cmp = 0;
       switch (sortField) {
-        case "due":
-          cmp = a.due.localeCompare(b.due);
-          break;
-        case "title":
-          cmp = a.title.localeCompare(b.title);
-          break;
-        case "category":
-          cmp = a.cat.localeCompare(b.cat);
-          break;
-        case "student":
-          cmp = a.studentName.localeCompare(b.studentName);
-          break;
-        case "status":
-          cmp = a.status.localeCompare(b.status);
-          break;
-        case "specialist":
-          cmp = (a.specialist || "").localeCompare(b.specialist || "");
-          break;
+        case "due": cmp = a.due.localeCompare(b.due); break;
+        case "title": cmp = a.title.localeCompare(b.title); break;
+        case "category": cmp = a.cat.localeCompare(b.cat); break;
+        case "student": cmp = a.studentName.localeCompare(b.studentName); break;
+        case "status": cmp = a.status.localeCompare(b.status); break;
+        case "specialist": cmp = (a.specialist || "").localeCompare(b.specialist || ""); break;
       }
       return sortDir === "asc" ? cmp : -cmp;
     });
+
     return items;
-  }, [allDeadlines, filter, sortField, sortDir]);
+  }, [allDeadlines, colFilters, sortField, sortDir]);
 
   const toggleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortField(field);
-      setSortDir("asc");
-    }
+    if (sortField === field) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortField(field); setSortDir("asc"); }
   };
 
-  const SortHeader = ({ field, label }: { field: SortField; label: string }) => (
-    <div
-      onClick={() => toggleSort(field)}
-      className="text-xs text-sub uppercase tracking-widest font-semibold cursor-pointer hover:text-heading flex items-center gap-1 select-none"
-    >
-      {label}
-      {sortField === field && (
-        <span style={{ fontSize: 10, color: "#3b82f6" }}>{sortDir === "asc" ? "▲" : "▼"}</span>
-      )}
-    </div>
-  );
+  const setFilter = (key: keyof ColumnFilters, vals: string[]) =>
+    setColFilters((prev) => ({ ...prev, [key]: vals }));
 
-  // ======= CALENDAR VIEW DATA =======
+  const activeFilterCount = Object.values(colFilters).filter((v) => v.length > 0).length;
+
+  const clearAllFilters = () =>
+    setColFilters({ student: [], category: [], status: [], specialist: [] });
+
+  // ── Calendar view ──
+  const cats = ["all", ...Array.from(new Set(students.flatMap((s) => s.dl.map((d) => d.cat))))];
   const studentEmails = students.map((s) => s.email?.toLowerCase()).filter(Boolean);
 
   const myGoogleEvents = googleEvents.filter((ge: any) =>
@@ -190,20 +375,14 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
     avatarBg: "#eff6ff",
     avatarColor: "#1d4ed8",
     events: myGoogleEvents.map((ge: any) => ({
-      id: ge.id,
-      title: ge.title,
-      date: ge.date,
-      bgColor: "#eff6ff",
-      borderColor: "#3b82f6",
-      textColor: "#1d4ed8",
-      label: "personal",
-      meetingLink: ge.meetingLink || "",
-      location: ge.location || "",
+      id: ge.id, title: ge.title, date: ge.date,
+      bgColor: "#eff6ff", borderColor: "#3b82f6", textColor: "#1d4ed8",
+      label: "personal", meetingLink: ge.meetingLink || "", location: ge.location || "",
     })),
   } : null;
 
   const calendarRows = students.map((s) => {
-    const dl = filter === "all" ? s.dl : s.dl.filter((d) => d.cat === filter);
+    const dl = calFilter === "all" ? s.dl : s.dl.filter((d) => d.cat === calFilter);
     const studentCE = counselorEvents.filter((ce: any) => ce.studentIds.includes(s.id));
     const studentGE = googleEvents.filter((ge: any) =>
       ge.attendees && ge.attendees.includes(s.email?.toLowerCase())
@@ -211,46 +390,30 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
 
     const events = [
       ...dl.filter((d) => d.status !== "completed").map((d) => ({
-        id: d.id,
-        title: d.title,
-        date: d.due,
+        id: d.id, title: d.title, date: d.due,
         bgColor: d.status === "overdue" ? "#fef2f2" : getCategoryColor(d.cat) + "15",
         borderColor: d.status === "overdue" ? "#ef4444" : getCategoryColor(d.cat),
         textColor: d.status === "overdue" ? "#ef4444" : getCategoryColor(d.cat),
         label: d.cat,
       })),
       ...studentCE.map((ce: any) => ({
-        id: "ce-" + ce.id,
-        title: ce.title,
-        date: ce.date,
-        bgColor: "#eff6ff",
-        borderColor: "#3b82f6",
-        textColor: "#1d4ed8",
+        id: "ce-" + ce.id, title: ce.title, date: ce.date,
+        bgColor: "#eff6ff", borderColor: "#3b82f6", textColor: "#1d4ed8",
         label: "strategist",
         onClick: () => {
           if (confirm('Delete event "' + ce.title + '"?')) handleDeleteEvent(ce.id);
         },
       })),
       ...studentGE.map((ge: any) => ({
-        id: "gcal-" + ge.id,
-        title: ge.title,
-        date: ge.date,
-        bgColor: "#dbeafe",
-        borderColor: "#60a5fa",
-        textColor: "#1d4ed8",
-        label: "google",
-        meetingLink: ge.meetingLink || "",
-        location: ge.location || "",
+        id: "gcal-" + ge.id, title: ge.title, date: ge.date,
+        bgColor: "#dbeafe", borderColor: "#60a5fa", textColor: "#1d4ed8",
+        label: "google", meetingLink: ge.meetingLink || "", location: ge.location || "",
       })),
     ];
 
     return {
-      id: s.id,
-      name: s.name,
-      subtitle: "Gr. " + s.grade,
-      avatar: s.av,
-      avatarBg: "#eff6ff",
-      avatarColor: "#1d4ed8",
+      id: s.id, name: s.name, subtitle: "Gr. " + s.grade,
+      avatar: s.av, avatarBg: "#eff6ff", avatarColor: "#1d4ed8",
       events,
       onClick: () => { onSelectStudent(s); onNavigate("detail"); },
     };
@@ -262,58 +425,138 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
         title="Master Timeline"
         sub="All deadlines at a glance."
         right={
-          <div className="flex gap-2 items-center flex-wrap">
+          <div className="flex gap-2 items-center">
+            <Button primary onClick={() => setShowModal(true)}>+ New Event</Button>
+          </div>
+        }
+      />
+
+      <div className="p-4 px-8">
+        {/* View Toggle */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="inline-flex gap-0.5 bg-white border border-line rounded-lg p-1">
+            {([["calendar", "Calendar"], ["table", "Table"]] as const).map(([id, l]) => (
+              <button key={id} onClick={() => setViewMode(id)}
+                className="px-5 py-2 rounded-lg border-none cursor-pointer text-sm font-semibold"
+                style={{ background: viewMode === id ? "#3b82f6" : "transparent", color: viewMode === id ? "#fff" : "#64748b" }}>
+                {l}
+              </button>
+            ))}
+          </div>
+
+          {/* Calendar filter pills (only in calendar mode) */}
+          {viewMode === "calendar" && (
             <div className="flex gap-1 flex-wrap">
               {cats.map((c) => (
-                <button key={c} onClick={() => setFilter(c)}
+                <button key={c} onClick={() => setCalFilter(c)}
                   className="px-3 py-1.5 rounded-lg cursor-pointer text-xs font-semibold capitalize"
                   style={{
-                    background: filter === c ? "#eff6ff" : "#fff",
-                    border: "1px solid " + (filter === c ? "#3b82f6" : "#cbd5e1"),
-                    color: filter === c ? "#1d4ed8" : "#64748b",
+                    background: calFilter === c ? "#eff6ff" : "#fff",
+                    border: "1px solid " + (calFilter === c ? "#3b82f6" : "#cbd5e1"),
+                    color: calFilter === c ? "#1d4ed8" : "#64748b",
                   }}>
                   {c === "all" ? "All" : c}
                 </button>
               ))}
             </div>
-            <Button primary onClick={() => setShowModal(true)}>+ New Event</Button>
-          </div>
-        }
-      />
-      <div className="p-4 px-8">
-        {/* View Toggle */}
-        <div className="inline-flex gap-0.5 bg-white border border-line rounded-lg p-1 mb-4">
-          {([["calendar", "Calendar"], ["table", "Table"]] as const).map(([id, l]) => (
-            <button key={id} onClick={() => setViewMode(id)}
-              className="px-5 py-2 rounded-lg border-none cursor-pointer text-sm font-semibold"
-              style={{ background: viewMode === id ? "#3b82f6" : "transparent", color: viewMode === id ? "#fff" : "#64748b" }}>
-              {l}
-            </button>
-          ))}
+          )}
+
+          {/* Active filters summary (only in table mode) */}
+          {viewMode === "table" && activeFilterCount > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-sub">
+                {activeFilterCount} filter{activeFilterCount > 1 ? "s" : ""} active
+                · {filteredDeadlines.length} result{filteredDeadlines.length !== 1 ? "s" : ""}
+              </span>
+              <button
+                onClick={clearAllFilters}
+                className="text-xs font-semibold px-2.5 py-1 rounded-lg border-none cursor-pointer"
+                style={{ background: "#fef2f2", color: "#ef4444" }}
+              >
+                Clear all
+              </button>
+            </div>
+          )}
         </div>
 
         {viewMode === "calendar" ? (
           <WeeklyCalendar rows={calendarRows} personalRow={personalRow} />
         ) : (
-          /* TABLE VIEW */
           <div className="bg-white border border-line rounded-xl overflow-hidden">
-            {/* Table Header */}
+            {/* Table Header with per-column filters */}
             <div
               className="grid px-5 py-3 border-b border-line"
-              style={{ gridTemplateColumns: "100px 2fr 1fr 1.5fr 1fr 1fr 90px", background: "#f8f9fb" }}
+              style={{ gridTemplateColumns: "110px 2fr 1fr 1.5fr 1fr 1fr 90px", background: "#f8f9fb" }}
             >
-              <SortHeader field="due" label="Due Date" />
-              <SortHeader field="title" label="Project" />
-              <SortHeader field="category" label="Type" />
-              <SortHeader field="student" label="Student" />
-              <SortHeader field="specialist" label="Specialist" />
-              <SortHeader field="status" label="Status" />
+              {/* Due Date — sort only */}
+              <SortOnlyHeader field="due" label="Due Date" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
+
+              {/* Title — sort only */}
+              <SortOnlyHeader field="title" label="Project" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
+
+              {/* Category — filter + sort */}
+              <FilterDropdown
+                label="Type"
+                field="category"
+                options={filterOptions.category}
+                selected={colFilters.category.length > 0 ? colFilters.category : filterOptions.category}
+                onChange={(v) => setFilter("category", v.length === filterOptions.category.length ? [] : v)}
+                sortField={sortField}
+                sortDir={sortDir}
+                onSort={toggleSort}
+              />
+
+              {/* Student — filter + sort */}
+              <FilterDropdown
+                label="Student"
+                field="student"
+                options={filterOptions.student}
+                selected={colFilters.student.length > 0 ? colFilters.student : filterOptions.student}
+                onChange={(v) => setFilter("student", v.length === filterOptions.student.length ? [] : v)}
+                sortField={sortField}
+                sortDir={sortDir}
+                onSort={toggleSort}
+              />
+
+              {/* Specialist — filter + sort */}
+              <FilterDropdown
+                label="Specialist"
+                field="specialist"
+                options={filterOptions.specialist}
+                selected={colFilters.specialist.length > 0 ? colFilters.specialist : filterOptions.specialist}
+                onChange={(v) => setFilter("specialist", v.length === filterOptions.specialist.length ? [] : v)}
+                sortField={sortField}
+                sortDir={sortDir}
+                onSort={toggleSort}
+              />
+
+              {/* Status — filter + sort */}
+              <FilterDropdown
+                label="Status"
+                field="status"
+                options={filterOptions.status}
+                selected={colFilters.status.length > 0 ? colFilters.status : filterOptions.status}
+                onChange={(v) => setFilter("status", v.length === filterOptions.status.length ? [] : v)}
+                sortField={sortField}
+                sortDir={sortDir}
+                onSort={toggleSort}
+              />
+
               <div className="text-xs text-sub uppercase tracking-widest font-semibold">Actions</div>
             </div>
 
             {/* Table Rows */}
             {filteredDeadlines.length === 0 ? (
-              <div className="p-8 text-center text-sub text-sm">No deadlines found.</div>
+              <div className="p-8 text-center">
+                <div className="text-sub text-sm mb-2">No results match your filters.</div>
+                <button
+                  onClick={clearAllFilters}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-lg border-none cursor-pointer"
+                  style={{ background: "#eff6ff", color: "#1d4ed8" }}
+                >
+                  Clear all filters
+                </button>
+              </div>
             ) : (
               filteredDeadlines.map((d, idx) => {
                 const isOverdue = d.status === "overdue";
@@ -323,7 +566,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
                     key={d.id + "-" + idx}
                     className="grid px-5 py-3 border-b border-line items-center hover:bg-mist cursor-pointer"
                     style={{
-                      gridTemplateColumns: "100px 2fr 1fr 1.5fr 1fr 1fr 90px",
+                      gridTemplateColumns: "110px 2fr 1fr 1.5fr 1fr 1fr 90px",
                       background: isOverdue ? "#fef2f2" : isCE ? "#f8faff" : "#fff",
                     }}
                     onClick={() => {
@@ -331,31 +574,24 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
                       if (student) { onSelectStudent(student); onNavigate("detail"); }
                     }}
                   >
-                    {/* Due Date */}
                     <div className="text-sm font-medium" style={{ color: isOverdue ? "#ef4444" : "#0f172a" }}>
                       {new Date(d.due + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                     </div>
 
-                    {/* Project Title */}
                     <div className="flex items-center gap-2 min-w-0">
                       {isCE && <span className="text-[10px]">📅</span>}
                       <span className="text-sm font-medium text-heading truncate">{d.title}</span>
                     </div>
 
-                    {/* Type/Category */}
                     <div>
                       <span
                         className="text-[10px] px-2 py-0.5 rounded font-semibold"
-                        style={{
-                          background: getCategoryColor(d.cat) + "15",
-                          color: getCategoryColor(d.cat),
-                        }}
+                        style={{ background: getCategoryColor(d.cat) + "15", color: getCategoryColor(d.cat) }}
                       >
                         {d.cat}
                       </span>
                     </div>
 
-                    {/* Student */}
                     <div className="flex items-center gap-2">
                       <div
                         className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0"
@@ -366,17 +602,12 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
                       <span className="text-sm text-body truncate">{d.studentName}</span>
                     </div>
 
-                    {/* Specialist */}
-                    <div className="text-sm text-sub truncate">
-                      {d.specialist || "—"}
-                    </div>
+                    <div className="text-sm text-sub truncate">{d.specialist || "—"}</div>
 
-                    {/* Status */}
                     <Tag color={getStatusColor(d.status)}>
                       {isOverdue ? Math.abs(d.days) + "d late" : d.days === 0 ? "Today" : d.days + "d"}
                     </Tag>
 
-                    {/* Actions */}
                     <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                       {isCE && (
                         <button
@@ -395,7 +626,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
 
             {/* Table Footer */}
             <div className="px-5 py-2.5 border-t border-line flex justify-between items-center" style={{ background: "#f8f9fb" }}>
-              <span className="text-xs text-sub">{filteredDeadlines.length} items</span>
+              <span className="text-xs text-sub">{filteredDeadlines.length} of {allDeadlines.length} items</span>
               <div className="flex gap-2 text-xs text-sub">
                 <span className="flex items-center gap-1">
                   <span className="w-2 h-2 rounded-full" style={{ background: "#ef4444" }} /> Overdue
