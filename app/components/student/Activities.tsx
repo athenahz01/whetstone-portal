@@ -1,167 +1,430 @@
 "use client";
 
-import { Activity } from "../../types";
-import { Card } from "../ui/Card";
-import { Button } from "../ui/Button";
-import { Tag } from "../ui/Tag";
-import { PageHeader } from "../ui/PageHeader";
-import { Modal } from "../ui/Modal";
-import { FormField } from "../ui/FormField";
-import { ACTIVITY_TYPES, PARTICIPATION_TIMES } from "../../lib/constants";
 import { useState } from "react";
+import { Activity } from "../../types";
+import { PageHeader } from "../ui/PageHeader";
+import { supabase } from "../../lib/supabase";
 
 interface ActivitiesProps {
   activities: Activity[];
   setActivities: (a: Activity[]) => void;
   readOnly?: boolean;
+  studentId?: number;
 }
 
-export function Activities({ activities, setActivities, readOnly = false }: ActivitiesProps) {
-  const [showModal, setShowModal] = useState(false);
-  const [selectedGrades, setSelectedGrades] = useState<number[]>([]);
+const ACTIVITY_TYPES = [
+  "Academic",
+  "Art",
+  "Athletics: Club",
+  "Athletics: JV/Varsity",
+  "Career Oriented",
+  "Community Service (Volunteer)",
+  "Computer/Technology",
+  "Cultural",
+  "Dance",
+  "Debate/Speech",
+  "Environmental",
+  "Family Responsibilities",
+  "Foreign Exchange",
+  "Internship",
+  "Journalism/Publication",
+  "Junior R.O.T.C.",
+  "LGBT",
+  "Music: Instrumental",
+  "Music: Vocal",
+  "Other Club/Activity",
+  "Religious",
+  "Research",
+  "Robotics",
+  "School Spirit",
+  "Science/Math",
+  "Social Justice",
+  "Sports: Club",
+  "Student Govt./Politics",
+  "Theater/Drama",
+  "Work (Paid)",
+];
 
-  const toggleGrade = (g: number) =>
-    setSelectedGrades((p) => (p.includes(g) ? p.filter((x) => x !== g) : [...p, g].sort()));
+const TIMING_OPTIONS = ["During school year", "During school break", "All year"];
+const GRADE_OPTIONS = [9, 10, 11, 12, "Post-graduate"] as const;
+const TOTAL_SLOTS = 10;
 
-  const inputStyle: React.CSSProperties = {
-    width: "100%", padding: "10px 14px", background: "#fff",
-    border: "1px solid #cbd5e1", borderRadius: 8, color: "#0f172a",
-    fontSize: 14, outline: "none", boxSizing: "border-box",
+const inputStyle: React.CSSProperties = {
+  width: "100%", padding: "8px 12px", background: "#fff",
+  border: "1px solid #cbd5e1", borderRadius: 6, color: "#0f172a",
+  fontSize: 13, outline: "none", boxSizing: "border-box",
+};
+
+const labelStyle: React.CSSProperties = {
+  fontSize: 12, fontWeight: 600, color: "#64748b",
+  marginBottom: 4, display: "block",
+};
+
+function charCount(val: string, max: number) {
+  const over = val.length > max;
+  return (
+    <span style={{ fontSize: 11, color: over ? "#ef4444" : "#94a3b8", marginLeft: 4 }}>
+      {val.length}/{max}
+    </span>
+  );
+}
+
+export function Activities({ activities, setActivities, readOnly = false, studentId }: ActivitiesProps) {
+  // openSlot: which accordion index is open (-1 = none)
+  const [openSlot, setOpenSlot] = useState<number>(-1);
+  // localEdits: track edits per slot before saving
+  const [saving, setSaving] = useState(false);
+
+  // Build 10 slots — fill from activities array, rest are empty
+  const slots: (Activity | null)[] = Array.from({ length: TOTAL_SLOTS }, (_, i) =>
+    activities[i] ?? null
+  );
+
+  const toggleSlot = (i: number) => setOpenSlot(openSlot === i ? -1 : i);
+
+  const handleSave = async (index: number, formData: FormData) => {
+    setSaving(true);
+    const gradeValues = GRADE_OPTIONS.map((g) => formData.get(`grade_${g}`) === "on" ? g : null).filter(Boolean);
+    const timingValues = TIMING_OPTIONS.map((t) => formData.get(`timing_${t}`) === "on" ? t : null).filter(Boolean);
+
+    const updated: Activity = {
+      id: activities[index]?.id ?? Date.now(),
+      type: formData.get("type") as string,
+      pos: formData.get("position") as string,
+      org: formData.get("org") as string,
+      desc: formData.get("description") as string,
+      gr: gradeValues as number[],
+      timing: timingValues.join(", "),
+      hrs: formData.get("hours") as string,
+      wks: formData.get("weeks") as string,
+    };
+
+    const newActivities = [...activities];
+    if (index < newActivities.length) {
+      newActivities[index] = updated;
+    } else {
+      // Fill gaps with nulls then set
+      while (newActivities.length < index) newActivities.push(null as any);
+      newActivities[index] = updated;
+    }
+
+    // Persist to Supabase if studentId available
+    if (studentId) {
+      if (activities[index]?.id && activities[index].id < 1e12) {
+        // Update existing
+        await supabase.from("activities").update({
+          type: updated.type, position: updated.pos, organization: updated.org,
+          description: updated.desc, grades: updated.gr, timing: updated.timing,
+          hours_per_week: updated.hrs, weeks_per_year: updated.wks,
+        }).eq("id", updated.id);
+      } else {
+        // Insert new
+        const { data } = await supabase.from("activities").insert({
+          student_id: studentId, type: updated.type, position: updated.pos,
+          organization: updated.org, description: updated.desc, grades: updated.gr,
+          timing: updated.timing, hours_per_week: updated.hrs, weeks_per_year: updated.wks,
+        }).select("id").single();
+        if (data) updated.id = data.id;
+      }
+    }
+
+    setActivities(newActivities.filter(Boolean) as Activity[]);
+    setSaving(false);
+    setOpenSlot(-1);
   };
 
-  const [descText, setDescText] = useState("");
+  const handleDelete = async (index: number) => {
+    const act = activities[index];
+    if (act && studentId) {
+      await supabase.from("activities").delete().eq("id", act.id);
+    }
+    const newActivities = [...activities];
+    newActivities.splice(index, 1);
+    setActivities(newActivities);
+    setOpenSlot(-1);
+  };
 
   return (
     <div>
       <PageHeader
-        title="Activities & Honors"
-        sub="As they appear on your Common App."
+        title="Activities"
+        sub={`Common App format · ${activities.length}/${TOTAL_SLOTS} filled`}
         right={
           readOnly ? (
-            <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "#eff6ff", color: "#1d4ed8" }}>View Only</span>
-          ) : (
-            <Button primary onClick={() => setShowModal(true)}>+ Add Activity</Button>
-          )
+            <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "#eff6ff", color: "#1d4ed8" }}>
+              View Only
+            </span>
+          ) : null
         }
       />
-      <div className="p-6 px-8 flex flex-col gap-3">
-        {activities.map((a, idx) => (
-          <Card key={a.id} noPadding style={{ overflow: "hidden" }}>
-            <div className="px-6 py-4 border-b border-line flex justify-between" style={{ background: "#f8f9fb" }}>
-              <div className="flex gap-3.5">
-                <div className="w-10 h-10 rounded-lg bg-navy flex items-center justify-center text-base text-white font-bold flex-shrink-0">{idx + 1}</div>
-                <div>
-                  <div className="text-base font-bold text-heading">{a.org}</div>
-                  <div className="text-sm font-medium mt-0.5" style={{ color: "#1d4ed8" }}>{a.pos}</div>
-                  <div className="flex gap-2 flex-wrap items-center mt-2">
-                    <Tag color="#64748b">{a.type}</Tag>
-                    <Tag color="#d97706">{a.timing}</Tag>
-                    <div className="flex gap-1">
-                      {a.gr?.map((g) => (
-                        <span key={g} className="w-6 h-6 rounded-md text-xs inline-flex items-center justify-center font-bold" style={{ background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe" }}>{g}</span>
-                      ))}
+
+      <div className="p-6 px-8">
+        <div className="rounded-xl overflow-hidden border border-line bg-white shadow-sm">
+          {slots.map((act, i) => {
+            const isOpen = openSlot === i;
+            const isEmpty = !act;
+            const label = isEmpty ? `Activity ${i + 1}` : act.type;
+            const sublabel = isEmpty ? "[EMPTY]" : act.pos;
+
+            return (
+              <div key={i} className="border-b border-line last:border-b-0">
+                {/* Accordion header */}
+                <button
+                  onClick={() => toggleSlot(i)}
+                  className="w-full flex items-center justify-between px-5 py-4 text-left transition-colors hover:bg-gray-50"
+                  style={{ background: isOpen ? "#f8f9fb" : "white", border: "none", cursor: "pointer" }}
+                >
+                  <div className="flex items-center gap-3">
+                    {/* Status indicator */}
+                    <div
+                      className="w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0"
+                      style={{
+                        background: isEmpty ? "#f1f5f9" : "#dcfce7",
+                        color: isEmpty ? "#94a3b8" : "#16a34a",
+                        border: isEmpty ? "1.5px dashed #cbd5e1" : "none",
+                      }}
+                    >
+                      {isEmpty ? "" : "✓"}
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold" style={{ color: isEmpty ? "#94a3b8" : "#0f172a" }}>
+                        {label}
+                      </div>
+                      {!isEmpty && (
+                        <div className="text-xs text-sub mt-0.5">{sublabel}</div>
+                      )}
                     </div>
                   </div>
-                </div>
+                  <span className="text-gray-400 text-sm font-bold ml-4">
+                    {isOpen ? "−" : "+"}
+                  </span>
+                </button>
+
+                {/* Accordion body */}
+                {isOpen && (
+                  <div className="px-5 pb-5 pt-2" style={{ background: "#fafbfc" }}>
+                    {readOnly ? (
+                      /* Read-only display */
+                      isEmpty ? (
+                        <p className="text-sm text-sub italic py-4 text-center">This slot is empty.</p>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div><span className="font-semibold text-sub text-xs uppercase">Type</span><p className="mt-1 text-body">{act.type}</p></div>
+                          <div><span className="font-semibold text-sub text-xs uppercase">Position (50 chars)</span><p className="mt-1 text-body">{act.pos}</p></div>
+                          <div className="col-span-2"><span className="font-semibold text-sub text-xs uppercase">Organization (100 chars)</span><p className="mt-1 text-body">{act.org}</p></div>
+                          <div className="col-span-2"><span className="font-semibold text-sub text-xs uppercase">Description (150 chars)</span><p className="mt-1 text-body">{act.desc}</p></div>
+                          <div><span className="font-semibold text-sub text-xs uppercase">Grade Levels</span><p className="mt-1 text-body">{(act.gr || []).join(", ") || "—"}</p></div>
+                          <div><span className="font-semibold text-sub text-xs uppercase">Timing</span><p className="mt-1 text-body">{act.timing || "—"}</p></div>
+                          <div><span className="font-semibold text-sub text-xs uppercase">Hours/Week</span><p className="mt-1 text-body">{act.hrs || "—"}</p></div>
+                          <div><span className="font-semibold text-sub text-xs uppercase">Weeks/Year</span><p className="mt-1 text-body">{act.wks || "—"}</p></div>
+                        </div>
+                      )
+                    ) : (
+                      /* Editable form */
+                      <ActivityForm
+                        act={act}
+                        index={i}
+                        onSave={handleSave}
+                        onDelete={isEmpty ? undefined : () => handleDelete(i)}
+                        saving={saving}
+                      />
+                    )}
+                  </div>
+                )}
               </div>
-              {!readOnly && (
-                <button onClick={() => setActivities(activities.filter((x) => x.id !== a.id))} className="bg-white border border-line rounded-lg w-8 h-8 cursor-pointer text-sub text-sm">✕</button>
-              )}
-            </div>
-            <div className="px-6 py-4 grid gap-5" style={{ gridTemplateColumns: "5fr 2fr" }}>
-              <div>
-                <div className="text-xs text-sub uppercase tracking-widest font-semibold mb-1.5">Description</div>
-                <p className="m-0 text-sm text-body leading-relaxed p-3 rounded-lg" style={{ background: "#eef0f4" }}>{a.desc}</p>
-              </div>
-              <div>
-                <div className="mb-3.5">
-                  <div className="text-xs text-sub uppercase tracking-widest font-semibold mb-1">Participation</div>
-                  <div className="text-sm text-heading font-medium">{a.timing}</div>
-                </div>
-                <div className="flex gap-7">
-                  {[["Hrs/Wk", a.hrs], ["Wks/Yr", a.wks]].map(([l, v]) => (
-                    <div key={l}>
-                      <div className="text-xs text-sub uppercase tracking-widest font-semibold mb-1">{l}</div>
-                      <div className="text-2xl font-bold text-heading">{v}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </Card>
-        ))}
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── ActivityForm sub-component ─────────────────────────────────────────────
+
+interface ActivityFormProps {
+  act: Activity | null;
+  index: number;
+  onSave: (index: number, formData: FormData) => void;
+  onDelete?: () => void;
+  saving: boolean;
+}
+
+function ActivityForm({ act, index, onSave, onDelete, saving }: ActivityFormProps) {
+  const [position, setPosition] = useState(act?.pos ?? "");
+  const [org, setOrg] = useState(act?.org ?? "");
+  const [desc, setDesc] = useState(act?.desc ?? "");
+
+  const selectedGrades = act?.gr ?? [];
+  const selectedTiming = (act?.timing ?? "").split(", ").filter(Boolean);
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSave(index, new FormData(e.target as HTMLFormElement));
+      }}
+      className="space-y-4"
+    >
+      {/* Activity Type */}
+      <div>
+        <label style={labelStyle}>
+          Activity type <span style={{ color: "#ef4444" }}>*</span>
+        </label>
+        <select name="type" defaultValue={act?.type ?? ""} required style={inputStyle}>
+          <option value="" disabled>Select type...</option>
+          {ACTIVITY_TYPES.map((t) => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </select>
       </div>
 
-      {showModal && (
-        <Modal title="Add Activity" onClose={() => { setShowModal(false); setSelectedGrades([]); setDescText("");}}>
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            const f = new FormData(e.target as HTMLFormElement);
-            setActivities([...activities, {
-              id: Date.now(), org: f.get("org") as string, pos: f.get("pos") as string,
-              type: f.get("type") as string, desc: f.get("desc") as string,
-              timing: f.get("timing") as string, hrs: f.get("hrs") as string,
-              wks: f.get("wks") as string, gr: selectedGrades,
-            }]);
-            setShowModal(false);
-            setSelectedGrades([]);
-            setDescText("");
-          }}>
-            <FormField label="Organization Name"><input required name="org" style={inputStyle} /></FormField>
-            <FormField label="Position / Leadership"><input required name="pos" style={inputStyle} /></FormField>
-            <FormField label="Activity Type">
-              <select required name="type" style={inputStyle}>
-                {ACTIVITY_TYPES.map((t) => <option key={t}>{t}</option>)}
-              </select>
-            </FormField>
-            <FormField label="Participation Grades">
-              <div className="flex gap-2 items-center">
-                {[9, 10, 11, 12].map((g) => (
-                  <button key={g} type="button" onClick={() => toggleGrade(g)}
-                    className="w-12 h-10 rounded-lg cursor-pointer text-base font-bold"
-                    style={{
-                      background: selectedGrades.includes(g) ? "#3b82f6" : "#fff",
-                      color: selectedGrades.includes(g) ? "#fff" : "#64748b",
-                      border: `2px solid ${selectedGrades.includes(g) ? "#3b82f6" : "#cbd5e1"}`,
-                    }}>{g}</button>
-                ))}
-                <span className="text-sm text-sub ml-1">{selectedGrades.length ? `${selectedGrades.join(", ")} selected` : "Select grades"}</span>
-              </div>
-            </FormField>
-            <FormField label="Time of Participation">
-              <select required name="timing" style={inputStyle}>
-                {PARTICIPATION_TIMES.map((t) => <option key={t}>{t}</option>)}
-              </select>
-            </FormField>
-            <FormField label="Description">
-            <textarea
-                required
-                name="desc"
-                rows={3}
-                style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
-                value={descText}
-                onChange={(e) => setDescText(e.target.value)}
+      {/* Position / Leadership */}
+      <div>
+        <label style={labelStyle}>
+          Position/Leadership description
+          <span style={{ color: "#ef4444" }}> *</span>
+          <span style={{ fontWeight: 400 }}> (Max characters: 50)</span>
+          {charCount(position, 50)}
+        </label>
+        <input
+          name="position"
+          value={position}
+          onChange={(e) => setPosition(e.target.value)}
+          maxLength={50}
+          required
+          style={{ ...inputStyle, borderColor: position.length > 50 ? "#ef4444" : "#cbd5e1" }}
+        />
+      </div>
+
+      {/* Organization Name */}
+      <div>
+        <label style={labelStyle}>
+          Organization Name
+          <span style={{ fontWeight: 400 }}> (Max characters: 100)</span>
+          {charCount(org, 100)}
+        </label>
+        <input
+          name="org"
+          value={org}
+          onChange={(e) => setOrg(e.target.value)}
+          maxLength={100}
+          style={{ ...inputStyle, borderColor: org.length > 100 ? "#ef4444" : "#cbd5e1" }}
+        />
+      </div>
+
+      {/* Description */}
+      <div>
+        <label style={labelStyle}>
+          Please describe this activity, including what you accomplished and any recognition you received, etc.
+          <span style={{ color: "#ef4444" }}> *</span>
+          <span style={{ fontWeight: 400 }}> (Max characters: 150)</span>
+          {charCount(desc, 150)}
+        </label>
+        <textarea
+          name="description"
+          value={desc}
+          onChange={(e) => setDesc(e.target.value)}
+          maxLength={150}
+          required
+          rows={3}
+          style={{ ...inputStyle, resize: "vertical", borderColor: desc.length > 150 ? "#ef4444" : "#cbd5e1" }}
+        />
+      </div>
+
+      {/* Grade Levels */}
+      <div>
+        <label style={labelStyle}>
+          Participation grade levels <span style={{ color: "#ef4444" }}>*</span>
+        </label>
+        <div className="flex flex-col gap-1.5 mt-1">
+          {GRADE_OPTIONS.map((g) => (
+            <label key={g} className="flex items-center gap-2 text-sm cursor-pointer select-none">
+              <input
+                type="checkbox"
+                name={`grade_${g}`}
+                defaultChecked={selectedGrades.includes(g as any)}
+                className="w-4 h-4 rounded"
+                style={{ accentColor: "#3b82f6" }}
               />
-              <div className="flex justify-between mt-1">
-                <div className="text-xs text-faint">150 word limit on Common App</div>
-                <div
-                  className="text-xs font-semibold"
-                  style={{
-                    color: descText.trim().split(/\s+/).filter(Boolean).length > 150 ? "#ef4444" : "#64748b",
-                  }}
-                >
-                  {descText.trim() ? descText.trim().split(/\s+/).filter(Boolean).length : 0}/150 words
-                </div>
-              </div>
-            </FormField>
-            <div className="grid grid-cols-2 gap-3">
-              <FormField label="Hours / Week"><input required name="hrs" type="number" style={inputStyle} /></FormField>
-              <FormField label="Weeks / Year"><input required name="wks" type="number" style={inputStyle} /></FormField>
-            </div>
-            <div className="flex justify-end mt-2"><Button primary type="submit">Save Activity</Button></div>
-          </form>
-        </Modal>
-      )}
-    </div>
+              {g}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Timing */}
+      <div>
+        <label style={labelStyle}>
+          Timing of participation <span style={{ color: "#ef4444" }}>*</span>
+        </label>
+        <div className="flex flex-col gap-1.5 mt-1">
+          {TIMING_OPTIONS.map((t) => (
+            <label key={t} className="flex items-center gap-2 text-sm cursor-pointer select-none">
+              <input
+                type="checkbox"
+                name={`timing_${t}`}
+                defaultChecked={selectedTiming.includes(t)}
+                className="w-4 h-4 rounded"
+                style={{ accentColor: "#3b82f6" }}
+              />
+              {t}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Hours & Weeks */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label style={labelStyle}>
+            Hours spent per week <span style={{ color: "#ef4444" }}>*</span>
+          </label>
+          <input
+            name="hours"
+            type="number"
+            min={0}
+            max={168}
+            defaultValue={act?.hrs ?? ""}
+            required
+            style={inputStyle}
+          />
+        </div>
+        <div>
+          <label style={labelStyle}>
+            Weeks spent per year <span style={{ color: "#ef4444" }}>*</span>
+          </label>
+          <input
+            name="weeks"
+            type="number"
+            min={0}
+            max={52}
+            defaultValue={act?.wks ?? ""}
+            required
+            style={inputStyle}
+          />
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex justify-between pt-2">
+        {onDelete ? (
+          <button
+            type="button"
+            onClick={onDelete}
+            style={{ padding: "8px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: "#fef2f2", color: "#ef4444", border: "1px solid #fecaca", cursor: "pointer" }}
+          >
+            Remove Activity
+          </button>
+        ) : <div />}
+        <button
+          type="submit"
+          disabled={saving}
+          style={{ padding: "8px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: "#3b82f6", color: "#fff", border: "none", cursor: "pointer", opacity: saving ? 0.7 : 1 }}
+        >
+          {saving ? "Saving..." : act ? "Save Changes" : "Add Activity"}
+        </button>
+      </div>
+    </form>
   );
 }
