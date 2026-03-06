@@ -38,7 +38,6 @@ export async function fetchAllStudents(): Promise<Student[]> {
         av: s.avatar,
         school: s.school,
         gradYear: s.grad_year,
-        // Normalize: null → null, "Never" string (legacy) → null, real timestamp → keep
         lastLogin: (!s.last_login || s.last_login === "Never") ? null : s.last_login,
         engagement: s.engagement,
         schools: (schoolsRes.data || []).map((sc) => ({
@@ -57,6 +56,7 @@ export async function fetchAllStudents(): Promise<Student[]> {
           days: d.days,
           specialist: d.specialist || "",
           googleDocLink: d.google_doc_link || "",
+          createdBy: (d.created_by || "strategist") as "strategist" | "student",
         })),
         tasks: (tasksRes.data || []).map((t) => ({
           id: t.id,
@@ -133,7 +133,7 @@ export async function addStudent(data: {
       avatar: data.name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2),
       school: data.school,
       grad_year: data.gradYear,
-      last_login: null, // null = never logged in; trigger will update on first login
+      last_login: null,
       engagement: 0,
     })
     .select("id")
@@ -190,16 +190,74 @@ export async function deleteStudent(id: number): Promise<boolean> {
   return true;
 }
 
-export async function addDeadline(studentId: number, data: {
-  title: string; due: string; category: string; status: string; days: number;
-}): Promise<boolean> {
+// ── Deadlines ──────────────────────────────────────────────────────────────
+
+export async function addDeadline(
+  studentId: number,
+  data: {
+    title: string;
+    due: string;
+    category: string;
+    status: string;
+    days: number;
+    specialist?: string;
+    google_doc_link?: string;
+    created_by?: "strategist" | "student";
+  }
+): Promise<boolean> {
   const { error } = await supabase.from("deadlines").insert({
-    student_id: studentId, title: data.title, due: data.due,
-    category: data.category, status: data.status, days: data.days,
+    student_id: studentId,
+    title: data.title,
+    due: data.due,
+    category: data.category,
+    status: data.status,
+    days: data.days,
+    specialist: data.specialist || null,
+    google_doc_link: data.google_doc_link || null,
+    created_by: data.created_by || "strategist",
   });
-  if (error) { console.error("Error adding deadline:", error); return false; }
+  if (error) {
+    console.error("Error adding deadline:", error);
+    return false;
+  }
   return true;
 }
+
+export async function updateDeadline(
+  deadlineId: number,
+  data: {
+    title?: string;
+    due?: string;
+    category?: string;
+    status?: string;
+    specialist?: string;
+    google_doc_link?: string;
+  }
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("deadlines")
+    .update(data)
+    .eq("id", deadlineId);
+  if (error) {
+    console.error("Error updating deadline:", error);
+    return false;
+  }
+  return true;
+}
+
+export async function deleteDeadline(deadlineId: number): Promise<boolean> {
+  const { error } = await supabase
+    .from("deadlines")
+    .delete()
+    .eq("id", deadlineId);
+  if (error) {
+    console.error("Error deleting deadline:", error);
+    return false;
+  }
+  return true;
+}
+
+// ── Sessions ───────────────────────────────────────────────────────────────
 
 export async function addSession(studentId: number, data: {
   date: string; notes: string; action: string;
@@ -211,7 +269,7 @@ export async function addSession(studentId: number, data: {
   return true;
 }
 
-// === COUNSELOR EVENTS ===
+// ── Counselor Events ───────────────────────────────────────────────────────
 
 export async function addCounselorEvent(data: {
   title: string;
@@ -300,25 +358,6 @@ export async function deleteCounselorEvent(eventId: number): Promise<boolean> {
     .eq("id", eventId);
   if (error) {
     console.error("Error deleting event:", error);
-    return false;
-  }
-  return true;
-}
-
-export async function updateDeadline(deadlineId: number, data: {
-  title?: string;
-  due?: string;
-  category?: string;
-  status?: string;
-  specialist?: string;
-  google_doc_link?: string;
-}): Promise<boolean> {
-  const { error } = await supabase
-    .from("deadlines")
-    .update(data)
-    .eq("id", deadlineId);
-  if (error) {
-    console.error("Error updating deadline:", error);
     return false;
   }
   return true;
