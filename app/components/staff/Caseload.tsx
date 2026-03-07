@@ -81,7 +81,12 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh }: C
       }
 
       if (data.tempPassword) {
+        // Close the form, show credentials — DON'T refresh yet
+        // (refresh happens when user dismisses the credentials modal)
+        setSaving(false);
+        setShowModal(false);
         setInviteResult({ email, tempPassword: data.tempPassword, loginUrl: data.loginUrl });
+        return;
       }
     } catch (err) {
       console.error("Failed to create student account:", err);
@@ -90,6 +95,11 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh }: C
 
     setSaving(false);
     setShowModal(false);
+    onRefresh();
+  };
+
+  const handleDismissCredentials = () => {
+    setInviteResult(null);
     onRefresh();
   };
 
@@ -223,7 +233,7 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh }: C
 
       {/* Credentials Modal */}
       {inviteResult && (
-        <Modal title="Student Account Created! 🎉" onClose={() => setInviteResult(null)}>
+        <Modal title="Student Account Created! 🎉" onClose={handleDismissCredentials}>
           <div style={{ padding: "4px 0" }}>
             <p className="text-sm text-body mb-4">
               Share these login credentials with the student. They can log in at{" "}
@@ -265,7 +275,7 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh }: C
             </div>
 
             <button
-              onClick={() => setInviteResult(null)}
+              onClick={handleDismissCredentials}
               style={{ width: "100%", padding: "10px", borderRadius: 8, border: "none", background: "#0f172a", color: "#fff", fontWeight: 600, fontSize: 14, cursor: "pointer" }}
             >
               Done
