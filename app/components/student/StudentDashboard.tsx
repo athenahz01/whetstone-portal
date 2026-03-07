@@ -151,58 +151,31 @@ export function StudentDashboard({
               </Card>
             )}
 
-            {/* Weekly Goals */}
+            {/* Receptacle CTA */}
             <Card>
-              <h2 className="m-0 mb-1 text-lg font-bold text-heading">This Week</h2>
-              <p className="m-0 mb-3.5 text-sm text-sub">
-                Goals from strategist · {getWeekRange()}
-              </p>
-              {goals.length === 0 && (
-                <p className="text-sm text-sub py-2">No goals set yet.</p>
-              )}
-              {goals.map((g, i) => (
-                <div
-                  key={i}
-                  onClick={() => !readOnly && onToggleGoal(i)}
-                  className={`flex items-center gap-2.5 py-2.5 ${readOnly ? "" : "cursor-pointer"}`}
-                  style={{ borderBottom: i < goals.length - 1 ? "1px solid #e2e8f0" : "none" }}
-                >
-                  <div
-                    className="w-5 h-5 rounded-md flex-shrink-0 flex items-center justify-center text-white text-xs"
+              <div
+                onClick={() => !readOnly && onNavigate("receptacle")}
+                className={readOnly ? "" : "cursor-pointer"}
+                style={{ textAlign: "center", padding: "12px 0" }}
+              >
+                <div className="text-3xl mb-3">🧠</div>
+                <h2 className="m-0 mb-1.5 text-lg font-bold text-heading">Plan Your Day</h2>
+                <p className="m-0 mb-4 text-sm text-sub leading-relaxed">
+                  Use the Receptacle to brain dump, prioritize with the Eisenhower Matrix, and schedule your tasks.
+                </p>
+                {!readOnly && (
+                  <button
+                    onClick={() => onNavigate("receptacle")}
                     style={{
-                      border: g.done ? "none" : "2px solid #cbd5e1",
-                      background: g.done ? "#3b82f6" : "transparent",
+                      padding: "10px 24px", borderRadius: 10, border: "none",
+                      background: "#0f172a", color: "#fff", fontWeight: 600,
+                      fontSize: 13, cursor: "pointer",
                     }}
                   >
-                    {g.done && "✓"}
-                  </div>
-                  <span
-                    className="text-sm"
-                    style={{
-                      color: g.done ? "#94a3b8" : "#0f172a",
-                      textDecoration: g.done ? "line-through" : "none",
-                    }}
-                  >
-                    {g.t}
-                  </span>
-                </div>
-              ))}
-              {goals.length > 0 && (
-                <div className="mt-3.5">
-                  <div className="flex justify-between mb-1">
-                    <span className="text-xs text-sub">Progress</span>
-                    <span className="text-xs text-accent-ink font-semibold">
-                      {goals.length > 0 ? Math.round((done / goals.length) * 100) : 0}%
-                    </span>
-                  </div>
-                  <div className="h-1.5 bg-mist rounded-sm">
-                    <div
-                      className="h-full bg-accent rounded-sm transition-all duration-300"
-                      style={{ width: `${goals.length > 0 ? (done / goals.length) * 100 : 0}%` }}
-                    />
-                  </div>
-                </div>
-              )}
+                    Open Receptacle →
+                  </button>
+                )}
+              </div>
             </Card>
           </div>
         </div>
