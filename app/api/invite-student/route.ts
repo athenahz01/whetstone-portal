@@ -44,52 +44,26 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // If we have both a new auth user and a student record, link them via the profiles table
-    if (data?.user?.id && studentId) {
+    // Create the profile directly — the handle_new_user trigger may fail
+    // (e.g. missing email NOT NULL), so we do it ourselves to be safe.
+    if (data?.user?.id) {
       const userId = data.user.id;
 
-      // The handle_new_user trigger creates the profile row async.
-      // We need to wait for it, then update with student_id.
-      let linked = false;
-      for (let attempt = 0; attempt < 5; attempt++) {
-        // Wait a bit for the trigger to complete
-        await new Promise((r) => setTimeout(r, 500));
+      // Small delay to let the trigger attempt first (avoids unique conflict)
+      await new Promise((r) => setTimeout(r, 300));
 
-        const { data: existing } = await supabaseAdmin
-          .from("profiles")
-          .select("id")
-          .eq("id", userId)
-          .single();
+      const { error: upsertErr } = await supabaseAdmin
+        .from("profiles")
+        .upsert({
+          id: userId,
+          email: email,
+          role: "student",
+          display_name: name,
+          student_id: studentId || null,
+        });
 
-        if (existing) {
-          // Profile exists — update it with student_id
-          const { error: updateErr } = await supabaseAdmin
-            .from("profiles")
-            .update({ student_id: studentId, role: "student", display_name: name })
-            .eq("id", userId);
-
-          if (!updateErr) {
-            linked = true;
-            break;
-          }
-          console.error("[invite-student] profile update error:", updateErr.message);
-        }
-      }
-
-      // If trigger never created the profile, insert it directly
-      if (!linked) {
-        const { error: upsertErr } = await supabaseAdmin
-          .from("profiles")
-          .upsert({
-            id: userId,
-            student_id: studentId,
-            role: "student",
-            display_name: name,
-          });
-
-        if (upsertErr) {
-          console.error("[invite-student] profile upsert fallback error:", upsertErr.message);
-        }
+      if (upsertErr) {
+        console.error("[invite-student] profile upsert error:", upsertErr.message);
       }
     }
 
