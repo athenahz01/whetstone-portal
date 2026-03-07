@@ -51,6 +51,7 @@ export function Sidebar({ role, view, setView, collapsed, setCollapsed, onSignOu
           ["testing", "Testing"],
           ["activities", "Activities"],
           ["honors", "Honors"],
+          ["receptacle", "Receptacle"],
           ["schools", "Schools"],
           ...(role === "student" ? [["prep", "Session Prep"]] : []),
         ];

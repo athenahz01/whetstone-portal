@@ -20,6 +20,8 @@ import { MasterTimeline } from "./components/staff/MasterTimeline";
 import { pullFromGoogleCalendar, syncAllDeadlinesToGoogle, syncAllCounselorEventsToGoogle } from "./lib/calendar";
 import { Goal, Task, Course, Test, Activity, Student, Honor } from "./types";
 import { Honors } from "./components/student/Honors";
+import { Receptacle } from "./components/student/Receptacle";
+
 
 
 interface Profile {
@@ -266,6 +268,15 @@ export default function Home() {
     }
     if (isStudentOrParent && view === "schools") {
       return <Schools student={me} readOnly={isParent} />;
+    }
+    if (role === "student" && view === "receptacle") {
+      return (
+        <Receptacle
+          studentId={me?.id}
+          profileId={profileId}
+          gcalConnected={gcalConnected}
+        />
+      );
     }
     if (role === "student" && view === "prep") {
       return <SessionPrep student={me} />;
