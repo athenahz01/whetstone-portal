@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { PageHeader } from "../ui/PageHeader";
 import { pushToGoogleCalendar } from "../../lib/calendar";
+import { fetchReceptacleEvents, addReceptacleEvent, updateReceptacleEvent, deleteReceptacleEvent, ReceptacleEvent } from "../../lib/queries";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -24,6 +25,7 @@ interface CalendarEvent {
   date: string;
   topMinutes: number; // minutes from midnight — allows free positioning
   synced?: boolean;
+  dbId?: number; // ID from receptacle_events table
 }
 
 interface ReceptacleProps {
@@ -134,6 +136,31 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
   const calRef = useRef<HTMLDivElement>(null);
   const days = get3Days(dayOffset);
 
+  // ── Load persisted calendar events on mount ──
+  useEffect(() => {
+    if (!studentId) return;
+    fetchReceptacleEvents(studentId).then((events) => {
+      const loaded: CalendarEvent[] = events.map((e) => ({
+        taskId: `db-${e.id}`,
+        text: e.task_text,
+        minutes: e.minutes,
+        date: e.date,
+        topMinutes: e.top_minutes,
+        synced: e.synced,
+        dbId: e.id,
+      }));
+      setCalEvents((prev) => {
+        // Merge: keep in-memory events that aren't yet persisted, add DB events
+        const dbIds = new Set(loaded.map((e) => e.dbId));
+        const nonDb = prev.filter((e) => !e.dbId && !dbIds.has(e.dbId));
+        return [...nonDb, ...loaded];
+      });
+      // Load completed state
+      const completedIds = new Set(events.filter((e) => e.completed).map((e) => `db-${e.id}`));
+      setCompleted(completedIds);
+    });
+  }, [studentId]);
+
   // ── Step 1 ──
 
   const addTask = () => {
@@ -172,7 +199,7 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
   const tasksInSection = (q: Quadrant) => tasks.filter((t) => t.quadrant === q);
 
   // Free-form drop: calculate minute offset from mouse position
-  const handleCalDrop = useCallback((e: React.DragEvent, dateStr: string) => {
+  const handleCalDrop = useCallback(async (e: React.DragEvent, dateStr: string) => {
     e.preventDefault();
     const calEl = calRef.current;
     if (!calEl) return;
@@ -192,27 +219,90 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
     if (dragging) {
       const task = tasks.find((t) => t.id === dragging);
       if (!task) return;
+
+      // Save to DB
+      let dbId: number | undefined;
+      if (studentId) {
+        const saved = await addReceptacleEvent(studentId, {
+          task_text: task.text,
+          minutes: task.minutes,
+          date: dateStr,
+          top_minutes: clampedMinutes,
+          quadrant: task.quadrant || undefined,
+        });
+        if (saved) dbId = saved.id;
+      }
+
+      const newEvent: CalendarEvent = {
+        taskId: dbId ? `db-${dbId}` : dragging,
+        text: task.text,
+        minutes: task.minutes,
+        date: dateStr,
+        topMinutes: clampedMinutes,
+        synced: false,
+        dbId,
+      };
+
       setCalEvents((p) => [
         ...p.filter((ev) => ev.taskId !== dragging),
-        { taskId: dragging, text: task.text, minutes: task.minutes, date: dateStr, topMinutes: clampedMinutes, synced: false },
+        newEvent,
       ]);
       setDragging(null);
+
+      // Auto-sync to Google Calendar
+      if (profileId && gcalConnected) {
+        pushToGoogleCalendar(profileId, task.text, dateStr, `Scheduled at ${fmtMinutes(clampedMinutes)} · ${task.minutes}min`).then(() => {
+          if (dbId) {
+            updateReceptacleEvent(dbId, { synced: true });
+          }
+          setCalEvents((p) => p.map((ev) => ev.dbId === dbId ? { ...ev, synced: true } : ev));
+        });
+      }
     } else if (draggingEvent) {
+      // Moving an existing event
+      const existingEvent = calEvents.find((ev) => ev.taskId === draggingEvent);
       setCalEvents((p) => p.map((ev) => ev.taskId === draggingEvent ? { ...ev, date: dateStr, topMinutes: clampedMinutes } : ev));
       setDraggingEvent(null);
+
+      // Update in DB
+      if (existingEvent?.dbId) {
+        updateReceptacleEvent(existingEvent.dbId, { date: dateStr, top_minutes: clampedMinutes });
+      }
     }
-  }, [dragging, draggingEvent, tasks]);
+  }, [dragging, draggingEvent, tasks, studentId, profileId, gcalConnected, calEvents]);
 
-  const removeEvent = (taskId: string) => setCalEvents((p) => p.filter((e) => e.taskId !== taskId));
+  const removeEvent = (taskId: string) => {
+    const ev = calEvents.find((e) => e.taskId === taskId);
+    if (ev?.dbId) {
+      deleteReceptacleEvent(ev.dbId);
+    }
+    setCalEvents((p) => p.filter((e) => e.taskId !== taskId));
+  };
 
-  const toggleComplete = (id: string) =>
-    setCompleted((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggleComplete = (id: string) => {
+    setCompleted((p) => {
+      const n = new Set(p);
+      const nowComplete = !n.has(id);
+      nowComplete ? n.add(id) : n.delete(id);
+
+      // Persist to DB
+      const ev = calEvents.find((e) => e.taskId === id);
+      if (ev?.dbId) {
+        updateReceptacleEvent(ev.dbId, { completed: nowComplete });
+      }
+
+      return n;
+    });
+  };
 
   const syncToGcal = async () => {
     if (!profileId) return;
     setSyncing(true);
     for (const ev of calEvents.filter((e) => !e.synced)) {
       await pushToGoogleCalendar(profileId, ev.text, ev.date, `Scheduled at ${fmtMinutes(ev.topMinutes)} · ${ev.minutes}min`);
+      if (ev.dbId) {
+        await updateReceptacleEvent(ev.dbId, { synced: true });
+      }
       setCalEvents((p) => p.map((e) => e.taskId === ev.taskId ? { ...e, synced: true } : e));
     }
     setSyncing(false);

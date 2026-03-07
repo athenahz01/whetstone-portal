@@ -441,3 +441,88 @@ export async function fetchHonors(studentId: number): Promise<Honor[]> {
     recognition: h.recognition || [],
   }));
 }
+// ── Receptacle Events ─────────────────────────────────────────────────────
+
+export interface ReceptacleEvent {
+  id: number;
+  student_id: number;
+  task_text: string;
+  minutes: number;
+  date: string;
+  top_minutes: number;
+  quadrant: string | null;
+  synced: boolean;
+  completed: boolean;
+}
+
+export async function fetchReceptacleEvents(studentId: number): Promise<ReceptacleEvent[]> {
+  const { data, error } = await supabase
+    .from("receptacle_events")
+    .select("*")
+    .eq("student_id", studentId)
+    .order("date", { ascending: true });
+
+  if (error || !data) {
+    console.error("Error fetching receptacle events:", error);
+    return [];
+  }
+  return data as ReceptacleEvent[];
+}
+
+export async function addReceptacleEvent(studentId: number, data: {
+  task_text: string;
+  minutes: number;
+  date: string;
+  top_minutes: number;
+  quadrant?: string;
+}): Promise<ReceptacleEvent | null> {
+  const { data: result, error } = await supabase
+    .from("receptacle_events")
+    .insert({
+      student_id: studentId,
+      task_text: data.task_text,
+      minutes: data.minutes,
+      date: data.date,
+      top_minutes: data.top_minutes,
+      quadrant: data.quadrant || null,
+      synced: false,
+      completed: false,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error adding receptacle event:", error);
+    return null;
+  }
+  return result as ReceptacleEvent;
+}
+
+export async function updateReceptacleEvent(id: number, data: {
+  date?: string;
+  top_minutes?: number;
+  synced?: boolean;
+  completed?: boolean;
+}): Promise<boolean> {
+  const { error } = await supabase
+    .from("receptacle_events")
+    .update(data)
+    .eq("id", id);
+  if (error) {
+    console.error("Error updating receptacle event:", error);
+    return false;
+  }
+  return true;
+}
+
+export async function deleteReceptacleEvent(id: number): Promise<boolean> {
+  const { error } = await supabase
+    .from("receptacle_events")
+    .delete()
+    .eq("id", id);
+  if (error) {
+    console.error("Error deleting receptacle event:", error);
+    return false;
+  }
+  return true;
+}
