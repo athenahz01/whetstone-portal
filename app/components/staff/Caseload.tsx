@@ -130,9 +130,7 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh, isA
                 </button>
               ))}
             </div>
-            {isAdmin && (
-              <Button primary onClick={() => { setShowModal(true); setInviteResult(null); setInviteError(null); }}>+ Add Student</Button>
-            )}
+            <Button primary onClick={() => { setShowModal(true); setInviteResult(null); setInviteError(null); }}>+ Add Student</Button>
           </div>
         }
       />
