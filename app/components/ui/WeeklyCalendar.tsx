@@ -42,7 +42,7 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
   const baseDate = startDate || today;
 
   const viewStart = new Date(baseDate);
-  viewStart.setDate(viewStart.getDate() - viewStart.getDay() + weekOffset * 14);
+  viewStart.setDate(viewStart.getDate() + weekOffset * 14);
 
   const days = Array.from({ length: 14 }, (_, i) => {
     const d = new Date(viewStart);
