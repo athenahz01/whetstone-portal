@@ -9,7 +9,7 @@ import { PageHeader } from "../ui/PageHeader";
 import { Modal } from "../ui/Modal";
 import { FormField } from "../ui/FormField";
 import { getCategoryColor, getStatusColor } from "../../lib/colors";
-import { updateDeadline, addDeadline, deleteDeadline } from "../../lib/queries";
+import { updateDeadline, addDeadline, deleteDeadline, updateStudent, deleteStudent } from "../../lib/queries";
 import { useState } from "react";
 
 interface StudentDetailProps {
@@ -88,6 +88,11 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // Student edit/delete state
+  const [editingStudent, setEditingStudent] = useState(false);
+  const [confirmDeleteStudent, setConfirmDeleteStudent] = useState(false);
+  const [deletingStudent, setDeletingStudent] = useState(false);
+
   const loginDays = daysSinceLogin(s.lastLogin);
   const loginLabel = formatLastLogin(s.lastLogin);
   const loginColor =
@@ -153,12 +158,60 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
     setEditingDeadline(null);
   };
 
+  // ── Edit student info ───────────────────────────────────────────────────
+  const handleSaveStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    const f = new FormData(e.target as HTMLFormElement);
+    const success = await updateStudent(s.id, {
+      name: f.get("name") as string,
+      grade: Number(f.get("grade")),
+      school: f.get("school") as string,
+      gradYear: Number(f.get("gradYear")),
+      gpa: f.get("gpa") ? Number(f.get("gpa")) : undefined,
+      sat: f.get("sat") ? Number(f.get("sat")) : null,
+      status: f.get("status") as string,
+      engagement: f.get("engagement") ? Number(f.get("engagement")) : undefined,
+    });
+    if (success && onRefresh) await onRefresh();
+    setSaving(false);
+    setEditingStudent(false);
+  };
+
+  // ── Delete student ──────────────────────────────────────────────────────
+  const handleDeleteStudent = async () => {
+    setDeletingStudent(true);
+    const success = await deleteStudent(s.id);
+    if (success) {
+      onBack();
+      if (onRefresh) await onRefresh();
+    }
+    setDeletingStudent(false);
+    setConfirmDeleteStudent(false);
+  };
+
   return (
     <div>
       <PageHeader
         title={s.name}
         sub={`Grade ${s.grade} · ${s.school} · Class of ${s.gradYear}${s.email ? ` · ${s.email}` : ""}`}
-        right={<Button onClick={onBack}>← Back</Button>}
+        right={
+          <div className="flex gap-2">
+            <button
+              onClick={() => setEditingStudent(true)}
+              style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #cbd5e1", background: "#fff", color: "#334155", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+            >
+              ✏️ Edit
+            </button>
+            <button
+              onClick={() => setConfirmDeleteStudent(true)}
+              style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #fecaca", background: "#fff", color: "#ef4444", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+            >
+              🗑 Delete
+            </button>
+            <Button onClick={onBack}>← Back</Button>
+          </div>
+        }
       />
       <div className="p-6 px-8">
         {/* ── Metric Cards ─────────────────────────────────────────────── */}
@@ -411,7 +464,7 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
         </Modal>
       )}
 
-      {/* ── Delete Confirmation ───────────────────────────────────────────── */}
+      {/* ── Delete Deadline Confirmation ─────────────────────────────────── */}
       {confirmDeleteId !== null && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)" }}>
           <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4">
@@ -426,6 +479,74 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
                 style={{ background: "#ef4444", border: "none", cursor: "pointer" }}
               >
                 {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Edit Student Modal ─────────────────────────────────────────────── */}
+      {editingStudent && (
+        <Modal title="Edit Student" onClose={() => setEditingStudent(false)}>
+          <form onSubmit={handleSaveStudent}>
+            <FormField label="Full Name">
+              <input required name="name" defaultValue={s.name} style={inputStyle} />
+            </FormField>
+            <FormField label="School">
+              <input required name="school" defaultValue={s.school} style={inputStyle} />
+            </FormField>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Grade">
+                <input required name="grade" type="number" min="9" max="12" defaultValue={s.grade} style={inputStyle} />
+              </FormField>
+              <FormField label="Graduation Year">
+                <input required name="gradYear" type="number" defaultValue={s.gradYear} style={inputStyle} />
+              </FormField>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="GPA">
+                <input name="gpa" type="number" step="0.01" min="0" max="5" defaultValue={s.gpa ?? ""} placeholder="e.g. 3.85" style={inputStyle} />
+              </FormField>
+              <FormField label="SAT">
+                <input name="sat" type="number" min="400" max="1600" defaultValue={s.sat ?? ""} placeholder="e.g. 1480" style={inputStyle} />
+              </FormField>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Status">
+                <select name="status" defaultValue={s.status} style={inputStyle}>
+                  <option value="on-track">On Track</option>
+                  <option value="needs-attention">Needs Attention</option>
+                </select>
+              </FormField>
+              <FormField label="Engagement %">
+                <input name="engagement" type="number" min="0" max="100" defaultValue={s.engagement} style={inputStyle} />
+              </FormField>
+            </div>
+            <div className="flex justify-end gap-2 mt-3">
+              <Button onClick={() => setEditingStudent(false)}>Cancel</Button>
+              <Button primary type="submit">{saving ? "Saving..." : "Save Changes"}</Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ── Delete Student Confirmation ────────────────────────────────────── */}
+      {confirmDeleteStudent && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)" }}>
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-bold text-gray-900 mb-2">Delete {s.name}?</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              This will permanently remove this student and all their data (deadlines, schools, sessions, etc.). This cannot be undone.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <Button onClick={() => setConfirmDeleteStudent(false)}>Cancel</Button>
+              <button
+                onClick={handleDeleteStudent}
+                disabled={deletingStudent}
+                className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors"
+                style={{ background: "#ef4444", border: "none", cursor: "pointer" }}
+              >
+                {deletingStudent ? "Deleting..." : "Delete Student"}
               </button>
             </div>
           </div>
