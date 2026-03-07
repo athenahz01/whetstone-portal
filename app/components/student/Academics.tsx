@@ -8,7 +8,8 @@ import { MetricCard } from "../ui/MetricCard";
 import { PageHeader } from "../ui/PageHeader";
 import { Modal } from "../ui/Modal";
 import { FormField } from "../ui/FormField";
-import { useState } from "react";
+import { supabase } from "../../lib/supabase";
+import { useState, useEffect } from "react";
 
 interface AcademicsProps {
   student: Student;
@@ -17,13 +18,65 @@ interface AcademicsProps {
   readOnly?: boolean;
 }
 
+interface TranscriptFile {
+  name: string;
+  url: string;
+  uploaded_at: string;
+}
+
 export function Academics({ student, courses, setCourses, readOnly = false }: AcademicsProps) {
   const [showModal, setShowModal] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [transcripts, setTranscripts] = useState<TranscriptFile[]>([]);
 
   const inputStyle: React.CSSProperties = {
     width: "100%", padding: "10px 14px", background: "#fff",
     border: "1px solid #cbd5e1", borderRadius: 8, color: "#0f172a",
     fontSize: 14, outline: "none", boxSizing: "border-box",
+  };
+
+  // Load existing transcripts
+  useEffect(() => {
+    loadTranscripts();
+  }, [student.id]);
+
+  const loadTranscripts = async () => {
+    const { data, error } = await supabase.storage
+      .from("transcripts")
+      .list(`student-${student.id}/`, { limit: 20, sortBy: { column: "created_at", order: "desc" } });
+
+    if (!error && data) {
+      const files: TranscriptFile[] = data
+        .filter((f) => f.name !== ".emptyFolderPlaceholder")
+        .map((f) => ({
+          name: f.name,
+          url: supabase.storage.from("transcripts").getPublicUrl(`student-${student.id}/${f.name}`).data.publicUrl,
+          uploaded_at: f.created_at || "",
+        }));
+      setTranscripts(files);
+    }
+  };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const fileName = `${Date.now()}-${file.name}`;
+    const path = `student-${student.id}/${fileName}`;
+
+    const { error } = await supabase.storage
+      .from("transcripts")
+      .upload(path, file);
+
+    if (error) {
+      console.error("Upload error:", error.message);
+      alert("Failed to upload transcript. Make sure the 'transcripts' storage bucket exists in Supabase.");
+    } else {
+      await loadTranscripts();
+    }
+    setUploading(false);
+    e.target.value = "";
   };
 
   return (
@@ -36,44 +89,134 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
             <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "#eff6ff", color: "#1d4ed8" }}>View Only</span>
           ) : (
             <div className="flex gap-2">
-              <Button>Transcript</Button>
               <Button primary onClick={() => setShowModal(true)}>+ Add Course</Button>
             </div>
           )
         }
       />
       <div className="p-6 px-8">
-        <div className="grid grid-cols-3 gap-3.5 mb-5">
+        {/* GPA Metrics — no class rank or AP courses */}
+        <div className="grid grid-cols-2 gap-3.5 mb-5">
           <MetricCard label="GPA (UW)" value={student.gpaUnweighted || student.gpa || "—"} color="#16a34a" />
-          <MetricCard label="GPA (W)" value={student.gpaUnweighted || student.gpa || "—"} color="#3b82f6" />
-          <MetricCard label="Class Rank" value="Top 5%" color="#3b82f6" />
-          <MetricCard label="AP Courses" value={courses.length} color="#7c3aed" />
+          <MetricCard label="GPA (W)" value={student.gpaWeighted || student.gpa || "—"} color="#3b82f6" />
         </div>
+
+        {/* Coursework Table */}
         <Card noPadding style={{ overflow: "hidden" }}>
           <div className="px-6 py-3 border-b border-line flex justify-between items-center" style={{ background: "#f8f9fb" }}>
             <span className="text-base font-bold text-heading">{student.grade}th Grade Coursework</span>
             <Tag color="#16a34a">Current</Tag>
           </div>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
-                {["Course", "Level", "Sem 1", "Sem 2"].map((h) => (
-                  <th key={h} style={{ padding: "10px 24px", textAlign: h.includes("Sem") ? "center" : "left", fontSize: 11, color: "#64748b", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {courses.map((c) => (
-                <tr key={c.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
-                  <td style={{ padding: "12px 24px", fontSize: 14, fontWeight: 500, color: "#0f172a" }}>{c.name}</td>
-                  <td style={{ padding: "12px 24px", fontSize: 13, color: "#64748b" }}>{c.lv}</td>
-                  <td style={{ padding: "12px 24px", textAlign: "center", fontSize: 14, color: "#16a34a", fontWeight: 700 }}>{c.s1}</td>
-                  <td style={{ padding: "12px 24px", textAlign: "center", fontSize: 13, color: "#94a3b8" }}>{c.s2}</td>
+          {courses.length === 0 ? (
+            <p className="text-sm text-sub py-6 text-center">
+              No courses added yet.{!readOnly && " Add courses manually or upload a transcript below."}
+            </p>
+          ) : (
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+                  {["Course", "Level", "Sem 1", "Sem 2"].map((h) => (
+                    <th key={h} style={{ padding: "10px 24px", textAlign: h.includes("Sem") ? "center" : "left", fontSize: 11, color: "#64748b", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {courses.map((c) => (
+                  <tr key={c.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                    <td style={{ padding: "12px 24px", fontSize: 14, fontWeight: 500, color: "#0f172a" }}>{c.name}</td>
+                    <td style={{ padding: "12px 24px", fontSize: 13, color: "#64748b" }}>{c.lv}</td>
+                    <td style={{ padding: "12px 24px", textAlign: "center", fontSize: 14, color: "#16a34a", fontWeight: 700 }}>{c.s1}</td>
+                    <td style={{ padding: "12px 24px", textAlign: "center", fontSize: 13, color: "#94a3b8" }}>{c.s2}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </Card>
+
+        {/* Transcript Upload Section */}
+        {!readOnly && (
+          <Card className="mt-3.5">
+            <div className="flex justify-between items-center mb-3">
+              <div>
+                <h3 className="m-0 text-lg font-bold text-heading">Transcript</h3>
+                <p className="m-0 text-xs text-sub mt-0.5">Upload your transcript instead of entering courses manually.</p>
+              </div>
+              <label
+                className="px-4 py-2 rounded-lg text-sm font-semibold cursor-pointer"
+                style={{ background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe" }}
+              >
+                {uploading ? "Uploading..." : "📎 Upload File"}
+                <input
+                  type="file"
+                  accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
+                  onChange={handleUpload}
+                  disabled={uploading}
+                  style={{ display: "none" }}
+                />
+              </label>
+            </div>
+
+            {transcripts.length === 0 ? (
+              <div
+                className="rounded-lg py-8 text-center"
+                style={{ background: "#f8f9fb", border: "2px dashed #e2e8f0" }}
+              >
+                <p className="text-sm text-sub m-0">No transcript uploaded yet.</p>
+                <p className="text-xs text-sub m-0 mt-1">Accepted formats: PDF, PNG, JPG, DOC, DOCX</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {transcripts.map((t) => (
+                  <a
+                    key={t.name}
+                    href={t.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-3 rounded-lg no-underline"
+                    style={{ background: "#f8f9fb", border: "1px solid #e2e8f0" }}
+                  >
+                    <span className="text-lg">📄</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-heading truncate">{t.name.replace(/^\d+-/, "")}</div>
+                      {t.uploaded_at && (
+                        <div className="text-xs text-sub">
+                          Uploaded {new Date(t.uploaded_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-xs font-semibold" style={{ color: "#3b82f6" }}>View ↗</span>
+                  </a>
+                ))}
+              </div>
+            )}
+          </Card>
+        )}
+
+        {/* Read-only transcript display */}
+        {readOnly && transcripts.length > 0 && (
+          <Card className="mt-3.5">
+            <h3 className="m-0 mb-3 text-lg font-bold text-heading">Transcript</h3>
+            <div className="flex flex-col gap-2">
+              {transcripts.map((t) => (
+                <a
+                  key={t.name}
+                  href={t.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3 rounded-lg no-underline"
+                  style={{ background: "#f8f9fb", border: "1px solid #e2e8f0" }}
+                >
+                  <span className="text-lg">📄</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-heading truncate">{t.name.replace(/^\d+-/, "")}</div>
+                  </div>
+                  <span className="text-xs font-semibold" style={{ color: "#3b82f6" }}>View ↗</span>
+                </a>
+              ))}
+            </div>
+          </Card>
+        )}
       </div>
 
       {showModal && (
