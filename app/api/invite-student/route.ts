@@ -46,15 +46,50 @@ export async function POST(req: Request) {
 
     // If we have both a new auth user and a student record, link them via the profiles table
     if (data?.user?.id && studentId) {
-      // Update the profile to link to the student record
-      const { error: profileError } = await supabaseAdmin
-        .from("profiles")
-        .update({ student_id: studentId, role: "student", display_name: name })
-        .eq("id", data.user.id);
+      const userId = data.user.id;
 
-      if (profileError) {
-        console.error("[invite-student] profile update error:", profileError.message);
-        // Non-fatal — the trigger may have already handled this
+      // The handle_new_user trigger creates the profile row async.
+      // We need to wait for it, then update with student_id.
+      let linked = false;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        // Wait a bit for the trigger to complete
+        await new Promise((r) => setTimeout(r, 500));
+
+        const { data: existing } = await supabaseAdmin
+          .from("profiles")
+          .select("id")
+          .eq("id", userId)
+          .single();
+
+        if (existing) {
+          // Profile exists — update it with student_id
+          const { error: updateErr } = await supabaseAdmin
+            .from("profiles")
+            .update({ student_id: studentId, role: "student", display_name: name })
+            .eq("id", userId);
+
+          if (!updateErr) {
+            linked = true;
+            break;
+          }
+          console.error("[invite-student] profile update error:", updateErr.message);
+        }
+      }
+
+      // If trigger never created the profile, insert it directly
+      if (!linked) {
+        const { error: upsertErr } = await supabaseAdmin
+          .from("profiles")
+          .upsert({
+            id: userId,
+            student_id: studentId,
+            role: "student",
+            display_name: name,
+          });
+
+        if (upsertErr) {
+          console.error("[invite-student] profile upsert fallback error:", upsertErr.message);
+        }
       }
     }
 
