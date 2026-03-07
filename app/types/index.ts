@@ -1,4 +1,5 @@
 export interface School {
+  id?: number;
   name: string;
   type: "reach" | "match" | "safety";
   status: string;
@@ -66,6 +67,7 @@ export interface Goal {
 }
 
 export interface Session {
+  id?: number;
   date: string;
   notes: string;
   action: string;

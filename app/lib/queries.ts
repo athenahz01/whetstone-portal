@@ -41,6 +41,7 @@ export async function fetchAllStudents(): Promise<Student[]> {
         lastLogin: (!s.last_login || s.last_login === "Never") ? null : s.last_login,
         engagement: s.engagement,
         schools: (schoolsRes.data || []).map((sc) => ({
+          id: sc.id,
           name: sc.name,
           type: sc.type as "reach" | "match" | "safety",
           status: sc.status,
@@ -101,6 +102,7 @@ export async function fetchAllStudents(): Promise<Student[]> {
           done: g.done,
         })),
         sess: (sessRes.data || []).map((ss) => ({
+          id: ss.id,
           date: ss.date,
           notes: ss.notes,
           action: ss.action,
@@ -182,9 +184,22 @@ export async function updateStudent(
 }
 
 export async function deleteStudent(id: number): Promise<boolean> {
+  // Delete all child records first (foreign key constraints)
+  await supabase.from("schools").delete().eq("student_id", id);
+  await supabase.from("deadlines").delete().eq("student_id", id);
+  await supabase.from("tasks").delete().eq("student_id", id);
+  await supabase.from("courses").delete().eq("student_id", id);
+  await supabase.from("tests").delete().eq("student_id", id);
+  await supabase.from("activities").delete().eq("student_id", id);
+  await supabase.from("goals").delete().eq("student_id", id);
+  await supabase.from("sessions").delete().eq("student_id", id);
+  await supabase.from("honors").delete().eq("student_id", id);
+  // counselor_event_students links
+  await supabase.from("counselor_event_students").delete().eq("student_id", id);
+
   const { error } = await supabase.from("students").delete().eq("id", id);
   if (error) {
-    console.error("Error deleting student:", error);
+    console.error("Error deleting student:", error.message, error.details, error.hint);
     return false;
   }
   return true;
@@ -266,6 +281,46 @@ export async function addSession(studentId: number, data: {
     student_id: studentId, date: data.date, notes: data.notes, action: data.action,
   });
   if (error) { console.error("Error adding session:", error); return false; }
+  return true;
+}
+
+export async function updateSession(sessionId: number, data: {
+  date?: string; notes?: string; action?: string;
+}): Promise<boolean> {
+  const { error } = await supabase.from("sessions").update(data).eq("id", sessionId);
+  if (error) { console.error("Error updating session:", error); return false; }
+  return true;
+}
+
+export async function deleteSession(sessionId: number): Promise<boolean> {
+  const { error } = await supabase.from("sessions").delete().eq("id", sessionId);
+  if (error) { console.error("Error deleting session:", error); return false; }
+  return true;
+}
+
+// ── Schools ───────────────────────────────────────────────────────────────
+
+export async function addSchool(studentId: number, data: {
+  name: string; type: string; status: string; deadline: string; essay: string;
+}): Promise<boolean> {
+  const { error } = await supabase.from("schools").insert({
+    student_id: studentId, name: data.name, type: data.type, status: data.status, deadline: data.deadline, essay: data.essay,
+  });
+  if (error) { console.error("Error adding school:", error); return false; }
+  return true;
+}
+
+export async function updateSchool(schoolId: number, data: {
+  name?: string; type?: string; status?: string; deadline?: string; essay?: string;
+}): Promise<boolean> {
+  const { error } = await supabase.from("schools").update(data).eq("id", schoolId);
+  if (error) { console.error("Error updating school:", error); return false; }
+  return true;
+}
+
+export async function deleteSchool(schoolId: number): Promise<boolean> {
+  const { error } = await supabase.from("schools").delete().eq("id", schoolId);
+  if (error) { console.error("Error deleting school:", error); return false; }
   return true;
 }
 

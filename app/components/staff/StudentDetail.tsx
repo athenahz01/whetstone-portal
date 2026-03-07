@@ -1,6 +1,6 @@
 "use client";
 
-import { Student, Deadline } from "../../types";
+import { Student, Deadline, School, Session } from "../../types";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Tag } from "../ui/Tag";
@@ -9,7 +9,7 @@ import { PageHeader } from "../ui/PageHeader";
 import { Modal } from "../ui/Modal";
 import { FormField } from "../ui/FormField";
 import { getCategoryColor, getStatusColor } from "../../lib/colors";
-import { updateDeadline, addDeadline, deleteDeadline, updateStudent, deleteStudent } from "../../lib/queries";
+import { updateDeadline, addDeadline, deleteDeadline, updateStudent, deleteStudent, addSchool, updateSchool, deleteSchool, addSession, updateSession, deleteSession } from "../../lib/queries";
 import { useState } from "react";
 
 interface StudentDetailProps {
@@ -92,6 +92,16 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
   const [editingStudent, setEditingStudent] = useState(false);
   const [confirmDeleteStudent, setConfirmDeleteStudent] = useState(false);
   const [deletingStudent, setDeletingStudent] = useState(false);
+
+  // School state
+  const [addingSchool, setAddingSchool] = useState(false);
+  const [editingSchool, setEditingSchool] = useState<School | null>(null);
+  const [confirmDeleteSchoolId, setConfirmDeleteSchoolId] = useState<number | null>(null);
+
+  // Session state
+  const [addingSession, setAddingSession] = useState(false);
+  const [editingSession, setEditingSession] = useState<Session | null>(null);
+  const [confirmDeleteSessionId, setConfirmDeleteSessionId] = useState<number | null>(null);
 
   const loginDays = daysSinceLogin(s.lastLogin);
   const loginLabel = formatLastLogin(s.lastLogin);
@@ -188,6 +198,88 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
     }
     setDeletingStudent(false);
     setConfirmDeleteStudent(false);
+  };
+
+  // ── School handlers ───────────────────────────────────────────────────
+  const handleAddSchool = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    const f = new FormData(e.target as HTMLFormElement);
+    const success = await addSchool(s.id, {
+      name: f.get("name") as string,
+      type: f.get("type") as string,
+      status: f.get("status") as string,
+      deadline: f.get("deadline") as string,
+      essay: f.get("essay") as string,
+    });
+    if (success && onRefresh) await onRefresh();
+    setSaving(false);
+    setAddingSchool(false);
+  };
+
+  const handleSaveSchool = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSchool) return;
+    setSaving(true);
+    const f = new FormData(e.target as HTMLFormElement);
+    const success = await updateSchool(editingSchool.id!, {
+      name: f.get("name") as string,
+      type: f.get("type") as string,
+      status: f.get("status") as string,
+      deadline: f.get("deadline") as string,
+      essay: f.get("essay") as string,
+    });
+    if (success && onRefresh) await onRefresh();
+    setSaving(false);
+    setEditingSchool(null);
+  };
+
+  const handleDeleteSchool = async (id: number) => {
+    setDeleting(true);
+    const success = await deleteSchool(id);
+    if (success && onRefresh) await onRefresh();
+    setDeleting(false);
+    setConfirmDeleteSchoolId(null);
+    setEditingSchool(null);
+  };
+
+  // ── Session handlers ──────────────────────────────────────────────────
+  const handleAddSession = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    const f = new FormData(e.target as HTMLFormElement);
+    const success = await addSession(s.id, {
+      date: f.get("date") as string,
+      notes: f.get("notes") as string,
+      action: f.get("action") as string,
+    });
+    if (success && onRefresh) await onRefresh();
+    setSaving(false);
+    setAddingSession(false);
+  };
+
+  const handleSaveSession = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSession) return;
+    setSaving(true);
+    const f = new FormData(e.target as HTMLFormElement);
+    const success = await updateSession(editingSession.id!, {
+      date: f.get("date") as string,
+      notes: f.get("notes") as string,
+      action: f.get("action") as string,
+    });
+    if (success && onRefresh) await onRefresh();
+    setSaving(false);
+    setEditingSession(null);
+  };
+
+  const handleDeleteSession = async (id: number) => {
+    setDeleting(true);
+    const success = await deleteSession(id);
+    if (success && onRefresh) await onRefresh();
+    setDeleting(false);
+    setConfirmDeleteSessionId(null);
+    setEditingSession(null);
   };
 
   return (
@@ -327,15 +419,32 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
 
           {/* Schools */}
           <Card>
-            <h3 className="m-0 mb-3.5 text-lg font-bold text-heading">Schools</h3>
+            <div className="flex justify-between items-center mb-3.5">
+              <h3 className="m-0 text-lg font-bold text-heading">Schools</h3>
+              <button
+                onClick={() => setAddingSchool(true)}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer"
+                style={{ background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe" }}
+              >
+                + Add School
+              </button>
+            </div>
             {s.schools.length === 0 && (
               <p className="text-sm text-sub py-4 text-center">No schools added yet</p>
             )}
-            {s.schools.map((sc, i) => (
-              <div key={i} className="p-2.5 px-3 rounded-lg mb-1.5" style={{ background: "#eef0f4", borderLeft: `3px solid ${tc[sc.type]}` }}>
+            {s.schools.map((sc) => (
+              <div
+                key={sc.id}
+                onClick={() => setEditingSchool(sc)}
+                className="p-2.5 px-3 rounded-lg mb-1.5 cursor-pointer hover:opacity-80 transition-opacity"
+                style={{ background: "#eef0f4", borderLeft: `3px solid ${tc[sc.type]}` }}
+              >
                 <div className="flex justify-between">
                   <span className="text-sm font-medium text-heading">{sc.name}</span>
-                  <Tag color={tc[sc.type]}>{sc.type}</Tag>
+                  <div className="flex items-center gap-1.5">
+                    <Tag color={tc[sc.type]}>{sc.type}</Tag>
+                    <span className="text-[10px] text-sub">✏️</span>
+                  </div>
                 </div>
                 <div className="text-xs text-sub mt-0.5">{sc.status} · Essay: {sc.essay}</div>
               </div>
@@ -345,13 +454,30 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
 
         {/* Sessions */}
         <Card className="mt-3.5">
-          <h3 className="m-0 mb-3.5 text-lg font-bold text-heading">Sessions</h3>
+          <div className="flex justify-between items-center mb-3.5">
+            <h3 className="m-0 text-lg font-bold text-heading">Sessions</h3>
+            <button
+              onClick={() => setAddingSession(true)}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer"
+              style={{ background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe" }}
+            >
+              + Add Session
+            </button>
+          </div>
           {s.sess.length === 0 && (
             <p className="text-sm text-sub py-4 text-center">No sessions yet</p>
           )}
-          {s.sess.map((ss, i) => (
-            <div key={i} className="p-3 px-4 rounded-lg mb-1.5" style={{ background: "#eef0f4", borderLeft: "3px solid #3b82f6" }}>
-              <div className="text-sm font-bold mb-1.5" style={{ color: "#1d4ed8" }}>{ss.date}</div>
+          {s.sess.map((ss) => (
+            <div
+              key={ss.id}
+              onClick={() => setEditingSession(ss)}
+              className="p-3 px-4 rounded-lg mb-1.5 cursor-pointer hover:opacity-80 transition-opacity"
+              style={{ background: "#eef0f4", borderLeft: "3px solid #3b82f6" }}
+            >
+              <div className="flex justify-between mb-1.5">
+                <div className="text-sm font-bold" style={{ color: "#1d4ed8" }}>{ss.date}</div>
+                <span className="text-[10px] text-sub">✏️</span>
+              </div>
               <p className="m-0 mb-2 text-sm text-body leading-relaxed">{ss.notes}</p>
               <span className="text-xs text-sub">Action: </span>
               <span className="text-sm font-semibold" style={{ color: "#1d4ed8" }}>{ss.action}</span>
@@ -547,6 +673,206 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
                 style={{ background: "#ef4444", border: "none", cursor: "pointer" }}
               >
                 {deletingStudent ? "Deleting..." : "Delete Student"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Add School Modal ───────────────────────────────────────────────── */}
+      {addingSchool && (
+        <Modal title="Add School" onClose={() => setAddingSchool(false)}>
+          <form onSubmit={handleAddSchool}>
+            <FormField label="School Name">
+              <input required name="name" placeholder="e.g. Stanford University" style={inputStyle} />
+            </FormField>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Type">
+                <select required name="type" style={inputStyle} defaultValue="reach">
+                  <option value="reach">Reach</option>
+                  <option value="match">Match</option>
+                  <option value="safety">Safety</option>
+                </select>
+              </FormField>
+              <FormField label="Application Status">
+                <select name="status" style={inputStyle} defaultValue="Not started">
+                  <option value="Not started">Not started</option>
+                  <option value="In progress">In progress</option>
+                  <option value="Submitted">Submitted</option>
+                  <option value="Accepted">Accepted</option>
+                  <option value="Rejected">Rejected</option>
+                  <option value="Waitlisted">Waitlisted</option>
+                  <option value="Deferred">Deferred</option>
+                </select>
+              </FormField>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Deadline">
+                <input name="deadline" type="date" style={inputStyle} />
+              </FormField>
+              <FormField label="Essay Status">
+                <select name="essay" style={inputStyle} defaultValue="Not started">
+                  <option value="Not started">Not started</option>
+                  <option value="Drafting">Drafting</option>
+                  <option value="Reviewing">Reviewing</option>
+                  <option value="Final">Final</option>
+                  <option value="Submitted">Submitted</option>
+                </select>
+              </FormField>
+            </div>
+            <div className="flex justify-end gap-2 mt-3">
+              <Button onClick={() => setAddingSchool(false)}>Cancel</Button>
+              <Button primary type="submit">{saving ? "Adding..." : "Add School"}</Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ── Edit School Modal ──────────────────────────────────────────────── */}
+      {editingSchool && (
+        <Modal title="Edit School" onClose={() => setEditingSchool(null)}>
+          <form onSubmit={handleSaveSchool}>
+            <FormField label="School Name">
+              <input required name="name" defaultValue={editingSchool.name} style={inputStyle} />
+            </FormField>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Type">
+                <select required name="type" defaultValue={editingSchool.type} style={inputStyle}>
+                  <option value="reach">Reach</option>
+                  <option value="match">Match</option>
+                  <option value="safety">Safety</option>
+                </select>
+              </FormField>
+              <FormField label="Application Status">
+                <select name="status" defaultValue={editingSchool.status} style={inputStyle}>
+                  <option value="Not started">Not started</option>
+                  <option value="In progress">In progress</option>
+                  <option value="Submitted">Submitted</option>
+                  <option value="Accepted">Accepted</option>
+                  <option value="Rejected">Rejected</option>
+                  <option value="Waitlisted">Waitlisted</option>
+                  <option value="Deferred">Deferred</option>
+                </select>
+              </FormField>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Deadline">
+                <input name="deadline" type="date" defaultValue={editingSchool.deadline} style={inputStyle} />
+              </FormField>
+              <FormField label="Essay Status">
+                <select name="essay" defaultValue={editingSchool.essay} style={inputStyle}>
+                  <option value="Not started">Not started</option>
+                  <option value="Drafting">Drafting</option>
+                  <option value="Reviewing">Reviewing</option>
+                  <option value="Final">Final</option>
+                  <option value="Submitted">Submitted</option>
+                </select>
+              </FormField>
+            </div>
+            <div className="flex justify-between mt-3">
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteSchoolId(editingSchool.id!)}
+                style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: "#fef2f2", color: "#ef4444", border: "1px solid #fecaca", cursor: "pointer" }}
+              >
+                🗑 Delete
+              </button>
+              <div className="flex gap-2">
+                <Button onClick={() => setEditingSchool(null)}>Cancel</Button>
+                <Button primary type="submit">{saving ? "Saving..." : "Save Changes"}</Button>
+              </div>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ── Delete School Confirmation ─────────────────────────────────────── */}
+      {confirmDeleteSchoolId !== null && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)" }}>
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-bold text-gray-900 mb-2">Delete School?</h3>
+            <p className="text-sm text-gray-500 mb-4">This action cannot be undone.</p>
+            <div className="flex gap-2 justify-end">
+              <Button onClick={() => setConfirmDeleteSchoolId(null)}>Cancel</Button>
+              <button
+                onClick={() => handleDeleteSchool(confirmDeleteSchoolId)}
+                disabled={deleting}
+                className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
+                style={{ background: "#ef4444", border: "none", cursor: "pointer" }}
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Add Session Modal ──────────────────────────────────────────────── */}
+      {addingSession && (
+        <Modal title="Add Session" onClose={() => setAddingSession(false)}>
+          <form onSubmit={handleAddSession}>
+            <FormField label="Date">
+              <input required name="date" type="date" style={inputStyle} />
+            </FormField>
+            <FormField label="Notes">
+              <textarea required name="notes" rows={4} placeholder="Session notes..." style={{ ...inputStyle, resize: "vertical" }} />
+            </FormField>
+            <FormField label="Action Items">
+              <input required name="action" placeholder="e.g. Complete Common App essay draft" style={inputStyle} />
+            </FormField>
+            <div className="flex justify-end gap-2 mt-3">
+              <Button onClick={() => setAddingSession(false)}>Cancel</Button>
+              <Button primary type="submit">{saving ? "Adding..." : "Add Session"}</Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ── Edit Session Modal ─────────────────────────────────────────────── */}
+      {editingSession && (
+        <Modal title="Edit Session" onClose={() => setEditingSession(null)}>
+          <form onSubmit={handleSaveSession}>
+            <FormField label="Date">
+              <input required name="date" type="date" defaultValue={editingSession.date} style={inputStyle} />
+            </FormField>
+            <FormField label="Notes">
+              <textarea required name="notes" rows={4} defaultValue={editingSession.notes} style={{ ...inputStyle, resize: "vertical" }} />
+            </FormField>
+            <FormField label="Action Items">
+              <input required name="action" defaultValue={editingSession.action} style={inputStyle} />
+            </FormField>
+            <div className="flex justify-between mt-3">
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteSessionId(editingSession.id!)}
+                style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: "#fef2f2", color: "#ef4444", border: "1px solid #fecaca", cursor: "pointer" }}
+              >
+                🗑 Delete
+              </button>
+              <div className="flex gap-2">
+                <Button onClick={() => setEditingSession(null)}>Cancel</Button>
+                <Button primary type="submit">{saving ? "Saving..." : "Save Changes"}</Button>
+              </div>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ── Delete Session Confirmation ────────────────────────────────────── */}
+      {confirmDeleteSessionId !== null && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)" }}>
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-bold text-gray-900 mb-2">Delete Session?</h3>
+            <p className="text-sm text-gray-500 mb-4">This action cannot be undone.</p>
+            <div className="flex gap-2 justify-end">
+              <Button onClick={() => setConfirmDeleteSessionId(null)}>Cancel</Button>
+              <button
+                onClick={() => handleDeleteSession(confirmDeleteSessionId)}
+                disabled={deleting}
+                className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
+                style={{ background: "#ef4444", border: "none", cursor: "pointer" }}
+              >
+                {deleting ? "Deleting..." : "Delete"}
               </button>
             </div>
           </div>
