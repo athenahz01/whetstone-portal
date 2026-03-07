@@ -12,7 +12,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [role, setRole] = useState<"student" | "parent" | "strategist">("student");
+  const [role, setRole] = useState<"student" | "parent" | "strategist">("parent");
   const [childEmail, setChildEmail] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -135,10 +135,10 @@ export function LoginPage({ onLogin }: LoginPageProps) {
               <div>
                 <label className="block text-sm font-semibold text-body mb-1.5">I am a...</label>
                 <div className="flex gap-2">
-                  {(["student", "parent", "strategist"] as const).map((r) => (
+                  {(["parent", "strategist"] as const).map((r) => (
                     <button
                       key={r}
-                      onClick={() => { setRole(r); setError(""); }}
+                      onClick={() => { setRole(r as "student" | "parent" | "strategist"); setError(""); }}
                       className="flex-1 py-2.5 rounded-lg cursor-pointer text-sm font-semibold capitalize border"
                       style={{
                         background: role === r ? "#eff6ff" : "#fff",
@@ -146,10 +146,13 @@ export function LoginPage({ onLogin }: LoginPageProps) {
                         color: role === r ? "#1d4ed8" : "#64748b",
                       }}
                     >
-                      {r === "strategist" ? "Strategist" : r}
+                      {r === "strategist" ? "Strategist" : "Parent"}
                     </button>
                   ))}
                 </div>
+                <p className="text-xs mt-2 m-0" style={{ color: "#64748b" }}>
+                  Students: Your strategist will create your account and share login credentials with you.
+                </p>
               </div>
 
               {/* Parent-specific: Child's email */}

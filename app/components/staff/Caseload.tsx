@@ -28,6 +28,7 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh }: C
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [inviteResult, setInviteResult] = useState<InviteResult | null>(null);
+  const [inviteError, setInviteError] = useState<string | null>(null);
   const [copied, setCopied] = useState<"email" | "password" | null>(null);
 
   const sorted = [...students].sort((a, b) =>
@@ -53,9 +54,16 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh }: C
     const school = f.get("school") as string;
     const gradYear = Number(f.get("gradYear"));
 
-    const result = await addStudent({ name, email, grade, gpa: null, school, gradYear });
-    const studentId = (result as any)?.id ?? null;
+    // Step 1: Add student record to database
+    const studentId = await addStudent({ name, email, grade, gpa: null, school, gradYear });
 
+    if (!studentId) {
+      setSaving(false);
+      setInviteError("Failed to create student record. Please try again.");
+      return;
+    }
+
+    // Step 2: Create auth account for the student
     try {
       const res = await fetch("/api/invite-student", {
         method: "POST",
@@ -63,11 +71,21 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh }: C
         body: JSON.stringify({ email, name, studentId }),
       });
       const data = await res.json();
+
+      if (!res.ok) {
+        setInviteError(data.error || "Failed to create student login account.");
+        setSaving(false);
+        setShowModal(false);
+        onRefresh();
+        return;
+      }
+
       if (data.tempPassword) {
         setInviteResult({ email, tempPassword: data.tempPassword, loginUrl: data.loginUrl });
       }
     } catch (err) {
       console.error("Failed to create student account:", err);
+      setInviteError("Network error creating student account. The student record was created but they won't be able to log in yet.");
     }
 
     setSaving(false);
@@ -101,7 +119,7 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh }: C
                 </button>
               ))}
             </div>
-            <Button primary onClick={() => { setShowModal(true); setInviteResult(null); }}>+ Add Student</Button>
+            <Button primary onClick={() => { setShowModal(true); setInviteResult(null); setInviteError(null); }}>+ Add Student</Button>
           </div>
         }
       />
@@ -180,6 +198,26 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh }: C
               </button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* Invite Error Banner */}
+      {inviteError && !inviteResult && (
+        <Modal title="Account Creation Issue" onClose={() => setInviteError(null)}>
+          <div style={{ padding: "4px 0" }}>
+            <div className="rounded-lg px-4 py-3 text-sm mb-4" style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626" }}>
+              {inviteError}
+            </div>
+            <p className="text-sm text-sub mb-4">
+              The student record was added to your caseload, but their login account could not be created automatically. You may need to set up their account manually in Supabase, or try again.
+            </p>
+            <button
+              onClick={() => setInviteError(null)}
+              style={{ width: "100%", padding: "10px", borderRadius: 8, border: "none", background: "#0f172a", color: "#fff", fontWeight: 600, fontSize: 14, cursor: "pointer" }}
+            >
+              OK
+            </button>
+          </div>
         </Modal>
       )}
 

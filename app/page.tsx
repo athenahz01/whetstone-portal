@@ -59,21 +59,6 @@ export default function Home() {
     const data = await fetchAllStudents();
     setAllStudents(data);
 
-    if (data.length > 0) {
-      const me = data[0];
-      setGoals(me.goals);
-      setTasks(me.tasks);
-      setCourses(me.courses);
-      setTests(me.tests);
-      setActivities(me.acts);
-
-      // Fetch honors for the linked student
-      if (me.id) {
-        const honorsData = await fetchHonors(me.id);
-        setHonors(honorsData);
-      }
-    }
-
     if (!silent) setLoading(false);
     else setRefreshing(false);
   }, []);
@@ -96,6 +81,28 @@ export default function Home() {
       if (updated) setSelectedStudent(updated);
     }
   }, [allStudents]);
+
+  // Sync student sub-data (goals, tasks, etc.) from the linked student
+  useEffect(() => {
+    if (!profile) return;
+    const isStudentOrParent = profile.role === "student" || profile.role === "parent";
+
+    const linkedStudent = isStudentOrParent && profile.student_id
+      ? allStudents.find((s) => s.id === profile.student_id)
+      : allStudents[0];
+
+    if (linkedStudent) {
+      setGoals(linkedStudent.goals);
+      setTasks(linkedStudent.tasks);
+      setCourses(linkedStudent.courses);
+      setTests(linkedStudent.tests);
+      setActivities(linkedStudent.acts);
+
+      if (linkedStudent.id) {
+        fetchHonors(linkedStudent.id).then(setHonors);
+      }
+    }
+  }, [allStudents, profile]);
 
   // ── Auto-refresh every 60s so last_login stays live ──
   useEffect(() => {
@@ -126,16 +133,22 @@ export default function Home() {
 
   // ── Google Calendar events for student ──
   useEffect(() => {
-    if (gcalConnected && profileId && allStudents.length > 0 && allStudents[0]?.email) {
+    if (!gcalConnected || !profileId || !profile) return;
+    const isStudentOrParent = profile.role === "student" || profile.role === "parent";
+    const linkedStudent = isStudentOrParent && profile.student_id
+      ? allStudents.find((s) => s.id === profile.student_id)
+      : allStudents[0];
+
+    if (linkedStudent?.email) {
       pullFromGoogleCalendar(profileId).then((events) => {
-        const studentEmail = allStudents[0].email?.toLowerCase();
+        const studentEmail = linkedStudent.email?.toLowerCase();
         const forStudent = events.filter((e: any) =>
           e.attendees && e.attendees.includes(studentEmail)
         );
         setStudentGoogleEvents(forStudent);
       });
     }
-  }, [gcalConnected, profileId, allStudents]);
+  }, [gcalConnected, profileId, allStudents, profile]);
 
   const loadProfile = async (userId: string) => {
     const { data } = await supabase
@@ -147,6 +160,13 @@ export default function Home() {
     if (data) {
       setProfile(data as Profile);
       setProfileId(userId);
+
+      // Update last_login timestamp
+      await supabase
+        .from("profiles")
+        .update({ last_login: new Date().toISOString() })
+        .eq("id", userId);
+
       loadData();
 
       const { data: tokenData } = await supabase
@@ -155,6 +175,27 @@ export default function Home() {
         .eq("profile_id", userId)
         .single();
       setGcalConnected(!!tokenData);
+    } else {
+      // Profile doesn't exist yet — the trigger may not have fired.
+      // Wait a moment and retry once (the trigger is async).
+      setTimeout(async () => {
+        const { data: retryData } = await supabase
+          .from("profiles")
+          .select("role, display_name, student_id, timezone")
+          .eq("id", userId)
+          .single();
+
+        if (retryData) {
+          setProfile(retryData as Profile);
+          setProfileId(userId);
+          loadData();
+        } else {
+          // Still no profile — show a fallback
+          setProfile({ role: "student", display_name: "Student", student_id: null, timezone: "America/New_York" });
+          setProfileId(userId);
+          setLoading(false);
+        }
+      }, 1500);
     }
   };
 
@@ -204,13 +245,18 @@ export default function Home() {
   }
 
   const role = profile.role;
-  const me = allStudents[0];
   const isParent = role === "parent";
   const isStudentOrParent = role === "student" || role === "parent";
 
+  // For students & parents, find THEIR linked student record
+  // For strategists, me is not used the same way
+  const me = isStudentOrParent && profile.student_id
+    ? allStudents.find((s) => s.id === profile.student_id) || null
+    : allStudents[0] || null;
+
   const renderMain = () => {
     // Unlinked student or parent
-    if (isStudentOrParent && allStudents.length === 0) {
+    if (isStudentOrParent && !me) {
       return (
         <div className="p-8 text-center">
           <h1 className="text-2xl font-bold text-heading mb-2">Welcome!</h1>
@@ -223,7 +269,7 @@ export default function Home() {
     }
 
     // ── Student & Parent views ──
-    if (isStudentOrParent && view === "dashboard") {
+    if (isStudentOrParent && view === "dashboard" && me) {
       return (
         <StudentDashboard
           student={me}
@@ -236,18 +282,18 @@ export default function Home() {
         />
       );
     }
-    if (isStudentOrParent && view === "roadmap")
+    if (isStudentOrParent && view === "roadmap" && me)
       return (
         <Roadmap
           tasks={tasks}
           setTasks={setTasks}
-          deadlines={me?.dl}
-          studentId={me?.id}
+          deadlines={me.dl}
+          studentId={me.id}
           onRefresh={handleRefresh}
           readOnly={isParent}
         />
       );
-    if (isStudentOrParent && view === "academics") {
+    if (isStudentOrParent && view === "academics" && me) {
       return <Academics student={me} courses={courses} setCourses={setCourses} readOnly={isParent} />;
     }
     if (isStudentOrParent && view === "testing") {
@@ -256,29 +302,29 @@ export default function Home() {
     if (isStudentOrParent && view === "activities") {
       return <Activities activities={activities} setActivities={setActivities} readOnly={isParent} />;
     }
-    if (isStudentOrParent && view === "honors") {
+    if (isStudentOrParent && view === "honors" && me) {
       return (
         <Honors
           honors={honors}
           setHonors={setHonors}
-          studentId={me?.id}
+          studentId={me.id}
           readOnly={isParent}
         />
       );
     }
-    if (isStudentOrParent && view === "schools") {
+    if (isStudentOrParent && view === "schools" && me) {
       return <Schools student={me} readOnly={isParent} />;
     }
-    if (role === "student" && view === "receptacle") {
+    if (role === "student" && view === "receptacle" && me) {
       return (
         <Receptacle
-          studentId={me?.id}
+          studentId={me.id}
           profileId={profileId}
           gcalConnected={gcalConnected}
         />
       );
     }
-    if (role === "student" && view === "prep") {
+    if (role === "student" && view === "prep" && me) {
       return <SessionPrep student={me} />;
     }
 
@@ -363,7 +409,7 @@ export default function Home() {
         studentName={
           role === "strategist"
             ? profile?.display_name || "Strategist"
-            : me?.name
+            : me?.name || profile?.display_name || "Student"
         }
         profileId={profileId}
         gcalConnected={gcalConnected}
