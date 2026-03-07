@@ -1,18 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { PageHeader } from "../ui/PageHeader";
 import { pushToGoogleCalendar } from "../../lib/calendar";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-type Quadrant = "demand" | "fulfillment" | "delusion" | "distraction" | null;
+type Quadrant = "do" | "schedule" | "delegate" | "delete" | null;
+type DoSubType = "quick" | "scheduleDo" | null; // for DO quadrant: <2min vs schedule-and-do
 
 interface Task {
   id: string;
   text: string;
   minutes: number;
   quadrant: Quadrant;
+  doSub: DoSubType;
 }
 
 interface CalendarEvent {
@@ -20,7 +22,7 @@ interface CalendarEvent {
   text: string;
   minutes: number;
   date: string;
-  hour: number;
+  topMinutes: number; // minutes from midnight — allows free positioning
   synced?: boolean;
 }
 
@@ -33,7 +35,15 @@ interface ReceptacleProps {
 // ── Constants ──────────────────────────────────────────────────────────────
 
 const QUADRANT_CONFIG = {
-  fulfillment: {
+  do: {
+    label: "Do",
+    tag: "URGENT · IMPORTANT",
+    bg: "rgba(239,68,68,0.07)",
+    border: "rgba(239,68,68,0.22)",
+    accent: "#ef4444",
+    emoji: "🔥",
+  },
+  schedule: {
     label: "Schedule",
     tag: "IMPORTANT · NOT URGENT",
     bg: "rgba(59,130,246,0.07)",
@@ -41,7 +51,7 @@ const QUADRANT_CONFIG = {
     accent: "#3b82f6",
     emoji: "📅",
   },
-  delusion: {
+  delegate: {
     label: "Delegate",
     tag: "URGENT · NOT IMPORTANT",
     bg: "rgba(245,158,11,0.07)",
@@ -49,15 +59,7 @@ const QUADRANT_CONFIG = {
     accent: "#f59e0b",
     emoji: "🤝",
   },
-  demand: {
-    label: "Do Now",
-    tag: "URGENT · IMPORTANT",
-    bg: "rgba(239,68,68,0.07)",
-    border: "rgba(239,68,68,0.22)",
-    accent: "#ef4444",
-    emoji: "🔥",
-  },
-  distraction: {
+  delete: {
     label: "Delete",
     tag: "NOT URGENT · NOT IMPORTANT",
     bg: "rgba(100,116,139,0.07)",
@@ -67,20 +69,30 @@ const QUADRANT_CONFIG = {
   },
 } as const;
 
+// Quadrant layout order: top-left, top-right, bottom-left, bottom-right
+const QUADRANT_ORDER: (keyof typeof QUADRANT_CONFIG)[] = ["do", "schedule", "delegate", "delete"];
+
 const HOURS = Array.from({ length: 17 }, (_, i) => i + 7); // 7am–11pm
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const HOUR_HEIGHT = 60; // px per hour for calendar
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function fmt(d: Date) {
-  return d.toISOString().split("T")[0];
-}
+function fmt(d: Date) { return d.toISOString().split("T")[0]; }
 
 function fmtHour(h: number) {
   if (h === 0) return "12 AM";
   if (h < 12) return `${h} AM`;
   if (h === 12) return "12 PM";
   return `${h - 12} PM`;
+}
+
+function fmtMinutes(totalMins: number) {
+  const h = Math.floor(totalMins / 60);
+  const m = totalMins % 60;
+  const period = h < 12 ? "AM" : "PM";
+  const displayH = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return m === 0 ? `${displayH} ${period}` : `${displayH}:${String(m).padStart(2, "0")} ${period}`;
 }
 
 function get3Days(offset: number): Date[] {
@@ -94,7 +106,7 @@ function get3Days(offset: number): Date[] {
 }
 
 function minutesToHeight(min: number) {
-  return Math.max(28, (min / 60) * 52);
+  return Math.max(24, (min / 60) * HOUR_HEIGHT);
 }
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -119,6 +131,7 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
   const [syncing, setSyncing] = useState(false);
   const [syncDone, setSyncDone] = useState(false);
 
+  const calRef = useRef<HTMLDivElement>(null);
   const days = get3Days(dayOffset);
 
   // ── Step 1 ──
@@ -127,7 +140,7 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
     const text = inputText.trim();
     const mins = parseInt(inputMins);
     if (!text || !mins || mins <= 0) return;
-    setTasks((p) => [...p, { id: Date.now().toString(), text, minutes: mins, quadrant: null }]);
+    setTasks((p) => [...p, { id: Date.now().toString(), text, minutes: mins, quadrant: null, doSub: null }]);
     setInputText("");
     setInputMins("");
   };
@@ -138,14 +151,19 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
 
   const assign = (q: Quadrant) => {
     if (!selectedTask) return;
-    setTasks((p) => p.map((t) => t.id === selectedTask ? { ...t, quadrant: q } : t));
+    setTasks((p) => p.map((t) => t.id === selectedTask ? { ...t, quadrant: q, doSub: null } : t));
     const remaining = tasks.filter((t) => t.quadrant === null && t.id !== selectedTask);
     setSelectedTask(remaining.length > 0 ? remaining[0].id : null);
   };
 
   const unassign = (id: string) => {
-    setTasks((p) => p.map((t) => t.id === id ? { ...t, quadrant: null } : t));
+    setTasks((p) => p.map((t) => t.id === id ? { ...t, quadrant: null, doSub: null } : t));
     setSelectedTask(id);
+  };
+
+  // DO sub-assignment
+  const assignDoSub = (id: string, sub: DoSubType) => {
+    setTasks((p) => p.map((t) => t.id === id ? { ...t, doSub: sub } : t));
   };
 
   // ── Step 3 ──
@@ -153,20 +171,37 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
   const scheduledIds = new Set(calEvents.map((e) => e.taskId));
   const tasksInSection = (q: Quadrant) => tasks.filter((t) => t.quadrant === q);
 
-  const dropOnCell = (date: string, hour: number) => {
+  // Free-form drop: calculate minute offset from mouse position
+  const handleCalDrop = useCallback((e: React.DragEvent, dateStr: string) => {
+    e.preventDefault();
+    const calEl = calRef.current;
+    if (!calEl) return;
+
+    const scrollContainer = calEl.querySelector("[data-cal-scroll]") as HTMLElement;
+    if (!scrollContainer) return;
+
+    const rect = scrollContainer.getBoundingClientRect();
+    const scrollTop = scrollContainer.scrollTop;
+    const yInGrid = e.clientY - rect.top + scrollTop;
+
+    // Convert pixel position to minutes from start hour (7am = 420 min)
+    const minutesFromTop = (yInGrid / HOUR_HEIGHT) * 60;
+    const totalMinutes = Math.round((420 + minutesFromTop) / 5) * 5; // snap to 5-min intervals
+    const clampedMinutes = Math.max(420, Math.min(totalMinutes, 23 * 60));
+
     if (dragging) {
       const task = tasks.find((t) => t.id === dragging);
       if (!task) return;
       setCalEvents((p) => [
-        ...p.filter((e) => e.taskId !== dragging),
-        { taskId: dragging, text: task.text, minutes: task.minutes, date, hour, synced: false },
+        ...p.filter((ev) => ev.taskId !== dragging),
+        { taskId: dragging, text: task.text, minutes: task.minutes, date: dateStr, topMinutes: clampedMinutes, synced: false },
       ]);
       setDragging(null);
     } else if (draggingEvent) {
-      setCalEvents((p) => p.map((e) => e.taskId === draggingEvent ? { ...e, date, hour } : e));
+      setCalEvents((p) => p.map((ev) => ev.taskId === draggingEvent ? { ...ev, date: dateStr, topMinutes: clampedMinutes } : ev));
       setDraggingEvent(null);
     }
-  };
+  }, [dragging, draggingEvent, tasks]);
 
   const removeEvent = (taskId: string) => setCalEvents((p) => p.filter((e) => e.taskId !== taskId));
 
@@ -177,7 +212,7 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
     if (!profileId) return;
     setSyncing(true);
     for (const ev of calEvents.filter((e) => !e.synced)) {
-      await pushToGoogleCalendar(profileId, ev.text, ev.date, `Scheduled at ${fmtHour(ev.hour)} · ${ev.minutes}min`);
+      await pushToGoogleCalendar(profileId, ev.text, ev.date, `Scheduled at ${fmtMinutes(ev.topMinutes)} · ${ev.minutes}min`);
       setCalEvents((p) => p.map((e) => e.taskId === ev.taskId ? { ...e, synced: true } : e));
     }
     setSyncing(false);
@@ -193,6 +228,12 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
   const card: React.CSSProperties = {
     background: "#fff", border: "1px solid #e2e8f0", borderRadius: 16, padding: 20,
   };
+
+  // Derived: DO tasks split by sub-type
+  const doTasks = tasksInSection("do");
+  const doQuickTasks = doTasks.filter((t) => t.doSub === "quick");
+  const doScheduleTasks = doTasks.filter((t) => t.doSub === "scheduleDo");
+  const doUnassigned = doTasks.filter((t) => t.doSub === null);
 
   return (
     <div>
@@ -218,9 +259,8 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
                   background: active ? "#0f172a" : done ? "#f0fdf4" : "#f8f9fb",
                   color: active ? "#fff" : done ? "#16a34a" : "#64748b",
                   borderRight: n < 3 ? "1px solid #e2e8f0" : "none",
-                }}
-              >
-                {done && !active ? "✓ " : ""}{label}
+                }}>
+                {done ? "✓ " : ""}{label}
               </button>
             );
           })}
@@ -233,56 +273,30 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
               <div className="flex gap-4 mb-5">
                 <div className="text-3xl">🧠</div>
                 <div>
-                  <h2 className="text-xl font-bold text-heading m-0">Timer 1: The Brain Dump</h2>
-                  <p className="text-sm text-sub mt-1 m-0">
-                    Capture <strong>every</strong> task, commitment and idea. Don't organize — just dump. Be specific and include a time estimate for each.
-                  </p>
+                  <h2 className="text-xl font-bold text-heading m-0">Timer 1: Brain Dump</h2>
+                  <p className="text-sm text-sub mt-1 m-0">Write down everything on your mind. Set the timer for 5 minutes. Don&apos;t filter — just dump.</p>
                 </div>
               </div>
 
-              <div className="rounded-lg px-4 py-3 mb-5 text-sm" style={{ background: "#fffbeb", border: "1px solid #fde68a", color: "#92400e" }}>
-                💡 <strong>Tip:</strong> "Write essay" → "Draft intro paragraph for Common App personal statement" · 45 min
-              </div>
-
-              {/* Two-field input */}
-              <div className="flex gap-2 mb-4 items-end">
-                <div className="flex-1">
-                  <label className="text-xs font-semibold text-sub block mb-1">Task description *</label>
-                  <input
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && addTask()}
-                    placeholder="e.g. Draft intro paragraph for Common App essay"
-                    autoFocus
-                    style={{ width: "100%", padding: "10px 14px", border: "1px solid #cbd5e1", borderRadius: 8, outline: "none", color: "#0f172a", background: "#fff", fontSize: 13, boxSizing: "border-box" }}
-                  />
-                </div>
-                <div style={{ width: 140, flexShrink: 0 }}>
-                  <label className="text-xs font-semibold text-sub block mb-1">Time estimate (min) *</label>
-                  <input
-                    type="number"
-                    value={inputMins}
-                    onChange={(e) => setInputMins(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && addTask()}
-                    placeholder="e.g. 45"
-                    min={1}
-                    style={{ width: "100%", padding: "10px 14px", border: "1px solid #cbd5e1", borderRadius: 8, outline: "none", color: "#0f172a", background: "#fff", fontSize: 13, boxSizing: "border-box" }}
-                  />
-                </div>
-                <button
-                  onClick={addTask}
-                  style={{
-                    padding: "10px 20px", borderRadius: 8, border: "none", cursor: "pointer",
-                    background: inputText.trim() && inputMins ? "#0f172a" : "#e2e8f0",
-                    color: inputText.trim() && inputMins ? "#fff" : "#94a3b8",
-                    fontWeight: 600, fontSize: 13, flexShrink: 0,
-                  }}
+              <div className="flex gap-2 mb-4">
+                <input value={inputText} onChange={(e) => setInputText(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && addTask()}
+                  placeholder="What's on your mind?"
+                  className="flex-1 px-4 py-3 rounded-lg text-sm"
+                  style={{ border: "1.5px solid #e2e8f0", outline: "none", color: "#0f172a" }} />
+                <input value={inputMins} onChange={(e) => setInputMins(e.target.value.replace(/\D/g, ""))}
+                  onKeyDown={(e) => e.key === "Enter" && addTask()}
+                  placeholder="min"
+                  className="w-16 px-3 py-3 rounded-lg text-sm text-center"
+                  style={{ border: "1.5px solid #e2e8f0", outline: "none", color: "#0f172a" }} />
+                <button onClick={addTask}
+                  style={{ padding: "0 18px", borderRadius: 10, border: "none", background: "#0f172a", color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
                 >+ Add</button>
               </div>
 
               {tasks.length === 0 ? (
                 <div className="text-center py-10 text-sm text-sub rounded-lg" style={{ border: "2px dashed #e2e8f0" }}>
-                  Start adding tasks above — don't think, just capture everything.
+                  Start adding tasks above — don&apos;t think, just capture everything.
                 </div>
               ) : (
                 <div className="flex flex-col gap-1.5">
@@ -344,13 +358,87 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
                   </div>
                 </div>
 
-                {/* Matrix */}
+                {/* Matrix - 2x2 grid: DO(tl) SCHEDULE(tr) DELEGATE(bl) DELETE(br) */}
                 <div className="flex-1 grid grid-cols-2 gap-3">
-                  {(Object.entries(QUADRANT_CONFIG) as [keyof typeof QUADRANT_CONFIG, typeof QUADRANT_CONFIG[keyof typeof QUADRANT_CONFIG]][]).map(([key, cfg]) => {
+                  {QUADRANT_ORDER.map((key) => {
+                    const cfg = QUADRANT_CONFIG[key];
                     const placed = tasks.filter((t) => t.quadrant === key);
+
+                    // DO quadrant has sub-sections
+                    if (key === "do") {
+                      const quickTasks = placed.filter((t) => t.doSub === "quick");
+                      const schedDoTasks = placed.filter((t) => t.doSub === "scheduleDo");
+                      const unsubbed = placed.filter((t) => t.doSub === null);
+
+                      return (
+                        <div key={key} onClick={() => assign(key)} className="rounded-xl p-3 cursor-pointer"
+                          style={{ background: cfg.bg, border: `1.5px solid ${selectedTask ? cfg.border : "rgba(0,0,0,0.05)"}`, minHeight: 130, opacity: selectedTask ? 1 : 0.72 }}>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="font-bold text-sm" style={{ color: cfg.accent }}>{cfg.emoji} {cfg.label}</div>
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: `${cfg.accent}18`, color: cfg.accent }}>{cfg.tag}</span>
+                          </div>
+
+                          {/* Unsubbed tasks — click to assign sub-type */}
+                          {unsubbed.map((t) => (
+                            <div key={t.id} className="flex items-center justify-between px-2 py-1.5 rounded mb-1 group"
+                              style={{ background: "rgba(255,255,255,0.65)" }}
+                              onClick={(e) => e.stopPropagation()}>
+                              <span className="text-xs truncate" style={{ color: "#334155" }}>{t.text}</span>
+                              <div className="flex items-center gap-1 flex-shrink-0 ml-1">
+                                <button onClick={(e) => { e.stopPropagation(); assignDoSub(t.id, "quick"); }}
+                                  className="text-[8px] px-1.5 py-0.5 rounded border-none cursor-pointer font-bold"
+                                  style={{ background: "#fef2f2", color: "#ef4444" }} title="Under 2 minutes — do immediately">⚡ &lt;2m</button>
+                                <button onClick={(e) => { e.stopPropagation(); assignDoSub(t.id, "scheduleDo"); }}
+                                  className="text-[8px] px-1.5 py-0.5 rounded border-none cursor-pointer font-bold"
+                                  style={{ background: "#fef2f2", color: "#b91c1c" }} title="Schedule and do">📅</button>
+                                <button onClick={(e) => { e.stopPropagation(); unassign(t.id); }}
+                                  className="text-[9px] opacity-0 group-hover:opacity-100 border-none bg-transparent cursor-pointer" style={{ color: "#94a3b8" }}>↩</button>
+                              </div>
+                            </div>
+                          ))}
+
+                          {/* <2min section */}
+                          {quickTasks.length > 0 && (
+                            <div className="mt-1.5">
+                              <div className="text-[8px] font-bold uppercase tracking-wider mb-1 px-1" style={{ color: "#dc2626" }}>⚡ &lt;2min do now!</div>
+                              {quickTasks.map((t) => (
+                                <div key={t.id} className="flex items-center justify-between px-2 py-1 rounded mb-0.5 group"
+                                  style={{ background: "rgba(239,68,68,0.08)" }}
+                                  onClick={(e) => e.stopPropagation()}>
+                                  <span className="text-[11px] truncate" style={{ color: "#7f1d1d" }}>{t.text}</span>
+                                  <button onClick={(e) => { e.stopPropagation(); unassign(t.id); }}
+                                    className="text-[9px] opacity-0 group-hover:opacity-100 border-none bg-transparent cursor-pointer" style={{ color: "#94a3b8" }}>↩</button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Schedule & do section */}
+                          {schedDoTasks.length > 0 && (
+                            <div className="mt-1.5">
+                              <div className="text-[8px] font-bold uppercase tracking-wider mb-1 px-1" style={{ color: "#b91c1c" }}>📅 Schedule & Do</div>
+                              {schedDoTasks.map((t) => (
+                                <div key={t.id} className="flex items-center justify-between px-2 py-1 rounded mb-0.5 group"
+                                  style={{ background: "rgba(255,255,255,0.5)" }}
+                                  onClick={(e) => e.stopPropagation()}>
+                                  <span className="text-[11px] truncate" style={{ color: "#334155" }}>{t.text}</span>
+                                  <div className="flex items-center gap-1 flex-shrink-0">
+                                    <span className="text-[9px]" style={{ color: "#94a3b8" }}>{t.minutes}m</span>
+                                    <button onClick={(e) => { e.stopPropagation(); unassign(t.id); }}
+                                      className="text-[9px] opacity-0 group-hover:opacity-100 border-none bg-transparent cursor-pointer" style={{ color: "#94a3b8" }}>↩</button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    // Other quadrants — same as before
                     return (
                       <div key={key} onClick={() => assign(key)} className="rounded-xl p-3 cursor-pointer"
-                        style={{ background: cfg.bg, border: `1.5px solid ${selectedTask ? cfg.border : "rgba(0,0,0,0.05)"}`, minHeight: 110, opacity: selectedTask ? 1 : 0.72 }}>
+                        style={{ background: cfg.bg, border: `1.5px solid ${selectedTask ? cfg.border : "rgba(0,0,0,0.05)"}`, minHeight: 130, opacity: selectedTask ? 1 : 0.72 }}>
                         <div className="flex items-center justify-between mb-2">
                           <div className="font-bold text-sm" style={{ color: cfg.accent }}>{cfg.emoji} {cfg.label}</div>
                           <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: `${cfg.accent}18`, color: cfg.accent }}>{cfg.tag}</span>
@@ -358,9 +446,9 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
                         <div className="flex flex-col gap-1">
                           {placed.map((t) => (
                             <div key={t.id} className="flex items-center justify-between px-2 py-1.5 rounded group"
-                              style={{ background: "rgba(255,255,255,0.65)", textDecoration: key === "distraction" ? "line-through" : "none" }}
+                              style={{ background: "rgba(255,255,255,0.65)", textDecoration: key === "delete" ? "line-through" : "none" }}
                               onClick={(e) => e.stopPropagation()}>
-                              <span className="text-xs truncate" style={{ color: key === "distraction" ? "#94a3b8" : "#334155" }}>{t.text}</span>
+                              <span className="text-xs truncate" style={{ color: key === "delete" ? "#94a3b8" : "#334155" }}>{t.text}</span>
                               <div className="flex items-center gap-1.5 flex-shrink-0 ml-1">
                                 <span className="text-[9px]" style={{ color: "#94a3b8" }}>{t.minutes}m</span>
                                 <button onClick={(e) => { e.stopPropagation(); unassign(t.id); }} className="opacity-0 group-hover:opacity-100 border-none bg-transparent cursor-pointer text-xs" style={{ color: "#94a3b8" }}>↩</button>
@@ -390,7 +478,7 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
                 <div className="text-2xl">📅</div>
                 <div className="flex-1">
                   <h2 className="text-lg font-bold text-heading m-0">Timer 3: Calendar Sync</h2>
-                  <p className="text-xs text-sub m-0 mt-0.5">Drag tasks from the right panel onto the calendar. <strong>Do Now</strong> — check off as you go.</p>
+                  <p className="text-xs text-sub m-0 mt-0.5">Drag tasks from the right panel onto the calendar. <strong>&lt;2min tasks</strong> — check off as you go.</p>
                 </div>
                 {gcalConnected && (
                   <button onClick={syncToGcal} disabled={syncing || syncDone || calEvents.length === 0}
@@ -402,8 +490,8 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
             </div>
 
             <div className="flex gap-4" style={{ alignItems: "flex-start" }}>
-              {/* ── 3-Day Calendar ── */}
-              <div style={{ flex: 1, ...card, padding: 0, overflow: "hidden", minWidth: 0 }}>
+              {/* ── 3-Day Calendar (free-form positioning) ── */}
+              <div ref={calRef} style={{ flex: 1, ...card, padding: 0, overflow: "hidden", minWidth: 0 }}>
                 {/* Nav */}
                 <div className="flex items-center justify-between px-4 py-2.5 border-b border-line" style={{ background: "#f8f9fb" }}>
                   <button onClick={() => setDayOffset((o) => o - 3)} style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid #e2e8f0", cursor: "pointer", background: "#fff", color: "#334155", fontWeight: 600 }}>‹</button>
@@ -433,39 +521,50 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
                   })}
                 </div>
 
-                {/* Time grid */}
-                <div style={{ maxHeight: 520, overflowY: "auto" }}>
+                {/* Time grid — free-form positioning */}
+                <div data-cal-scroll style={{ maxHeight: 540, overflowY: "auto" }}>
                   <div className="grid" style={{ gridTemplateColumns: "52px repeat(3, 1fr)" }}>
+                    {/* Hour labels column + day columns with events */}
                     {HOURS.map((hour) => (
-                      <>
-                        <div key={`lbl-${hour}`} className="text-[10px] text-sub text-right pr-2 border-t border-line"
-                          style={{ height: 52, paddingTop: 4, background: "#fafbfc", lineHeight: 1 }}>
+                      <div key={`row-${hour}`} style={{ display: "contents" }}>
+                        <div className="text-[10px] text-sub text-right pr-2 border-t border-line"
+                          style={{ height: HOUR_HEIGHT, paddingTop: 4, background: "#fafbfc", lineHeight: 1 }}>
                           {fmtHour(hour)}
                         </div>
                         {days.map((d, di) => {
                           const dateStr = fmt(d);
-                          const eventsHere = calEvents.filter((e) => e.date === dateStr && e.hour === hour);
+                          // Events in this hour cell (for rendering)
+                          const cellStartMin = hour * 60;
+                          const cellEndMin = (hour + 1) * 60;
+                          const eventsHere = calEvents.filter((e) => e.date === dateStr && e.topMinutes >= cellStartMin && e.topMinutes < cellEndMin);
+
                           return (
-                            <div key={`cell-${hour}-${di}`} className="border-t border-l border-line relative" style={{ height: 52 }}
+                            <div key={`cell-${hour}-${di}`}
+                              className="border-t border-l border-line relative"
+                              style={{ height: HOUR_HEIGHT }}
                               onDragOver={(e) => e.preventDefault()}
-                              onDrop={() => dropOnCell(dateStr, hour)}>
-                              {eventsHere.map((ev) => (
-                                <div key={ev.taskId} draggable
-                                  onDragStart={() => setDraggingEvent(ev.taskId)}
-                                  onDragEnd={() => setDraggingEvent(null)}
-                                  className="absolute inset-x-0.5 rounded-md px-1.5 pt-1 cursor-grab group z-10 overflow-hidden"
-                                  style={{ top: 2, height: minutesToHeight(ev.minutes) - 4, background: "#eff6ff", border: "1.5px solid #3b82f6" }}>
-                                  <div className="text-[10px] font-semibold leading-tight truncate pr-4" style={{ color: "#1d4ed8" }}>{ev.text}</div>
-                                  <div className="text-[9px] mt-0.5" style={{ color: "#60a5fa" }}>{fmtHour(hour)} · {ev.minutes}m{ev.synced ? " · ✓" : ""}</div>
-                                  <button onClick={() => removeEvent(ev.taskId)}
-                                    className="absolute top-0.5 right-0.5 w-4 h-4 rounded text-[9px] hidden group-hover:flex items-center justify-center border-none cursor-pointer"
-                                    style={{ background: "#bfdbfe", color: "#1d4ed8" }}>✕</button>
-                                </div>
-                              ))}
+                              onDrop={(e) => handleCalDrop(e, dateStr)}>
+                              {eventsHere.map((ev) => {
+                                const offsetMin = ev.topMinutes - cellStartMin;
+                                const topPx = (offsetMin / 60) * HOUR_HEIGHT;
+                                return (
+                                  <div key={ev.taskId} draggable
+                                    onDragStart={() => setDraggingEvent(ev.taskId)}
+                                    onDragEnd={() => setDraggingEvent(null)}
+                                    className="absolute left-0.5 right-0.5 rounded-md px-1.5 pt-1 cursor-grab group z-10 overflow-hidden"
+                                    style={{ top: topPx, height: minutesToHeight(ev.minutes), background: "#eff6ff", border: "1.5px solid #3b82f6" }}>
+                                    <div className="text-[10px] font-semibold leading-tight truncate pr-4" style={{ color: "#1d4ed8" }}>{ev.text}</div>
+                                    <div className="text-[9px] mt-0.5" style={{ color: "#60a5fa" }}>{fmtMinutes(ev.topMinutes)} · {ev.minutes}m{ev.synced ? " · ✓" : ""}</div>
+                                    <button onClick={() => removeEvent(ev.taskId)}
+                                      className="absolute top-0.5 right-0.5 w-4 h-4 rounded text-[9px] hidden group-hover:flex items-center justify-center border-none cursor-pointer"
+                                      style={{ background: "#bfdbfe", color: "#1d4ed8" }}>✕</button>
+                                  </div>
+                                );
+                              })}
                             </div>
                           );
                         })}
-                      </>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -474,16 +573,61 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
               {/* ── Task Bar (right) ── */}
               <div style={{ width: 270, flexShrink: 0, display: "flex", flexDirection: "column", gap: 10 }}>
 
-                {/* Schedule */}
+                {/* <2min Do Now! — todo checklist */}
+                {doQuickTasks.length > 0 && (
+                  <div style={{ ...card, background: "#fef2f2", border: "1.5px solid #fecaca" }}>
+                    <div className="text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: "#ef4444" }}>⚡ &lt;2min Do Now!</div>
+                    <div className="flex flex-col gap-1.5">
+                      {doQuickTasks.map((t) => {
+                        const done = completed.has(t.id);
+                        return (
+                          <label key={t.id} className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg cursor-pointer"
+                            style={{ background: done ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.55)", border: "1px solid rgba(239,68,68,0.15)" }}>
+                            <input type="checkbox" checked={done} onChange={() => toggleComplete(t.id)} style={{ accentColor: "#ef4444", width: 14, height: 14, flexShrink: 0 }} />
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-medium truncate" style={{ color: done ? "#94a3b8" : "#7f1d1d", textDecoration: done ? "line-through" : "none" }}>{t.text}</div>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Schedule & Do (from DO quadrant) — draggable */}
+                {doScheduleTasks.length > 0 && (
+                  <div style={card}>
+                    <div className="text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: "#ef4444" }}>
+                      🔥 Do: Schedule & Do <span className="text-[9px] font-normal text-sub normal-case tracking-normal ml-1">(drag to calendar)</span>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      {doScheduleTasks.map((t) => {
+                        const onCal = scheduledIds.has(t.id);
+                        return (
+                          <div key={t.id} draggable={!onCal}
+                            onDragStart={() => !onCal && setDragging(t.id)}
+                            onDragEnd={() => setDragging(null)}
+                            className="flex items-center justify-between px-3 py-2.5 rounded-lg select-none"
+                            style={{ background: onCal ? "#f0fdf4" : dragging === t.id ? "#fef2f2" : "#f8f9fb", border: `1.5px solid ${onCal ? "#86efac" : dragging === t.id ? "#ef4444" : "#e2e8f0"}`, cursor: onCal ? "default" : "grab", opacity: dragging === t.id ? 0.5 : 1 }}>
+                            <span className="text-xs font-medium truncate min-w-0" style={{ color: onCal ? "#16a34a" : "#334155" }}>{onCal ? "✓ " : "⠿ "}{t.text}</span>
+                            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full ml-2 flex-shrink-0" style={{ background: "#fef2f2", color: "#ef4444" }}>{t.minutes}m</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Schedule (blue) */}
                 <div style={card}>
                   <div className="text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: "#3b82f6" }}>
                     📅 Schedule <span className="text-[9px] font-normal text-sub normal-case tracking-normal ml-1">(drag to calendar)</span>
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    {tasksInSection("fulfillment").length === 0 && (
+                    {tasksInSection("schedule").length === 0 && (
                       <div className="text-xs text-sub text-center py-3" style={{ border: "1.5px dashed #e2e8f0", borderRadius: 8 }}>No scheduled tasks</div>
                     )}
-                    {tasksInSection("fulfillment").map((t) => {
+                    {tasksInSection("schedule").map((t) => {
                       const onCal = scheduledIds.has(t.id);
                       return (
                         <div key={t.id} draggable={!onCal}
@@ -499,16 +643,16 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
                   </div>
                 </div>
 
-                {/* Delegate */}
+                {/* Delegate (yellow) */}
                 <div style={card}>
                   <div className="text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: "#f59e0b" }}>
                     🤝 Delegate <span className="text-[9px] font-normal text-sub normal-case tracking-normal ml-1">(drag to calendar)</span>
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    {tasksInSection("delusion").length === 0 && (
+                    {tasksInSection("delegate").length === 0 && (
                       <div className="text-xs text-sub text-center py-3" style={{ border: "1.5px dashed #e2e8f0", borderRadius: 8 }}>No delegate tasks</div>
                     )}
-                    {tasksInSection("delusion").map((t) => {
+                    {tasksInSection("delegate").map((t) => {
                       const onCal = scheduledIds.has(t.id);
                       return (
                         <div key={t.id} draggable={!onCal}
@@ -519,29 +663,6 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
                           <span className="text-xs font-medium truncate min-w-0" style={{ color: "#334155" }}>{onCal ? "✓ " : "⠿ "}{t.text}</span>
                           <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full ml-2 flex-shrink-0" style={{ background: "#fef3c7", color: "#f59e0b" }}>{t.minutes}m</span>
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Do Now */}
-                <div style={{ ...card, background: "#fef2f2", border: "1.5px solid #fecaca" }}>
-                  <div className="text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: "#ef4444" }}>🔥 Do Now</div>
-                  <div className="flex flex-col gap-1.5">
-                    {tasksInSection("demand").length === 0 && (
-                      <div className="text-xs text-sub text-center py-3" style={{ border: "1.5px dashed #fecaca", borderRadius: 8 }}>No urgent tasks</div>
-                    )}
-                    {tasksInSection("demand").map((t) => {
-                      const done = completed.has(t.id);
-                      return (
-                        <label key={t.id} className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg cursor-pointer"
-                          style={{ background: done ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.55)", border: "1px solid rgba(239,68,68,0.15)" }}>
-                          <input type="checkbox" checked={done} onChange={() => toggleComplete(t.id)} style={{ accentColor: "#ef4444", width: 14, height: 14, flexShrink: 0 }} />
-                          <div className="flex-1 min-w-0">
-                            <div className="text-xs font-medium truncate" style={{ color: done ? "#94a3b8" : "#7f1d1d", textDecoration: done ? "line-through" : "none" }}>{t.text}</div>
-                            <div className="text-[9px] mt-0.5" style={{ color: done ? "#cbd5e1" : "#fca5a5" }}>{t.minutes}m</div>
-                          </div>
-                        </label>
                       );
                     })}
                   </div>
