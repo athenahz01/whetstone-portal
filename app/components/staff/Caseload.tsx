@@ -21,7 +21,8 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh }: C
   const [sort, setSort] = useState("urgency");
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [inviteStatus, setInviteStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const sorted = [...students].sort((a, b) =>
     sort === "name" ? a.name.localeCompare(b.name) :
@@ -38,7 +39,6 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh }: C
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    setInviteStatus("idle");
 
     const f = new FormData(e.target as HTMLFormElement);
     const name = f.get("name") as string;
@@ -47,33 +47,33 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh }: C
     const school = f.get("school") as string;
     const gradYear = Number(f.get("gradYear"));
 
-    // 1. Save student to DB
     const result = await addStudent({ name, email, grade, gpa: null, school, gradYear });
     const studentId = (result as any)?.id ?? null;
 
-    // 2. Send invite email
-    setInviteStatus("sending");
     try {
       const res = await fetch("/api/invite-student", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, name, studentId }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        console.error("Invite error:", data.error);
-        setInviteStatus("error");
-      } else {
-        setInviteStatus("sent");
+      const data = await res.json();
+      if (data.inviteLink) {
+        setInviteLink(data.inviteLink);
       }
     } catch (err) {
-      console.error("Invite fetch failed:", err);
-      setInviteStatus("error");
+      console.error("Failed to generate invite link:", err);
     }
 
     setSaving(false);
     setShowModal(false);
     onRefresh();
+  };
+
+  const handleCopy = () => {
+    if (!inviteLink) return;
+    navigator.clipboard.writeText(inviteLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -96,24 +96,10 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh }: C
                 </button>
               ))}
             </div>
-            <Button primary onClick={() => { setShowModal(true); setInviteStatus("idle"); }}>+ Add Student</Button>
+            <Button primary onClick={() => { setShowModal(true); setInviteLink(null); }}>+ Add Student</Button>
           </div>
         }
       />
-
-      {/* Invite status toasts */}
-      {inviteStatus === "sent" && (
-        <div className="mx-8 mb-4 px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2"
-          style={{ background: "#f0fdf4", border: "1px solid #86efac", color: "#16a34a" }}>
-          ✓ Student added and invite email sent successfully.
-        </div>
-      )}
-      {inviteStatus === "error" && (
-        <div className="mx-8 mb-4 px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2"
-          style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626" }}>
-          ⚠ Student saved but invite email failed to send. Check the API logs.
-        </div>
-      )}
 
       <div className="p-6 px-8 grid grid-cols-2 gap-3.5">
         {sorted.map((s) => {
@@ -159,7 +145,7 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh }: C
             <FormField label="Student Email">
               <input required name="email" type="email" placeholder="e.g. jane@email.com" style={inputStyle} />
               <div className="text-xs mt-1.5 px-1" style={{ color: "#64748b" }}>
-                📧 An invite link will be sent to this email so the student can activate their account.
+                A signup link will be generated for you to share with the student.
               </div>
             </FormField>
             <FormField label="School">
@@ -175,7 +161,6 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh }: C
             </div>
             <div className="flex justify-end gap-2 mt-2">
               <Button onClick={() => setShowModal(false)}>Cancel</Button>
-              {/* Native button used here to support disabled state without modifying Button component */}
               <button
                 type="submit"
                 disabled={saving}
@@ -186,10 +171,49 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh }: C
                   cursor: saving ? "not-allowed" : "pointer",
                 }}
               >
-                {saving ? (inviteStatus === "sending" ? "Sending invite..." : "Adding...") : "Add & Invite Student"}
+                {saving ? "Adding..." : "Add Student"}
               </button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* Invite Link Modal */}
+      {inviteLink && (
+        <Modal title="Student Added! 🎉" onClose={() => setInviteLink(null)}>
+          <div style={{ padding: "4px 0" }}>
+            <p className="text-sm text-body mb-4">
+              Share this signup link with the student. They'll click it to set their password and activate their account.
+            </p>
+            <div
+              className="rounded-lg p-3 mb-4 text-xs font-mono break-all select-all"
+              style={{ background: "#f8f9fb", border: "1px solid #e2e8f0", color: "#334155", lineHeight: 1.6 }}
+            >
+              {inviteLink}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleCopy}
+                style={{
+                  flex: 1, padding: "10px", borderRadius: 8, border: "none", fontWeight: 600, fontSize: 14,
+                  background: copied ? "#f0fdf4" : "#0f172a",
+                  color: copied ? "#16a34a" : "#fff",
+                  cursor: "pointer",
+                }}
+              >
+                {copied ? "✓ Copied!" : "Copy Link"}
+              </button>
+              <button
+                onClick={() => setInviteLink(null)}
+                style={{
+                  padding: "10px 16px", borderRadius: 8, border: "1px solid #e2e8f0",
+                  background: "#fff", color: "#64748b", fontWeight: 600, fontSize: 14, cursor: "pointer",
+                }}
+              >
+                Done
+              </button>
+            </div>
+          </div>
         </Modal>
       )}
     </div>
