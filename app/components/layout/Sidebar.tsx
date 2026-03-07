@@ -20,6 +20,7 @@ const TIMEZONES = [
 
 interface SidebarProps {
   role: "student" | "strategist" | "parent";
+  isAdmin?: boolean;
   view: string;
   setView: (v: string) => void;
   collapsed: boolean;
@@ -33,7 +34,7 @@ interface SidebarProps {
   onSyncCalendar?: () => Promise<void>;
 }
 
-export function Sidebar({ role, view, setView, collapsed, setCollapsed, onSignOut, studentName, profileId, gcalConnected, timezone, onTimezoneChange, onSyncCalendar }: SidebarProps) {
+export function Sidebar({ role, isAdmin, view, setView, collapsed, setCollapsed, onSignOut, studentName, profileId, gcalConnected, timezone, onTimezoneChange, onSyncCalendar }: SidebarProps) {
   const [showTz, setShowTz] = useState(false);
 
   const nav =
@@ -43,6 +44,7 @@ export function Sidebar({ role, view, setView, collapsed, setCollapsed, onSignOu
           ["master", "Master Timeline"],
           ["caseload", "Caseload"],
           ["analytics", "Analytics"],
+          ...(isAdmin ? [["admin", "Admin"]] : []),
         ]
       : [
           ["dashboard", "Dashboard"],
@@ -83,7 +85,7 @@ export function Sidebar({ role, view, setView, collapsed, setCollapsed, onSignOu
       {/* Role Label */}
       {!collapsed && (
         <div className="px-4 pt-3.5 pb-1 text-[10px] text-navy-hi uppercase tracking-widest font-bold">
-          {role === "student" ? "Student" : role === "parent" ? "Parent" : "strategist"}
+          {role === "student" ? "Student" : role === "parent" ? "Parent" : isAdmin ? "Admin" : "strategist"}
           {role === "parent" && (
             <span className="ml-1.5 text-[9px] opacity-60 normal-case tracking-normal">(view only)</span>
           )}

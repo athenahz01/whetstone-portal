@@ -17,6 +17,7 @@ import { Caseload } from "./components/staff/Caseload";
 import { StudentDetail } from "./components/staff/StudentDetail";
 import { Analytics } from "./components/staff/Analytics";
 import { MasterTimeline } from "./components/staff/MasterTimeline";
+import { AdminPanel } from "./components/staff/AdminPanel";
 import { pullFromGoogleCalendar, syncAllDeadlinesToGoogle, syncAllCounselorEventsToGoogle } from "./lib/calendar";
 import { Goal, Task, Course, Test, Activity, Student, Honor } from "./types";
 import { Honors } from "./components/student/Honors";
@@ -31,10 +32,13 @@ interface Profile {
   timezone: string;
 }
 
+const ADMIN_EMAIL = "athena@whetstoneadmissions.com";
+
 export default function Home() {
   const [session, setSession] = useState<boolean | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileId, setProfileId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [gcalConnected, setGcalConnected] = useState(false);
   const [view, setView] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -115,14 +119,20 @@ export default function Home() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(!!s);
-      if (s) loadProfile(s.user.id);
+      if (s) {
+        setUserEmail(s.user.email || null);
+        loadProfile(s.user.id);
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(!!s);
-      if (s) loadProfile(s.user.id);
-      else {
+      if (s) {
+        setUserEmail(s.user.email || null);
+        loadProfile(s.user.id);
+      } else {
         setProfile(null);
+        setUserEmail(null);
         setAllStudents([]);
         setLoading(false);
       }
@@ -204,6 +214,7 @@ export default function Home() {
     setSession(false);
     setProfile(null);
     setProfileId(null);
+    setUserEmail(null);
     setGcalConnected(false);
     setView("dashboard");
     setSelectedStudent(null);
@@ -245,6 +256,7 @@ export default function Home() {
   }
 
   const role = profile.role;
+  const isAdmin = role === "strategist" && userEmail === ADMIN_EMAIL;
   const isParent = role === "parent";
   const isStudentOrParent = role === "student" || role === "parent";
 
@@ -358,6 +370,7 @@ export default function Home() {
           onSelectStudent={setSelectedStudent}
           onNavigate={setView}
           onRefresh={loadData}
+          isAdmin={isAdmin}
         />
       );
     }
@@ -377,6 +390,14 @@ export default function Home() {
           students={allStudents}
           onSelectStudent={setSelectedStudent}
           onNavigate={setView}
+        />
+      );
+    }
+    if (role === "strategist" && view === "admin" && isAdmin) {
+      return (
+        <AdminPanel
+          students={allStudents}
+          onRefresh={loadData}
         />
       );
     }
@@ -401,6 +422,7 @@ export default function Home() {
     >
       <Sidebar
         role={role}
+        isAdmin={isAdmin}
         view={view}
         setView={setView}
         collapsed={!sidebarOpen}

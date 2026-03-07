@@ -15,6 +15,7 @@ interface CaseloadProps {
   onSelectStudent: (s: Student) => void;
   onNavigate: (view: string) => void;
   onRefresh: () => void;
+  isAdmin?: boolean;
 }
 
 interface InviteResult {
@@ -23,7 +24,7 @@ interface InviteResult {
   loginUrl: string;
 }
 
-export function Caseload({ students, onSelectStudent, onNavigate, onRefresh }: CaseloadProps) {
+export function Caseload({ students, onSelectStudent, onNavigate, onRefresh, isAdmin }: CaseloadProps) {
   const [sort, setSort] = useState("urgency");
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -65,10 +66,10 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh }: C
 
     // Step 2: Create auth account for the student
     try {
-      const res = await fetch("/api/invite-student", {
+      const res = await fetch("/api/invite-user", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name, studentId }),
+        body: JSON.stringify({ email, name, role: "student", studentId }),
       });
       const data = await res.json();
 
@@ -129,7 +130,9 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh }: C
                 </button>
               ))}
             </div>
-            <Button primary onClick={() => { setShowModal(true); setInviteResult(null); setInviteError(null); }}>+ Add Student</Button>
+            {isAdmin && (
+              <Button primary onClick={() => { setShowModal(true); setInviteResult(null); setInviteError(null); }}>+ Add Student</Button>
+            )}
           </div>
         }
       />
