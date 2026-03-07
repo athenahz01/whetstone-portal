@@ -21,6 +21,7 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh }: C
   const [sort, setSort] = useState("urgency");
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [inviteStatus, setInviteStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
 
   const sorted = [...students].sort((a, b) =>
     sort === "name" ? a.name.localeCompare(b.name) :
@@ -37,15 +38,39 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh }: C
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setInviteStatus("idle");
+
     const f = new FormData(e.target as HTMLFormElement);
-    await addStudent({
-      name: f.get("name") as string,
-      email: f.get("email") as string,
-      grade: Number(f.get("grade")),
-      gpa: null,
-      school: f.get("school") as string,
-      gradYear: Number(f.get("gradYear")),
-    });
+    const name = f.get("name") as string;
+    const email = f.get("email") as string;
+    const grade = Number(f.get("grade"));
+    const school = f.get("school") as string;
+    const gradYear = Number(f.get("gradYear"));
+
+    // 1. Save student to DB
+    const result = await addStudent({ name, email, grade, gpa: null, school, gradYear });
+    const studentId = (result as any)?.id ?? null;
+
+    // 2. Send invite email
+    setInviteStatus("sending");
+    try {
+      const res = await fetch("/api/invite-student", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, name, studentId }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        console.error("Invite error:", data.error);
+        setInviteStatus("error");
+      } else {
+        setInviteStatus("sent");
+      }
+    } catch (err) {
+      console.error("Invite fetch failed:", err);
+      setInviteStatus("error");
+    }
+
     setSaving(false);
     setShowModal(false);
     onRefresh();
@@ -71,10 +96,25 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh }: C
                 </button>
               ))}
             </div>
-            <Button primary onClick={() => setShowModal(true)}>+ Add Student</Button>
+            <Button primary onClick={() => { setShowModal(true); setInviteStatus("idle"); }}>+ Add Student</Button>
           </div>
         }
       />
+
+      {/* Invite status toasts */}
+      {inviteStatus === "sent" && (
+        <div className="mx-8 mb-4 px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2"
+          style={{ background: "#f0fdf4", border: "1px solid #86efac", color: "#16a34a" }}>
+          ✓ Student added and invite email sent successfully.
+        </div>
+      )}
+      {inviteStatus === "error" && (
+        <div className="mx-8 mb-4 px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2"
+          style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626" }}>
+          ⚠ Student saved but invite email failed to send. Check the API logs.
+        </div>
+      )}
+
       <div className="p-6 px-8 grid grid-cols-2 gap-3.5">
         {sorted.map((s) => {
           const ov = s.dl.filter((d) => d.status === "overdue").length;
@@ -113,19 +153,41 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh }: C
       {showModal && (
         <Modal title="Add New Student" onClose={() => setShowModal(false)}>
           <form onSubmit={handleAdd}>
-            <FormField label="Full Name"><input required name="name" placeholder="e.g. Jane Smith" style={inputStyle} /></FormField>
+            <FormField label="Full Name">
+              <input required name="name" placeholder="e.g. Jane Smith" style={inputStyle} />
+            </FormField>
             <FormField label="Student Email">
               <input required name="email" type="email" placeholder="e.g. jane@email.com" style={inputStyle} />
-              <div className="text-xs text-sub mt-1">The student will use this email to create their account and log in.</div>
+              <div className="text-xs mt-1.5 px-1" style={{ color: "#64748b" }}>
+                📧 An invite link will be sent to this email so the student can activate their account.
+              </div>
             </FormField>
-            <FormField label="School"><input required name="school" placeholder="e.g. Stuyvesant High School" style={inputStyle} /></FormField>
+            <FormField label="School">
+              <input required name="school" placeholder="e.g. Stuyvesant High School" style={inputStyle} />
+            </FormField>
             <div className="grid grid-cols-2 gap-3">
-              <FormField label="Grade"><input required name="grade" type="number" min="9" max="12" placeholder="12" style={inputStyle} /></FormField>
-              <FormField label="Graduation Year"><input required name="gradYear" type="number" placeholder="2026" style={inputStyle} /></FormField>
+              <FormField label="Grade">
+                <input required name="grade" type="number" min="9" max="12" placeholder="12" style={inputStyle} />
+              </FormField>
+              <FormField label="Graduation Year">
+                <input required name="gradYear" type="number" placeholder="2026" style={inputStyle} />
+              </FormField>
             </div>
             <div className="flex justify-end gap-2 mt-2">
               <Button onClick={() => setShowModal(false)}>Cancel</Button>
-              <Button primary type="submit">{saving ? "Adding..." : "Add Student"}</Button>
+              {/* Native button used here to support disabled state without modifying Button component */}
+              <button
+                type="submit"
+                disabled={saving}
+                style={{
+                  padding: "9px 20px", borderRadius: 8, border: "none", fontWeight: 600, fontSize: 14,
+                  background: saving ? "#e2e8f0" : "#0f172a",
+                  color: saving ? "#94a3b8" : "#fff",
+                  cursor: saving ? "not-allowed" : "pointer",
+                }}
+              >
+                {saving ? (inviteStatus === "sending" ? "Sending invite..." : "Adding...") : "Add & Invite Student"}
+              </button>
             </div>
           </form>
         </Modal>
