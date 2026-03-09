@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { PageHeader } from "../ui/PageHeader";
-import { pushToGoogleCalendar } from "../../lib/calendar";
+import { pushToGoogleCalendar, pullWhetstoneEventsFromGcal } from "../../lib/calendar";
 import { fetchReceptacleEvents, addReceptacleEvent, updateReceptacleEvent, deleteReceptacleEvent, addBrainDumpTask, fetchBrainDumpTasks, updateBrainDumpQuadrant, ReceptacleEvent } from "../../lib/queries";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -183,8 +183,33 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
       // Load completed state
       const completedIds = new Set(events.filter((e) => e.completed).map((e) => `db-${e.id}`));
       setCompleted(completedIds);
+
+      // Sync back from GCal: detect if user moved Whetstone events in GCal
+      if (profileId && gcalConnected && events.length > 0) {
+        pullWhetstoneEventsFromGcal(profileId).then((gcalEvents) => {
+          if (!gcalEvents.length) return;
+          // Match GCal events to DB events by task name
+          for (const gce of gcalEvents) {
+            if (gce.startMinutes == null || !gce.date) continue;
+            // Find matching DB event by title
+            const match = events.find((e) => e.task_text === gce.title && e.synced);
+            if (match && (match.date !== gce.date || match.top_minutes !== gce.startMinutes)) {
+              // GCal event was moved — update DB and local state
+              updateReceptacleEvent(match.id, {
+                date: gce.date,
+                top_minutes: gce.startMinutes,
+              });
+              setCalEvents((prev) => prev.map((ev) =>
+                ev.dbId === match.id
+                  ? { ...ev, date: gce.date, topMinutes: gce.startMinutes! }
+                  : ev
+              ));
+            }
+          }
+        });
+      }
     });
-  }, [studentId]);
+  }, [studentId, profileId, gcalConnected]);
 
   // ── Step 1 ──
 

@@ -59,6 +59,30 @@ export function getGoogleAuthUrl(profileId: string) {
     }
   }
 
+  // Pull Whetstone-created events from GCal to detect time changes made in GCal
+  export async function pullWhetstoneEventsFromGcal(profileId: string) {
+    try {
+      const res = await fetch(`/api/calendar/sync?profileId=${profileId}`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return (data.events || [])
+        .filter((e: any) => e.title?.startsWith("[Whetstone]") || e.title?.endsWith("[Whetstone]"))
+        .map((e: any) => ({
+          id: e.id,
+          // Strip [Whetstone] prefix/suffix to get original task name
+          title: (e.title || "")
+            .replace(/^\[Whetstone\]\s*/, "")
+            .replace(/\s*\[Whetstone\]$/, ""),
+          date: e.date || "",
+          startMinutes: e.startMinutes ?? null,
+          durationMinutes: e.durationMinutes ?? null,
+        }));
+    } catch (err) {
+      console.error("Failed to pull Whetstone events from GCal:", err);
+      return [];
+    }
+  }
+
   export async function syncAllDeadlinesToGoogle(profileId: string, students: any[]) {
     // First, pull existing Google Calendar events to check for duplicates
     const existing = await pullExistingWhetstoneEvents(profileId);
