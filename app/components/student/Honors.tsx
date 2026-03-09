@@ -250,7 +250,7 @@ function HonorForm({ honor, index, onSave, onDelete, saving }: HonorFormProps) {
         <label style={labelStyle}>
           Honors {index + 1} title <span style={{ color: "#e55b5b" }}>*</span>
           <span style={{ fontWeight: 400 }}> (Max characters: 100)</span>
-          <span style={{ fontSize: 11, color: title.length > 100 ? "#e55b5b" : "#505050", marginLeft: 4 }}>
+          <span style={{ fontSize: 11, color: title.length > 100 ? "#e55b5b" : "#505050", marginLeft: 4, fontWeight: title.length > 100 ? 600 : 400 }}>
             {title.length}/100
           </span>
         </label>
@@ -258,9 +258,8 @@ function HonorForm({ honor, index, onSave, onDelete, saving }: HonorFormProps) {
           name="title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          maxLength={100}
           required
-          style={{ ...inputStyle, borderColor: title.length > 100 ? "#e55b5b" : "#333" }}
+          style={{ ...inputStyle, borderColor: title.length > 100 ? "#e55b5b" : "#333", color: title.length > 100 ? "#e55b5b" : "#ebebeb" }}
         />
       </div>
 

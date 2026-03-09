@@ -69,7 +69,7 @@ const labelStyle: React.CSSProperties = {
 function charCount(val: string, max: number) {
   const over = val.length > max;
   return (
-    <span style={{ fontSize: 11, color: over ? "#e55b5b" : "#505050", marginLeft: 4 }}>
+    <span style={{ fontSize: 11, color: over ? "#e55b5b" : "#505050", marginLeft: 4, fontWeight: over ? 600 : 400 }}>
       {val.length}/{max}
     </span>
   );
@@ -311,9 +311,9 @@ function ActivityForm({ act, index, onSave, onDelete, saving }: ActivityFormProp
           name="position"
           value={position}
           onChange={(e) => setPosition(e.target.value)}
-          maxLength={50}
+
           required
-          style={{ ...inputStyle, borderColor: position.length > 50 ? "#e55b5b" : "#333" }}
+          style={{ ...inputStyle, borderColor: position.length > 50 ? "#e55b5b" : "#333", color: position.length > 50 ? "#e55b5b" : "#ebebeb" }}
         />
       </div>
 
@@ -328,8 +328,8 @@ function ActivityForm({ act, index, onSave, onDelete, saving }: ActivityFormProp
           name="org"
           value={org}
           onChange={(e) => setOrg(e.target.value)}
-          maxLength={100}
-          style={{ ...inputStyle, borderColor: org.length > 100 ? "#e55b5b" : "#333" }}
+
+          style={{ ...inputStyle, borderColor: org.length > 100 ? "#e55b5b" : "#333", color: org.length > 100 ? "#e55b5b" : "#ebebeb" }}
         />
       </div>
 
@@ -345,10 +345,10 @@ function ActivityForm({ act, index, onSave, onDelete, saving }: ActivityFormProp
           name="description"
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
-          maxLength={150}
+
           required
           rows={3}
-          style={{ ...inputStyle, resize: "vertical", borderColor: desc.length > 150 ? "#e55b5b" : "#333" }}
+          style={{ ...inputStyle, resize: "vertical", borderColor: desc.length > 150 ? "#e55b5b" : "#333", color: desc.length > 150 ? "#e55b5b" : "#ebebeb" }}
         />
       </div>
 
