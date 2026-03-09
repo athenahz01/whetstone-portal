@@ -188,6 +188,7 @@ export async function deleteStudent(id: number): Promise<boolean> {
   await supabase.from("profiles").update({ student_id: null }).eq("student_id", id);
 
   // Delete all child records (foreign key constraints)
+  await supabase.from("receptacle_events").delete().eq("student_id", id);
   await supabase.from("schools").delete().eq("student_id", id);
   await supabase.from("deadlines").delete().eq("student_id", id);
   await supabase.from("tasks").delete().eq("student_id", id);
