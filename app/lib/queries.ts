@@ -461,6 +461,7 @@ export async function fetchReceptacleEvents(studentId: number): Promise<Receptac
     .from("receptacle_events")
     .select("*")
     .eq("student_id", studentId)
+    .neq("date", "braindump")
     .order("date", { ascending: true });
 
   if (error || !data) {
