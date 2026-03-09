@@ -66,8 +66,8 @@ export function getGoogleAuthUrl(profileId: string) {
       for (const dl of student.dl || []) {
         if (dl.due && dl.status !== "completed") {
           const eventTitle = `${dl.title} (${student.name})`;
-          // Skip if already synced
-          if (existingTitles.has(`[Whetstone] ${eventTitle}`)) continue;
+          // Skip if already synced (check both old prefix and new suffix format)
+          if (existingTitles.has(`[Whetstone] ${eventTitle}`) || existingTitles.has(`${eventTitle} [Whetstone]`)) continue;
   
           const result = await pushToGoogleCalendar(
             profileId,
@@ -88,8 +88,8 @@ export function getGoogleAuthUrl(profileId: string) {
   
     const results = [];
     for (const event of events) {
-      // Skip if already synced
-      if (existingTitles.has(`[Whetstone] ${event.title}`)) continue;
+      // Skip if already synced (check both old prefix and new suffix format)
+      if (existingTitles.has(`[Whetstone] ${event.title}`) || existingTitles.has(`${event.title} [Whetstone]`)) continue;
   
       const studentNames = students
         .filter((s: any) => event.studentIds?.includes(s.id))
