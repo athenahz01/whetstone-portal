@@ -156,14 +156,27 @@ export async function GET(request: NextRequest) {
 
   const events = (data.items || []).map((e: any) => {
     let date = "";
+    let startMinutes: number | null = null;
+    let durationMinutes: number | null = null;
+    let allDay = false;
+
     if (e.start?.date) {
-      // All-day event
       date = e.start.date;
+      allDay = true;
     } else if (e.start?.dateTime) {
-      // Timed event - extract date from the ISO string directly
-      // e.start.dateTime looks like "2026-03-06T10:00:00-05:00"
-      // Take the first 10 characters to get the local date
       date = e.start.dateTime.substring(0, 10);
+      const startMatch = e.start.dateTime.match(/T(\d{2}):(\d{2})/);
+      if (startMatch) {
+        startMinutes = parseInt(startMatch[1]) * 60 + parseInt(startMatch[2]);
+      }
+      if (e.end?.dateTime) {
+        const endMatch = e.end.dateTime.match(/T(\d{2}):(\d{2})/);
+        if (endMatch && startMinutes !== null) {
+          const endMin = parseInt(endMatch[1]) * 60 + parseInt(endMatch[2]);
+          durationMinutes = endMin - startMinutes;
+          if (durationMinutes <= 0) durationMinutes = 30;
+        }
+      }
     }
 
     return {
@@ -171,6 +184,9 @@ export async function GET(request: NextRequest) {
       title: e.summary || "Untitled",
       date,
       source: "google",
+      allDay,
+      startMinutes,
+      durationMinutes,
       attendees: (e.attendees || []).map((a: any) => a.email?.toLowerCase()).filter(Boolean),
       meetingLink: e.hangoutLink || e.conferenceData?.entryPoints?.[0]?.uri || "",
       location: e.location || "",

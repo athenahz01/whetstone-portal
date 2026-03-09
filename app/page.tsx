@@ -144,21 +144,11 @@ export default function Home() {
   // ── Google Calendar events for student ──
   useEffect(() => {
     if (!gcalConnected || !profileId || !profile) return;
-    const isStudentOrParent = profile.role === "student" || profile.role === "parent";
-    const linkedStudent = isStudentOrParent && profile.student_id
-      ? allStudents.find((s) => s.id === profile.student_id)
-      : allStudents[0];
 
-    if (linkedStudent?.email) {
-      pullFromGoogleCalendar(profileId).then((events) => {
-        const studentEmail = linkedStudent.email?.toLowerCase();
-        const forStudent = events.filter((e: any) =>
-          e.attendees && e.attendees.includes(studentEmail)
-        );
-        setStudentGoogleEvents(forStudent);
-      });
-    }
-  }, [gcalConnected, profileId, allStudents, profile]);
+    pullFromGoogleCalendar(profileId).then((events) => {
+      setStudentGoogleEvents(events);
+    });
+  }, [gcalConnected, profileId, profile]);
 
   const loadProfile = async (userId: string) => {
     const { data } = await supabase
@@ -303,6 +293,7 @@ export default function Home() {
           studentId={me.id}
           onRefresh={handleRefresh}
           readOnly={isParent}
+          googleEvents={studentGoogleEvents}
         />
       );
     if (isStudentOrParent && view === "academics" && me) {
@@ -333,6 +324,7 @@ export default function Home() {
           studentId={me.id}
           profileId={profileId}
           gcalConnected={gcalConnected}
+          googleEvents={studentGoogleEvents}
         />
       );
     }

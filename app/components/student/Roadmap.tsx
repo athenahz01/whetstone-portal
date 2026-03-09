@@ -16,9 +16,10 @@ interface RoadmapProps {
   studentId?: number;
   onRefresh?: () => void;
   readOnly?: boolean;
+  googleEvents?: any[];
 }
 
-export function Roadmap({ tasks, setTasks, deadlines = [], studentId, onRefresh, readOnly }: RoadmapProps) {
+export function Roadmap({ tasks, setTasks, deadlines = [], studentId, onRefresh, readOnly, googleEvents = [] }: RoadmapProps) {
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [counselorEvents, setCounselorEvents] = useState<any[]>([]);
 
@@ -62,6 +63,24 @@ export function Roadmap({ tasks, setTasks, deadlines = [], studentId, onRefresh,
             bgColor: "rgba(82,139,255,0.08)",
             borderColor: "#528bff",
             textColor: "#7aabff",
+          })),
+        }]
+      : []),
+    ...(googleEvents.length > 0
+      ? [{
+          id: "gcal",
+          name: "Google Calendar",
+          subtitle: `${googleEvents.length} event${googleEvents.length !== 1 ? "s" : ""}`,
+          avatar: "📆",
+          avatarBg: "rgba(74,186,106,0.08)",
+          avatarColor: "#4aba6a",
+          events: googleEvents.map((ge: any) => ({
+            id: ge.id,
+            title: ge.title,
+            date: ge.date,
+            bgColor: "rgba(74,186,106,0.08)",
+            borderColor: "#4aba6a",
+            textColor: "#4aba6a",
           })),
         }]
       : []),

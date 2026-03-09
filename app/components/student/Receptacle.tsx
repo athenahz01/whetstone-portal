@@ -33,6 +33,7 @@ interface ReceptacleProps {
   studentId?: number;
   profileId?: string | null;
   gcalConnected?: boolean;
+  googleEvents?: any[];
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -114,7 +115,7 @@ function minutesToHeight(min: number) {
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export function Receptacle({ studentId, profileId, gcalConnected }: ReceptacleProps) {
+export function Receptacle({ studentId, profileId, gcalConnected, googleEvents = [] }: ReceptacleProps) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   // Step 1
@@ -691,7 +692,7 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
                     {HOURS.map((hour) => (
                       <div key={`row-${hour}`} style={{ display: "contents" }}>
                         <div className="text-[10px] text-sub text-right pr-2 border-t border-line"
-                          style={{ height: HOUR_HEIGHT, paddingTop: 4, background: "#fafbfc", lineHeight: 1 }}>
+                          style={{ height: HOUR_HEIGHT, paddingTop: 4, background: "#1e1e1e", lineHeight: 1 }}>
                           {fmtHour(hour)}
                         </div>
                         {days.map((d, di) => {
@@ -707,6 +708,23 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
                               style={{ height: HOUR_HEIGHT }}
                               onDragOver={(e) => e.preventDefault()}
                               onDrop={(e) => handleCalDrop(e, dateStr)}>
+                              {/* Google Calendar events (background, non-interactive) */}
+                              {googleEvents
+                                .filter((ge: any) => ge.date === dateStr && ge.startMinutes != null && ge.startMinutes >= cellStartMin && ge.startMinutes < cellEndMin)
+                                .map((ge: any) => {
+                                  const offsetMin = ge.startMinutes - cellStartMin;
+                                  const topPx = (offsetMin / 60) * HOUR_HEIGHT;
+                                  const dur = ge.durationMinutes || 30;
+                                  return (
+                                    <div key={`gcal-${ge.id}`}
+                                      className="absolute left-0.5 right-0.5 rounded-md px-1.5 pt-1 z-0 overflow-hidden pointer-events-none"
+                                      style={{ top: topPx, height: minutesToHeight(dur), background: "rgba(74,186,106,0.06)", border: "1px dashed rgba(74,186,106,0.25)" }}>
+                                      <div className="text-[9px] font-medium leading-tight truncate" style={{ color: "#4aba6a" }}>{ge.title}</div>
+                                      <div className="text-[8px] mt-0.5" style={{ color: "rgba(74,186,106,0.5)" }}>{fmtMinutes(ge.startMinutes)} · {dur}m</div>
+                                    </div>
+                                  );
+                                })}
+                              {/* Whetstone events */}
                               {eventsHere.map((ev) => {
                                 const offsetMin = ev.topMinutes - cellStartMin;
                                 const topPx = (offsetMin / 60) * HOUR_HEIGHT;
