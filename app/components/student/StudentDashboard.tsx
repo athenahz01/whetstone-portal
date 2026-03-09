@@ -130,27 +130,6 @@ export function StudentDashboard({
               </Card>
             )}
 
-            {/* Google Calendar Events */}
-            {googleEvents.length > 0 && (
-              <Card>
-                <h2 className="m-0 mb-3.5 text-lg font-bold text-heading">Upcoming (Google Calendar)</h2>
-                {googleEvents.map((ge) => (
-                  <div
-                    key={ge.id}
-                    className="flex justify-between items-center p-3 rounded-lg mb-1.5"
-                    style={{ background: "#eff6ff", borderLeft: "3px solid #60a5fa" }}
-                  >
-                    <div>
-                      <div className="text-sm font-medium text-heading">{ge.title}</div>
-                      <span className="text-xs" style={{ color: "#3b82f6" }}>
-                        {new Date(ge.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </Card>
-            )}
-
             {/* Receptacle CTA */}
             <Card>
               <div
