@@ -144,15 +144,21 @@ export function StudentDashboard({
                 </p>
                 {!readOnly && (
                   <button
-                    onClick={() => onNavigate("receptacle")}
-                    style={{
-                      padding: "10px 24px", borderRadius: 10, border: "none",
-                      background: "#ebebeb", color: "#fff", fontWeight: 600,
-                      fontSize: 13, cursor: "pointer",
-                    }}
-                  >
-                    Open Receptacle →
-                  </button>
+                  onClick={() => onNavigate("receptacle")}
+                  style={{
+                    padding: "10px 24px",
+                    borderRadius: 10,
+                    border: "1px solid rgba(148,163,184,0.18)",
+                    background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
+                    color: "#f8fafc",
+                    fontWeight: 700,
+                    fontSize: 13,
+                    cursor: "pointer",
+                    boxShadow: "0 8px 20px rgba(0,0,0,0.22)",
+                  }}
+                >
+                  Open Receptacle →
+                </button>
                 )}
               </div>
             </Card>

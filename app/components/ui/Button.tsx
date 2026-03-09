@@ -1,22 +1,44 @@
 interface ButtonProps {
-    children: React.ReactNode;
-    onClick?: () => void;
-    primary?: boolean;
-    type?: "button" | "submit";
-  }
-  
-  export function Button({ children, onClick, primary, type = "button" }: ButtonProps) {
-    return (
-      <button
-        onClick={onClick}
-        type={type}
-        className={`px-5 py-2.5 rounded-lg text-sm font-semibold cursor-pointer transition-colors ${
-          primary
-            ? "bg-accent text-white border-none hover:opacity-90"
-            : "bg-mist text-body border border-line-dk hover:bg-raised"
-        }`}
-      >
-        {children}
-      </button>
-    );
-  }
+  children: React.ReactNode;
+  onClick?: () => void;
+  primary?: boolean;
+  type?: "button" | "submit";
+  className?: string;
+  style?: React.CSSProperties;
+  disabled?: boolean;
+}
+
+export function Button({
+  children,
+  onClick,
+  primary = false,
+  type = "button",
+  className = "",
+  style,
+  disabled = false,
+}: ButtonProps) {
+  const baseStyle: React.CSSProperties = {
+    padding: "10px 16px",
+    borderRadius: 10,
+    border: "1px solid rgba(148,163,184,0.18)",
+    background: primary ? "#3b82f6" : "#111827",
+    color: "#f8fafc",
+    fontWeight: 600,
+    fontSize: 13,
+    cursor: disabled ? "not-allowed" : "pointer",
+    transition: "all 0.15s ease",
+    opacity: disabled ? 0.6 : 1,
+  };
+
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      className={className}
+      style={{ ...baseStyle, ...style }}
+    >
+      {children}
+    </button>
+  );
+}

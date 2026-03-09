@@ -50,9 +50,15 @@ const GRADE_OPTIONS = [9, 10, 11, 12, "Post-graduate"] as const;
 const TOTAL_SLOTS = 10;
 
 const inputStyle: React.CSSProperties = {
-  width: "100%", padding: "8px 12px", background: "#252525",
-  border: "1px solid #333", borderRadius: 6, color: "#ebebeb",
-  fontSize: 13, outline: "none", boxSizing: "border-box",
+  width: "100%",
+  padding: "10px 12px",
+  background: "#111827",
+  border: "1px solid rgba(148,163,184,0.18)",
+  borderRadius: 8,
+  color: "#f8fafc",
+  fontSize: 13,
+  outline: "none",
+  boxSizing: "border-box",
 };
 
 const labelStyle: React.CSSProperties = {
@@ -167,7 +173,11 @@ export function Activities({ activities, setActivities, readOnly = false, studen
                 <button
                   onClick={() => toggleSlot(i)}
                   className="w-full flex items-center justify-between px-5 py-4 text-left transition-colors hover:bg-mist"
-                  style={{ background: isOpen ? "#2a2a2a" : "#1e1e1e", border: "none", cursor: "pointer" }}
+                  style={{
+                    background: isOpen ? "rgba(255,255,255,0.04)" : "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
                 >
                   <div className="flex items-center gap-3">
                     <div
@@ -235,7 +245,12 @@ export function Activities({ activities, setActivities, readOnly = false, studen
               setOpenSlot(totalSlots);
             }}
             className="mt-3 flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg border border-dashed"
-            style={{ color: "#528bff", borderColor: "#93c5fd", background: "rgba(82,139,255,0.06)", cursor: "pointer" }}
+            style={{
+              color: "#93c5fd",
+              borderColor: "rgba(96,165,250,0.28)",
+              background: "rgba(59,130,246,0.10)",
+              cursor: "pointer",
+            }}
           >
             + Add Another Activity
           </button>
