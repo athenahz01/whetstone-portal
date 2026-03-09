@@ -53,28 +53,57 @@ async function getValidToken(profileId: string) {
   return tokenData.access_token;
 }
 
-// PUSH: Add a deadline to Google Calendar
+// PUSH: Add a deadline or timed event to Google Calendar
 export async function POST(request: NextRequest) {
-  const { profileId, title, date, description } = await request.json();
+  const { profileId, title, date, description, startMinutes, durationMinutes } = await request.json();
 
   const token = await getValidToken(profileId);
   if (!token) {
     return NextResponse.json({ error: "Not connected to Google Calendar" }, { status: 401 });
   }
 
-  const event = {
-    summary: `[Whetstone] ${title}`,
-    description: description || "",
-    start: { date },
-    end: { date },
-    reminders: {
-      useDefault: false,
-      overrides: [
-        { method: "popup", minutes: 1440 },
-        { method: "popup", minutes: 60 },
-      ],
-    },
-  };
+  let event;
+
+  if (startMinutes !== undefined && startMinutes !== null) {
+    // Timed event — startMinutes is minutes from midnight (e.g. 480 = 8:00 AM)
+    const startHour = Math.floor(startMinutes / 60);
+    const startMin = startMinutes % 60;
+    const duration = durationMinutes || 30;
+    const endTotalMin = startMinutes + duration;
+    const endHour = Math.floor(endTotalMin / 60);
+    const endMin = endTotalMin % 60;
+
+    const startTime = `${date}T${String(startHour).padStart(2, "0")}:${String(startMin).padStart(2, "0")}:00`;
+    const endTime = `${date}T${String(endHour).padStart(2, "0")}:${String(endMin).padStart(2, "0")}:00`;
+
+    event = {
+      summary: `[Whetstone] ${title}`,
+      description: description || "",
+      start: { dateTime: startTime, timeZone: "America/New_York" },
+      end: { dateTime: endTime, timeZone: "America/New_York" },
+      reminders: {
+        useDefault: false,
+        overrides: [
+          { method: "popup", minutes: 15 },
+        ],
+      },
+    };
+  } else {
+    // All-day event (deadlines)
+    event = {
+      summary: `[Whetstone] ${title}`,
+      description: description || "",
+      start: { date },
+      end: { date },
+      reminders: {
+        useDefault: false,
+        overrides: [
+          { method: "popup", minutes: 1440 },
+          { method: "popup", minutes: 60 },
+        ],
+      },
+    };
+  }
 
   const res = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
     method: "POST",

@@ -20,12 +20,12 @@ export function getGoogleAuthUrl(profileId: string) {
   );
 }
   
-  export async function pushToGoogleCalendar(profileId: string, title: string, date: string, description?: string) {
+  export async function pushToGoogleCalendar(profileId: string, title: string, date: string, description?: string, startMinutes?: number, durationMinutes?: number) {
     try {
       const res = await fetch("/api/calendar/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ profileId, title, date, description }),
+        body: JSON.stringify({ profileId, title, date, description, startMinutes, durationMinutes }),
       });
       return await res.json();
     } catch (err) {

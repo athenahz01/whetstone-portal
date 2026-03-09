@@ -251,7 +251,7 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
 
       // Auto-sync to Google Calendar
       if (profileId && gcalConnected) {
-        pushToGoogleCalendar(profileId, task.text, dateStr, `Scheduled at ${fmtMinutes(clampedMinutes)} · ${task.minutes}min`).then(() => {
+        pushToGoogleCalendar(profileId, task.text, dateStr, `${task.minutes}min task`, clampedMinutes, task.minutes).then(() => {
           if (dbId) {
             updateReceptacleEvent(dbId, { synced: true });
           }
@@ -305,7 +305,7 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
     setSyncDone(false);
     for (const ev of calEvents) {
       console.log("[Receptacle] Syncing event:", ev.text, ev.date, ev.topMinutes);
-      const result = await pushToGoogleCalendar(profileId, ev.text, ev.date, `Scheduled at ${fmtMinutes(ev.topMinutes)} · ${ev.minutes}min`);
+      const result = await pushToGoogleCalendar(profileId, ev.text, ev.date, `${ev.minutes}min task`, ev.topMinutes, ev.minutes);
       console.log("[Receptacle] Sync result:", result);
       if (ev.dbId) {
         await updateReceptacleEvent(ev.dbId, { synced: true });
