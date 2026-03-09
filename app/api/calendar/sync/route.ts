@@ -1,134 +1,64 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+export async function GET(request: NextRequest) {
+  const code = request.nextUrl.searchParams.get("code");
 
-async function getValidToken(profileId: string) {
-  const { data: tokenData } = await supabase
-    .from("google_tokens")
-    .select("*")
-    .eq("profile_id", profileId)
-    .single();
-
-  if (!tokenData) return null;
-
-  // Check if token is expired
-  if (new Date(tokenData.expires_at) < new Date()) {
-    // Refresh the token
-    const res = await fetch("https://oauth2.googleapis.com/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-        refresh_token: tokenData.refresh_token,
-        grant_type: "refresh_token",
-      }),
-    });
-
-    const newTokens = await res.json();
-    if (!newTokens.access_token) return null;
-
-    const expiresAt = new Date(Date.now() + newTokens.expires_in * 1000).toISOString();
-
-    await supabase
-      .from("google_tokens")
-      .update({ access_token: newTokens.access_token, expires_at: expiresAt })
-      .eq("profile_id", profileId);
-
-    return newTokens.access_token;
+  if (!code) {
+    return NextResponse.redirect(new URL("/?error=no_code", request.url));
   }
 
-  return tokenData.access_token;
-}
+  // IMPORTANT: Use the same site URL as the initial auth request (from calendar.ts)
+  // This must match exactly or Google will reject the token exchange
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin;
+  const redirectUri = `${siteUrl}/api/auth/google/callback`;
 
-// PUSH: Add a deadline to Google Calendar
-export async function POST(request: NextRequest) {
-  const { profileId, title, date, description } = await request.json();
-
-  const token = await getValidToken(profileId);
-  if (!token) {
-    return NextResponse.json({ error: "Not connected to Google Calendar" }, { status: 401 });
-  }
-
-  const event = {
-    summary: `[Whetstone] ${title}`,
-    description: description || "",
-    start: { date },
-    end: { date },
-    reminders: {
-      useDefault: false,
-      overrides: [
-        { method: "popup", minutes: 1440 },
-        { method: "popup", minutes: 60 },
-      ],
-    },
-  };
-
-  const res = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
+  // Exchange code for tokens
+  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(event),
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      code,
+      client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+      redirect_uri: redirectUri,
+      grant_type: "authorization_code",
+    }),
   });
 
-  const result = await res.json();
-  return NextResponse.json(result);
-}
+  const tokens = await tokenRes.json();
 
-// PULL: Get events from Google Calendar
-export async function GET(request: NextRequest) {
-  const profileId = request.nextUrl.searchParams.get("profileId");
-  if (!profileId) {
-    return NextResponse.json({ error: "Missing profileId" }, { status: 400 });
+  if (!tokens.access_token) {
+    console.error("Token exchange failed:", tokens);
+    return NextResponse.redirect(new URL("/?error=token_failed", request.url));
   }
 
-  const token = await getValidToken(profileId);
-  if (!token) {
-    return NextResponse.json({ error: "Not connected" }, { status: 401 });
+  const state = request.nextUrl.searchParams.get("state");
+
+  if (!state) {
+    return NextResponse.redirect(new URL("/?error=no_state", request.url));
   }
 
-  const now = new Date();
-  const future = new Date();
-  future.setDate(future.getDate() + 60);
-
-  const res = await fetch(
-    `https://www.googleapis.com/calendar/v3/calendars/primary/events?` +
-    `timeMin=${now.toISOString()}&timeMax=${future.toISOString()}&singleEvents=true&orderBy=startTime&maxResults=50`,
-    {
-      headers: { Authorization: `Bearer ${token}` },
-    }
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const data = await res.json();
+  const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
 
-  const events = (data.items || []).map((e: any) => {
-    let date = "";
-    if (e.start?.date) {
-      // All-day event
-      date = e.start.date;
-    } else if (e.start?.dateTime) {
-      // Timed event - extract date from the ISO string directly
-      // e.start.dateTime looks like "2026-03-06T10:00:00-05:00"
-      // Take the first 10 characters to get the local date
-      date = e.start.dateTime.substring(0, 10);
-    }
+  const { error } = await supabase
+    .from("google_tokens")
+    .upsert({
+      profile_id: state,
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token || "",
+      expires_at: expiresAt,
+    }, { onConflict: "profile_id" });
 
-    return {
-      id: e.id,
-      title: e.summary || "Untitled",
-      date,
-      source: "google",
-      attendees: (e.attendees || []).map((a: any) => a.email?.toLowerCase()).filter(Boolean),
-      meetingLink: e.hangoutLink || e.conferenceData?.entryPoints?.[0]?.uri || "",
-      location: e.location || "",
-    };
-  });
+  if (error) {
+    console.error("Error saving token:", error);
+    return NextResponse.redirect(new URL("/?error=save_failed", request.url));
+  }
 
-  return NextResponse.json({ events });
+  return NextResponse.redirect(new URL("/?gcal=connected", request.url));
 }
