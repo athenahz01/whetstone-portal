@@ -40,7 +40,7 @@ export function getGoogleAuthUrl(profileId: string) {
       if (!res.ok) return [];
       const data = await res.json();
       return (data.events || [])
-        .filter((e: any) => !e.title?.startsWith("[Whetstone]"))
+        .filter((e: any) => !e.title?.startsWith("[Whetstone]") && !e.title?.endsWith("[Whetstone]"))
         .map((e: any) => ({
           id: e.id,
           title: e.title || "Untitled",
@@ -112,7 +112,7 @@ export function getGoogleAuthUrl(profileId: string) {
       if (!res.ok) return [];
       const data = await res.json();
       return (data.events || [])
-        .filter((e: any) => e.title?.startsWith("[Whetstone]"))
+        .filter((e: any) => e.title?.startsWith("[Whetstone]") || e.title?.endsWith("[Whetstone]"))
         .map((e: any) => ({
           title: e.title,
           date: e.date,

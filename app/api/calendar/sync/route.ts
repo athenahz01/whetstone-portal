@@ -55,7 +55,10 @@ async function getValidToken(profileId: string) {
 
 // PUSH: Add a deadline or timed event to Google Calendar
 export async function POST(request: NextRequest) {
-  const { profileId, title, date, description, startMinutes, durationMinutes } = await request.json();
+  const body = await request.json();
+  const { profileId, title, date, description, startMinutes, durationMinutes } = body;
+
+  console.log("[calendar-sync] POST body:", JSON.stringify({ title, date, startMinutes, durationMinutes }));
 
   const token = await getValidToken(profileId);
   if (!token) {
@@ -64,7 +67,7 @@ export async function POST(request: NextRequest) {
 
   let event;
 
-  if (startMinutes !== undefined && startMinutes !== null) {
+  if (typeof startMinutes === "number") {
     // Timed event — startMinutes is minutes from midnight (e.g. 480 = 8:00 AM)
     const startHour = Math.floor(startMinutes / 60);
     const startMin = startMinutes % 60;
@@ -76,8 +79,10 @@ export async function POST(request: NextRequest) {
     const startTime = `${date}T${String(startHour).padStart(2, "0")}:${String(startMin).padStart(2, "0")}:00`;
     const endTime = `${date}T${String(endHour).padStart(2, "0")}:${String(endMin).padStart(2, "0")}:00`;
 
+    console.log("[calendar-sync] Creating TIMED event:", startTime, "→", endTime);
+
     event = {
-      summary: `[Whetstone] ${title}`,
+      summary: `${title} [Whetstone]`,
       description: description || "",
       start: { dateTime: startTime, timeZone: "America/New_York" },
       end: { dateTime: endTime, timeZone: "America/New_York" },
@@ -91,7 +96,7 @@ export async function POST(request: NextRequest) {
   } else {
     // All-day event (deadlines)
     event = {
-      summary: `[Whetstone] ${title}`,
+      summary: `${title} [Whetstone]`,
       description: description || "",
       start: { date },
       end: { date },
