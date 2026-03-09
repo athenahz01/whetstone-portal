@@ -11,7 +11,7 @@ interface CardProps {
       <div
         onClick={onClick}
         style={style}
-        className={`bg-white rounded-2xl ${noPadding ? "" : "p-6"} ${onClick ? "cursor-pointer hover-lift" : ""} ${className}`}
+        className={`bg-white border border-line rounded-xl ${noPadding ? "" : "p-6"} ${onClick ? "cursor-pointer" : ""} ${className}`}
       >
         {children}
       </div>

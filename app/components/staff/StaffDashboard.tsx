@@ -92,16 +92,16 @@ export function StaffDashboard({
           {/* Login Warning */}
           <div
             onClick={() => inactiveStudents.length > 0 && setShowInactiveModal(true)}
-            className={`rounded-2xl p-5 transition-all select-none bg-white
+            className={`rounded-xl p-5 border-t-4 transition-all select-none bg-white border border-line
               ${inactiveStudents.length > 0
-                ? "cursor-pointer"
-                : ""
+                ? "border-t-red-500 cursor-pointer hover:shadow-md hover:bg-red-50"
+                : "border-t-green-500"
               }`}
           >
-            <p className="text-xs font-medium tracking-wider text-faint uppercase mb-2">
+            <p className="text-xs font-semibold tracking-widest text-faint uppercase mb-2">
               Login Warning
             </p>
-            <p className="text-4xl font-bold mb-1" style={{ color: inactiveStudents.length > 0 ? "#e25c5c" : "#4cb86a", fontVariantNumeric: "tabular-nums" }}>
+            <p className={`text-4xl font-bold mb-1 ${inactiveStudents.length > 0 ? "text-red-600" : "text-green-600"}`}>
               {inactiveStudents.length}
             </p>
             <p className="text-xs text-sub leading-tight">

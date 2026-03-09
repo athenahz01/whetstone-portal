@@ -7,15 +7,12 @@ interface MetricCardProps {
   color?: string;
 }
 
-export function MetricCard({ label, value, detail, color = "#6c8cff" }: MetricCardProps) {
+export function MetricCard({ label, value, detail, color = "#528bff" }: MetricCardProps) {
   return (
-    <Card>
-      <div className="flex items-center gap-2 mb-3">
-        <div className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
-        <div className="text-xs text-sub uppercase tracking-wider font-medium">{label}</div>
-      </div>
-      <div className="text-3xl font-bold text-heading" style={{ fontVariantNumeric: "tabular-nums" }}>{value}</div>
-      {detail && <div className="text-sm text-sub mt-1.5">{detail}</div>}
+    <Card style={{ borderTop: `3px solid ${color}` }}>
+      <div className="text-xs text-sub uppercase tracking-widest font-semibold mb-2">{label}</div>
+      <div className="text-3xl font-bold text-heading">{value}</div>
+      {detail && <div className="text-sm text-sub mt-1">{detail}</div>}
     </Card>
   );
 }

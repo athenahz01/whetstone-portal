@@ -1,38 +1,38 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-bg: #161616;
-  --color-white: #1c1c1c;
-  --color-raised: #222222;
-  --color-mist: #282828;
+  --color-bg: #191919;
+  --color-white: #1e1e1e;
+  --color-raised: #252525;
+  --color-mist: #2a2a2a;
 
-  --color-navy: #141414;
+  --color-navy: #111111;
   --color-navy-mid: #1a1a1a;
-  --color-navy-edge: #262626;
-  --color-navy-txt: #6b6b6b;
-  --color-navy-hi: #e0e0e0;
+  --color-navy-edge: #2a2a2a;
+  --color-navy-txt: #717171;
+  --color-navy-hi: #e8e8e8;
 
-  --color-heading: #f0f0f0;
-  --color-body: #999;
-  --color-sub: #666;
-  --color-faint: #444;
+  --color-heading: #ebebeb;
+  --color-body: #a0a0a0;
+  --color-sub: #717171;
+  --color-faint: #505050;
 
-  --color-line: #262626;
-  --color-line-dk: #303030;
+  --color-line: #2a2a2a;
+  --color-line-dk: #333333;
 
-  --color-accent: #6c8cff;
-  --color-accent-ghost: rgba(108, 140, 255, 0.07);
-  --color-accent-ring: rgba(108, 140, 255, 0.18);
-  --color-accent-ink: #8eaaff;
+  --color-accent: #528bff;
+  --color-accent-ghost: rgba(82, 139, 255, 0.08);
+  --color-accent-ring: rgba(82, 139, 255, 0.2);
+  --color-accent-ink: #7aabff;
 
-  --color-danger: #e25c5c;
-  --color-danger-ghost: rgba(226, 92, 92, 0.07);
-  --color-success: #4cb86a;
-  --color-success-ghost: rgba(76, 184, 106, 0.07);
-  --color-warn: #d4a03a;
-  --color-warn-ghost: rgba(212, 160, 58, 0.07);
-  --color-purple: #a07ef0;
-  --color-purple-ghost: rgba(160, 126, 240, 0.07);
+  --color-danger: #e55b5b;
+  --color-danger-ghost: rgba(229, 91, 91, 0.08);
+  --color-success: #4aba6a;
+  --color-success-ghost: rgba(74, 186, 106, 0.08);
+  --color-warn: #e5a83b;
+  --color-warn-ghost: rgba(229, 168, 59, 0.08);
+  --color-purple: #a480f2;
+  --color-purple-ghost: rgba(164, 128, 242, 0.08);
 
   --font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -45,38 +45,27 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Serif display font for page titles */
-h1 {
-  font-family: "Instrument Serif", Georgia, "Times New Roman", serif;
-  font-weight: 400;
-  letter-spacing: -0.01em;
+h1, h2, h3, h4 {
+  letter-spacing: -0.02em;
 }
 
-h2, h3, h4 {
-  letter-spacing: -0.015em;
+/* Tabular numbers for metrics / data */
+[class*="text-3xl"], [class*="text-2xl"] {
+  font-variant-numeric: tabular-nums;
 }
 
-::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: #383838; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #444; }
 
 input:focus, select:focus, textarea:focus {
-  border-color: rgba(108, 140, 255, 0.4) !important;
-  box-shadow: 0 0 0 3px rgba(108, 140, 255, 0.08) !important;
+  border-color: #528bff !important;
+  box-shadow: 0 0 0 2px rgba(82, 139, 255, 0.15) !important;
   outline: none;
 }
 
 ::selection {
-  background: rgba(108, 140, 255, 0.25);
-  color: #f0f0f0;
-}
-
-/* Subtle hover lift for interactive cards */
-.hover-lift {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.hover-lift:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  background: rgba(82, 139, 255, 0.3);
+  color: #fff;
 }
