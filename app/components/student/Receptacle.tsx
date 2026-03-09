@@ -135,6 +135,9 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
   const [syncing, setSyncing] = useState(false);
   const [syncDone, setSyncDone] = useState(false);
 
+  // Drag ghost preview
+  const [ghostPreview, setGhostPreview] = useState<{ date: string; topMinutes: number; minutes: number; text: string; colIndex: number } | null>(null);
+
   const calRef = useRef<HTMLDivElement>(null);
   const days = get3Days(dayOffset);
 
@@ -241,23 +244,70 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
   const scheduledIds = new Set(calEvents.map((e) => e.taskId));
   const tasksInSection = (q: Quadrant) => tasks.filter((t) => t.quadrant === q);
 
-  // Free-form drop: calculate minute offset from mouse position
-  const handleCalDrop = useCallback(async (e: React.DragEvent, dateStr: string) => {
-    e.preventDefault();
+  // Calculate time from mouse Y position on calendar
+  const getMinutesFromMouseY = useCallback((e: React.DragEvent): number | null => {
     const calEl = calRef.current;
-    if (!calEl) return;
-
+    if (!calEl) return null;
     const scrollContainer = calEl.querySelector("[data-cal-scroll]") as HTMLElement;
-    if (!scrollContainer) return;
-
+    if (!scrollContainer) return null;
     const rect = scrollContainer.getBoundingClientRect();
     const scrollTop = scrollContainer.scrollTop;
     const yInGrid = e.clientY - rect.top + scrollTop;
-
-    // Convert pixel position to minutes from start hour (7am = 420 min)
     const minutesFromTop = (yInGrid / HOUR_HEIGHT) * 60;
-    const totalMinutes = Math.round((420 + minutesFromTop) / 5) * 5; // snap to 5-min intervals
-    const clampedMinutes = Math.max(420, Math.min(totalMinutes, 23 * 60));
+    const totalMinutes = Math.round((420 + minutesFromTop) / 15) * 15; // snap to 15-min
+    return Math.max(420, Math.min(totalMinutes, 23 * 60));
+  }, []);
+
+  // Get which day column the mouse is over (0, 1, 2)
+  const getDayColumnFromMouseX = useCallback((e: React.DragEvent): number => {
+    const calEl = calRef.current;
+    if (!calEl) return 0;
+    const scrollContainer = calEl.querySelector("[data-cal-scroll]") as HTMLElement;
+    if (!scrollContainer) return 0;
+    const rect = scrollContainer.getBoundingClientRect();
+    const xInGrid = e.clientX - rect.left - 52; // subtract hour label width
+    const colWidth = (rect.width - 52) / 3;
+    return Math.max(0, Math.min(2, Math.floor(xInGrid / colWidth)));
+  }, []);
+
+  // Track drag position for ghost preview
+  const handleCalDragOver = useCallback((e: React.DragEvent, dateStr: string) => {
+    e.preventDefault();
+    if (!dragging && !draggingEvent) return;
+
+    const mins = getMinutesFromMouseY(e);
+    if (mins === null) return;
+    const colIdx = getDayColumnFromMouseX(e);
+
+    const task = dragging
+      ? tasks.find((t) => t.id === dragging)
+      : null;
+    const existingEv = draggingEvent
+      ? calEvents.find((ev) => ev.taskId === draggingEvent)
+      : null;
+
+    const taskMinutes = task?.minutes || existingEv?.minutes || 30;
+    const taskText = task?.text || existingEv?.text || "";
+
+    setGhostPreview({
+      date: dateStr,
+      topMinutes: mins,
+      minutes: taskMinutes,
+      text: taskText,
+      colIndex: colIdx,
+    });
+  }, [dragging, draggingEvent, tasks, calEvents, getMinutesFromMouseY, getDayColumnFromMouseX]);
+
+  // Clear ghost on drag leave
+  const handleCalDragLeave = useCallback(() => {
+    setGhostPreview(null);
+  }, []);
+
+  // Free-form drop: use ghost position or calculate from mouse
+  const handleCalDrop = useCallback(async (e: React.DragEvent, dateStr: string) => {
+    e.preventDefault();
+    const clampedMinutes = ghostPreview?.topMinutes ?? getMinutesFromMouseY(e) ?? 480;
+    setGhostPreview(null);
 
     if (dragging) {
       const task = tasks.find((t) => t.id === dragging);
@@ -320,7 +370,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
         updateReceptacleEvent(existingEvent.dbId, { date: dateStr, top_minutes: clampedMinutes });
       }
     }
-  }, [dragging, draggingEvent, tasks, studentId, profileId, gcalConnected, calEvents]);
+  }, [dragging, draggingEvent, tasks, studentId, profileId, gcalConnected, calEvents, ghostPreview, getMinutesFromMouseY]);
 
   const removeEvent = (taskId: string) => {
     const ev = calEvents.find((e) => e.taskId === taskId);
@@ -706,8 +756,25 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                             <div key={`cell-${hour}-${di}`}
                               className="border-t border-l border-line relative"
                               style={{ height: HOUR_HEIGHT }}
-                              onDragOver={(e) => e.preventDefault()}
+                              onDragOver={(e) => handleCalDragOver(e, dateStr)}
+                              onDragLeave={handleCalDragLeave}
                               onDrop={(e) => handleCalDrop(e, dateStr)}>
+                              {/* Ghost preview */}
+                              {ghostPreview && ghostPreview.date === dateStr && ghostPreview.topMinutes >= cellStartMin && ghostPreview.topMinutes < cellEndMin && (
+                                <div className="absolute left-0.5 right-0.5 rounded-md px-1.5 pt-1 z-20 overflow-hidden pointer-events-none"
+                                  style={{
+                                    top: ((ghostPreview.topMinutes - cellStartMin) / 60) * HOUR_HEIGHT,
+                                    height: minutesToHeight(ghostPreview.minutes),
+                                    background: "rgba(82,139,255,0.12)",
+                                    border: "2px dashed #528bff",
+                                    transition: "top 0.08s ease-out",
+                                  }}>
+                                  <div className="text-[10px] font-semibold truncate" style={{ color: "#7aabff" }}>{ghostPreview.text}</div>
+                                  <div className="text-[9px] font-medium" style={{ color: "#528bff" }}>
+                                    {fmtMinutes(ghostPreview.topMinutes)} – {fmtMinutes(ghostPreview.topMinutes + ghostPreview.minutes)} · {ghostPreview.minutes}m
+                                  </div>
+                                </div>
+                              )}
                               {/* Google Calendar events (background, non-interactive) */}
                               {googleEvents
                                 .filter((ge: any) => ge.date === dateStr && ge.startMinutes != null && ge.startMinutes >= cellStartMin && ge.startMinutes < cellEndMin)
@@ -731,7 +798,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                                 return (
                                   <div key={ev.taskId} draggable
                                     onDragStart={() => setDraggingEvent(ev.taskId)}
-                                    onDragEnd={() => setDraggingEvent(null)}
+                                    onDragEnd={() => { setDraggingEvent(null); setGhostPreview(null); }}
                                     className="absolute left-0.5 right-0.5 rounded-md px-1.5 pt-1 cursor-grab group z-10 overflow-hidden"
                                     style={{ top: topPx, height: minutesToHeight(ev.minutes), background: "rgba(82,139,255,0.06)", border: "1.5px solid #3b82f6" }}>
                                     <div className="text-[10px] font-semibold leading-tight truncate pr-4" style={{ color: "#7aabff" }}>{ev.text}</div>
@@ -787,7 +854,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                         return (
                           <div key={t.id} draggable={!onCal}
                             onDragStart={() => !onCal && setDragging(t.id)}
-                            onDragEnd={() => setDragging(null)}
+                            onDragEnd={() => { setDragging(null); setGhostPreview(null); }}
                             className="flex items-center justify-between px-3 py-2.5 rounded-lg select-none"
                             style={{ background: onCal ? "rgba(74,186,106,0.08)" : dragging === t.id ? "rgba(229,91,91,0.08)" : "#252525", border: `1.5px solid ${onCal ? "#4aba6a" : dragging === t.id ? "#e55b5b" : "#333"}`, cursor: onCal ? "default" : "grab", opacity: dragging === t.id ? 0.5 : 1 }}>
                             <span className="text-xs font-medium truncate min-w-0" style={{ color: onCal ? "#4aba6a" : "#a0a0a0" }}>{onCal ? "✓ " : "⠿ "}{t.text}</span>
@@ -813,7 +880,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                       return (
                         <div key={t.id} draggable={!onCal}
                           onDragStart={() => !onCal && setDragging(t.id)}
-                          onDragEnd={() => setDragging(null)}
+                          onDragEnd={() => { setDragging(null); setGhostPreview(null); }}
                           className="flex items-center justify-between px-3 py-2.5 rounded-lg select-none"
                           style={{ background: onCal ? "rgba(74,186,106,0.08)" : dragging === t.id ? "rgba(82,139,255,0.08)" : "#252525", border: `1.5px solid ${onCal ? "#4aba6a" : dragging === t.id ? "#528bff" : "#333"}`, cursor: onCal ? "default" : "grab", opacity: dragging === t.id ? 0.5 : 1 }}>
                           <span className="text-xs font-medium truncate min-w-0" style={{ color: onCal ? "#4aba6a" : "#a0a0a0" }}>{onCal ? "✓ " : "⠿ "}{t.text}</span>
@@ -838,7 +905,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                       return (
                         <div key={t.id} draggable={!onCal}
                           onDragStart={() => !onCal && setDragging(t.id)}
-                          onDragEnd={() => setDragging(null)}
+                          onDragEnd={() => { setDragging(null); setGhostPreview(null); }}
                           className="flex items-center justify-between px-3 py-2.5 rounded-lg select-none"
                           style={{ background: onCal ? "rgba(229,168,59,0.08)" : dragging === t.id ? "rgba(229,168,59,0.12)" : "#252525", border: `1.5px solid ${onCal ? "#e5a83b" : dragging === t.id ? "#e5a83b" : "#333"}`, cursor: onCal ? "default" : "grab", opacity: dragging === t.id ? 0.5 : 1 }}>
                           <span className="text-xs font-medium truncate min-w-0" style={{ color: "#a0a0a0" }}>{onCal ? "✓ " : "⠿ "}{t.text}</span>
