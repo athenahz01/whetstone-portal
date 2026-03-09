@@ -761,19 +761,36 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                               onDrop={(e) => handleCalDrop(e, dateStr)}>
                               {/* Ghost preview */}
                               {ghostPreview && ghostPreview.date === dateStr && ghostPreview.topMinutes >= cellStartMin && ghostPreview.topMinutes < cellEndMin && (
-                                <div className="absolute left-0.5 right-0.5 rounded-md px-1.5 pt-1 z-20 overflow-hidden pointer-events-none"
-                                  style={{
-                                    top: ((ghostPreview.topMinutes - cellStartMin) / 60) * HOUR_HEIGHT,
-                                    height: minutesToHeight(ghostPreview.minutes),
-                                    background: "rgba(82,139,255,0.12)",
-                                    border: "2px dashed #528bff",
-                                    transition: "top 0.08s ease-out",
-                                  }}>
-                                  <div className="text-[10px] font-semibold truncate" style={{ color: "#7aabff" }}>{ghostPreview.text}</div>
-                                  <div className="text-[9px] font-medium" style={{ color: "#528bff" }}>
-                                    {fmtMinutes(ghostPreview.topMinutes)} – {fmtMinutes(ghostPreview.topMinutes + ghostPreview.minutes)} · {ghostPreview.minutes}m
+                                <>
+                                  {/* Ghost block on calendar */}
+                                  <div className="absolute left-0.5 right-0.5 rounded-md z-20 overflow-visible pointer-events-none"
+                                    style={{
+                                      top: ((ghostPreview.topMinutes - cellStartMin) / 60) * HOUR_HEIGHT,
+                                      height: Math.max(minutesToHeight(ghostPreview.minutes), 36),
+                                      background: "rgba(82,139,255,0.10)",
+                                      border: "2px dashed #528bff",
+                                      transition: "top 0.06s ease-out",
+                                    }}>
+                                    <div className="px-1.5 pt-1">
+                                      <div className="text-[10px] font-semibold truncate" style={{ color: "#7aabff" }}>{ghostPreview.text}</div>
+                                    </div>
                                   </div>
-                                </div>
+                                  {/* Floating time badge - anchored to left edge */}
+                                  <div className="absolute z-30 pointer-events-none"
+                                    style={{
+                                      top: ((ghostPreview.topMinutes - cellStartMin) / 60) * HOUR_HEIGHT - 2,
+                                      left: -54,
+                                      width: 52,
+                                    }}>
+                                    <div className="rounded-md px-1 py-0.5 text-right"
+                                      style={{ background: "#528bff", fontSize: 9, fontWeight: 700, color: "#fff", whiteSpace: "nowrap" }}>
+                                      {fmtMinutes(ghostPreview.topMinutes)}
+                                    </div>
+                                    <div className="text-right mt-0.5" style={{ fontSize: 8, color: "#528bff", fontWeight: 600 }}>
+                                      {ghostPreview.minutes}m
+                                    </div>
+                                  </div>
+                                </>
                               )}
                               {/* Google Calendar events (background, non-interactive) */}
                               {googleEvents
