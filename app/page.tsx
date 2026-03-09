@@ -232,7 +232,7 @@ export default function Home() {
     return (
       <div className="flex h-screen items-center justify-center bg-bg">
         <div className="text-center">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 text-2xl font-bold" style={{ background: "#ebebeb", color: "#111" }}>W</div>
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 text-2xl font-bold" style={{ background: "#f0f0f0", color: "#141414" }}>W</div>
           <div className="text-lg font-semibold text-heading">Loading...</div>
         </div>
       </div>
@@ -247,7 +247,7 @@ export default function Home() {
     return (
       <div className="flex h-screen items-center justify-center bg-bg">
         <div className="text-center">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 text-2xl font-bold" style={{ background: "#ebebeb", color: "#111" }}>W</div>
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 text-2xl font-bold" style={{ background: "#f0f0f0", color: "#141414" }}>W</div>
           <div className="text-lg font-semibold text-heading">Loading data...</div>
           <div className="text-sm text-sub mt-1">Fetching student records</div>
         </div>

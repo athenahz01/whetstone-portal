@@ -105,53 +105,42 @@ export function Sidebar({
 
   return (
     <aside
-      className="bg-navy flex flex-col flex-shrink-0 overflow-hidden transition-all duration-200"
+      className="flex flex-col flex-shrink-0 overflow-hidden transition-all duration-200"
       style={{
-        width: collapsed ? 60 : 220,
-        borderRight: "1px solid rgba(148,163,184,0.12)",
-        background: "linear-gradient(180deg, #0b1120 0%, #0f172a 100%)",
+        width: collapsed ? 56 : 216,
+        background: "#141414",
+        borderRight: "1px solid #222",
       }}
     >
       {/* Logo */}
       <div
-        className="border-b border-navy-edge flex items-center gap-3"
+        className="flex items-center gap-3"
         style={{
-          padding: collapsed ? "20px 14px" : "20px 16px",
-          borderBottom: "1px solid rgba(148,163,184,0.12)",
+          padding: collapsed ? "20px 12px" : "20px 16px",
         }}
       >
         <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center text-base font-bold flex-shrink-0"
+          className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-semibold flex-shrink-0"
           style={{
-            background: "#f8fafc",
-            color: "#0f172a",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.22)",
+            background: "#f0f0f0",
+            color: "#141414",
           }}
         >
           W
         </div>
 
         {!collapsed && (
-          <div className="flex flex-col leading-none">
-            <span
-              style={{
-                color: "#f8fafc",
-                fontWeight: 700,
-                fontSize: 17,
-                letterSpacing: "-0.02em",
-              }}
-            >
-              Whetstone
-            </span>
-          </div>
+          <span style={{ color: "#f0f0f0", fontWeight: 600, fontSize: 16, letterSpacing: "-0.02em" }}>
+            Whetstone
+          </span>
         )}
       </div>
 
       {/* Role Label */}
       {!collapsed && (
         <div
-          className="px-4 pt-3.5 pb-1 text-[10px] uppercase tracking-widest font-bold"
-          style={{ color: "#94a3b8" }}
+          className="px-4 pb-1 text-[10px] uppercase tracking-widest"
+          style={{ color: "#555", fontWeight: 500 }}
         >
           {role === "student"
             ? "Student"
@@ -169,21 +158,19 @@ export function Sidebar({
       )}
 
       {/* Nav Items */}
-      <nav className="flex-1" style={{ padding: "6px 8px" }}>
+      <nav className="flex-1" style={{ padding: "4px 8px" }}>
         {nav.map(([id, label]) => (
           <button
             key={id}
             onClick={() => setView(id)}
-            className="w-full flex items-center rounded-xl cursor-pointer text-sm mb-1 border transition-all duration-100"
+            className="w-full flex items-center cursor-pointer text-[13px] mb-0.5 border-none transition-all duration-100"
             style={{
-              padding: collapsed ? "10px" : "10px 12px",
+              padding: collapsed ? "9px" : "8px 12px",
               justifyContent: collapsed ? "center" : "flex-start",
-              background:
-                view === id ? "rgba(255,255,255,0.07)" : "transparent",
-              borderColor:
-                view === id ? "rgba(148,163,184,0.16)" : "transparent",
-              color: view === id ? "#f8fafc" : "#94a3b8",
-              fontWeight: view === id ? 600 : 500,
+              borderRadius: 6,
+              background: view === id ? "rgba(255,255,255,0.05)" : "transparent",
+              color: view === id ? "#e0e0e0" : "#666",
+              fontWeight: view === id ? 500 : 400,
             }}
           >
             {collapsed ? label[0] : label}
@@ -200,11 +187,11 @@ export function Sidebar({
                 className="flex items-center gap-2 px-2 py-2 rounded-lg"
                 style={{
                   background: "rgba(74,186,106,0.10)",
-                  border: "1px solid rgba(74,186,106,0.18)",
+                  border: "1px solid rgba(76,184,106,0.15)",
                 }}
               >
                 <span className="text-xs">📅</span>
-                <span className="text-xs font-medium" style={{ color: "#4ade80" }}>
+                <span className="text-xs font-medium" style={{ color: "#4cb86a" }}>
                   Calendar synced
                 </span>
               </div>
@@ -217,7 +204,7 @@ export function Sidebar({
                 className="w-full px-2 py-1.5 rounded-lg cursor-pointer text-[10px] font-semibold border-none"
                 style={{
                   background: "rgba(255,255,255,0.04)",
-                  color: "#cbd5e1",
+                  color: "#666",
                 }}
               >
                 🔄 Sync Now
@@ -231,7 +218,7 @@ export function Sidebar({
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer text-xs font-semibold border-none"
               style={{
                 background: "rgba(255,255,255,0.04)",
-                color: "#cbd5e1",
+                color: "#666",
               }}
             >
               📅 Connect Google Calendar
@@ -248,7 +235,7 @@ export function Sidebar({
             className="w-full flex items-center justify-between px-2 py-2 rounded-lg cursor-pointer text-xs border-none"
             style={{
               background: "rgba(255,255,255,0.04)",
-              color: "#cbd5e1",
+              color: "#666",
             }}
           >
             <span>🕐 {currentTzLabel}</span>
@@ -259,8 +246,8 @@ export function Sidebar({
             <div
               className="mt-1 rounded-lg overflow-hidden"
               style={{
-                background: "#111827",
-                border: "1px solid rgba(148,163,184,0.12)",
+                background: "#1a1a1a",
+                border: "1px solid #262626",
                 maxHeight: 200,
                 overflowY: "auto",
               }}
@@ -278,7 +265,7 @@ export function Sidebar({
                       timezone === tz.value
                         ? "rgba(255,255,255,0.07)"
                         : "transparent",
-                    color: timezone === tz.value ? "#f8fafc" : "#94a3b8",
+                    color: timezone === tz.value ? "#e0e0e0" : "#666",
                   }}
                 >
                   {tz.label}
@@ -292,7 +279,7 @@ export function Sidebar({
       {/* Bottom User Area */}
       <div
         className="p-3 border-t border-navy-edge"
-        style={{ borderTop: "1px solid rgba(148,163,184,0.12)" }}
+        style={{ borderTop: "1px solid #222" }}
       >
         {!collapsed && (
           <div className="flex items-center gap-2.5 px-1 py-1.5 mb-2">
@@ -300,17 +287,17 @@ export function Sidebar({
               className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
               style={{
                 background: "rgba(255,255,255,0.06)",
-                color: "#e2e8f0",
+                color: "#999",
                 border: "1px solid rgba(255,255,255,0.08)",
               }}
             >
               {userInitials}
             </div>
             <div>
-              <div className="text-sm font-medium" style={{ color: "#f8fafc" }}>
+              <div className="text-sm font-medium" style={{ color: "#e0e0e0" }}>
                 {userName}
               </div>
-              <div className="text-xs" style={{ color: "#94a3b8" }}>
+              <div className="text-xs" style={{ color: "#666" }}>
                 {userRole}
               </div>
             </div>
@@ -322,8 +309,8 @@ export function Sidebar({
             onClick={() => setCollapsed(!collapsed)}
             className="flex-1 py-1.5 border-none rounded-md cursor-pointer text-xs"
             style={{
-              background: "#1e293b",
-              color: "#cbd5e1",
+              background: "#1e1e1e",
+              color: "#666",
             }}
           >
             {collapsed ? "→" : "Collapse"}
@@ -334,8 +321,8 @@ export function Sidebar({
             className="py-1.5 px-2 bg-transparent rounded-md cursor-pointer text-xs"
             style={{
               flex: collapsed ? undefined : 1,
-              border: "1px solid rgba(148,163,184,0.18)",
-              color: "#94a3b8",
+              border: "1px solid #303030",
+              color: "#666",
             }}
           >
             {collapsed ? "×" : "Sign Out"}

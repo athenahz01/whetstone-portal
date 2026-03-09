@@ -18,16 +18,17 @@ export function Button({
   disabled = false,
 }: ButtonProps) {
   const baseStyle: React.CSSProperties = {
-    padding: "10px 16px",
-    borderRadius: 10,
-    border: "1px solid rgba(148,163,184,0.18)",
-    background: primary ? "#3b82f6" : "#111827",
-    color: "#f8fafc",
-    fontWeight: 600,
+    padding: "9px 18px",
+    borderRadius: 8,
+    border: primary ? "none" : "1px solid #303030",
+    background: primary ? "#6c8cff" : "#222",
+    color: primary ? "#fff" : "#ccc",
+    fontWeight: 500,
     fontSize: 13,
     cursor: disabled ? "not-allowed" : "pointer",
     transition: "all 0.15s ease",
-    opacity: disabled ? 0.6 : 1,
+    opacity: disabled ? 0.5 : 1,
+    letterSpacing: "-0.01em",
   };
 
   return (
