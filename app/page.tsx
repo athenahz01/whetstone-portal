@@ -312,7 +312,7 @@ export default function Home() {
       return <Testing tests={tests} setTests={setTests} readOnly={isParent} />;
     }
     if (isStudentOrParent && view === "activities") {
-      return <Activities activities={activities} setActivities={setActivities} readOnly={isParent} />;
+      return <Activities activities={activities} setActivities={setActivities} readOnly={isParent} studentId={me?.id} />;
     }
     if (isStudentOrParent && view === "honors" && me) {
       return (

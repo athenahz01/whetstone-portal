@@ -527,3 +527,59 @@ export async function deleteReceptacleEvent(id: number): Promise<boolean> {
   }
   return true;
 }
+
+// ── Brain dump task persistence (step 1) ──────────────────────────────────
+
+export async function addBrainDumpTask(studentId: number, data: {
+  task_text: string;
+  minutes: number;
+  quadrant?: string;
+}): Promise<ReceptacleEvent | null> {
+  const { data: result, error } = await supabase
+    .from("receptacle_events")
+    .insert({
+      student_id: studentId,
+      task_text: data.task_text,
+      minutes: data.minutes,
+      date: "braindump",
+      top_minutes: 0,
+      quadrant: data.quadrant || null,
+      synced: false,
+      completed: false,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error adding brain dump task:", error);
+    return null;
+  }
+  return result as ReceptacleEvent;
+}
+
+export async function fetchBrainDumpTasks(studentId: number): Promise<ReceptacleEvent[]> {
+  const { data, error } = await supabase
+    .from("receptacle_events")
+    .select("*")
+    .eq("student_id", studentId)
+    .eq("date", "braindump")
+    .order("id", { ascending: true });
+
+  if (error || !data) {
+    console.error("Error fetching brain dump tasks:", error);
+    return [];
+  }
+  return data as ReceptacleEvent[];
+}
+
+export async function updateBrainDumpQuadrant(id: number, quadrant: string | null): Promise<boolean> {
+  const { error } = await supabase
+    .from("receptacle_events")
+    .update({ quadrant })
+    .eq("id", id);
+  if (error) {
+    console.error("Error updating brain dump quadrant:", error);
+    return false;
+  }
+  return true;
+}

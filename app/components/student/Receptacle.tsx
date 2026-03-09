@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { PageHeader } from "../ui/PageHeader";
 import { pushToGoogleCalendar } from "../../lib/calendar";
-import { fetchReceptacleEvents, addReceptacleEvent, updateReceptacleEvent, deleteReceptacleEvent, ReceptacleEvent } from "../../lib/queries";
+import { fetchReceptacleEvents, addReceptacleEvent, updateReceptacleEvent, deleteReceptacleEvent, addBrainDumpTask, fetchBrainDumpTasks, updateBrainDumpQuadrant, ReceptacleEvent } from "../../lib/queries";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -16,6 +16,7 @@ interface Task {
   minutes: number;
   quadrant: Quadrant;
   doSub: DoSubType;
+  dbId?: number; // ID from receptacle_events table
 }
 
 interface CalendarEvent {
@@ -136,6 +137,26 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
   const calRef = useRef<HTMLDivElement>(null);
   const days = get3Days(dayOffset);
 
+  // ── Load persisted brain dump tasks on mount ──
+  useEffect(() => {
+    if (!studentId) return;
+    fetchBrainDumpTasks(studentId).then((events) => {
+      const loaded: Task[] = events.map((e) => ({
+        id: `db-${e.id}`,
+        text: e.task_text,
+        minutes: e.minutes,
+        quadrant: (e.quadrant as Quadrant) || null,
+        doSub: null,
+        dbId: e.id,
+      }));
+      setTasks((prev) => {
+        const dbIds = new Set(loaded.map((t) => t.dbId));
+        const nonDb = prev.filter((t) => !t.dbId && !dbIds.has(t.dbId));
+        return [...nonDb, ...loaded];
+      });
+    });
+  }, [studentId]);
+
   // ── Load persisted calendar events on mount ──
   useEffect(() => {
     if (!studentId) return;
@@ -163,11 +184,24 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
 
   // ── Step 1 ──
 
-  const addTask = () => {
+  const addTask = async () => {
     const text = inputText.trim();
     const mins = parseInt(inputMins);
     if (!text || !mins || mins <= 0) return;
-    setTasks((p) => [...p, { id: Date.now().toString(), text, minutes: mins, quadrant: null, doSub: null }]);
+
+    const tempId = Date.now().toString();
+    const newTask: Task = { id: tempId, text, minutes: mins, quadrant: null, doSub: null };
+
+    // Persist to DB if we have a studentId
+    if (studentId) {
+      const result = await addBrainDumpTask(studentId, { task_text: text, minutes: mins });
+      if (result) {
+        newTask.id = `db-${result.id}`;
+        newTask.dbId = result.id;
+      }
+    }
+
+    setTasks((p) => [...p, newTask]);
     setInputText("");
     setInputMins("");
   };
@@ -178,12 +212,20 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
 
   const assign = (q: Quadrant) => {
     if (!selectedTask) return;
+    const task = tasks.find((t) => t.id === selectedTask);
+    if (task?.dbId) {
+      updateBrainDumpQuadrant(task.dbId, q);
+    }
     setTasks((p) => p.map((t) => t.id === selectedTask ? { ...t, quadrant: q, doSub: null } : t));
     const remaining = tasks.filter((t) => t.quadrant === null && t.id !== selectedTask);
     setSelectedTask(remaining.length > 0 ? remaining[0].id : null);
   };
 
   const unassign = (id: string) => {
+    const task = tasks.find((t) => t.id === id);
+    if (task?.dbId) {
+      updateBrainDumpQuadrant(task.dbId, null);
+    }
     setTasks((p) => p.map((t) => t.id === id ? { ...t, quadrant: null, doSub: null } : t));
     setSelectedTask(id);
   };
@@ -220,17 +262,25 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
       const task = tasks.find((t) => t.id === dragging);
       if (!task) return;
 
-      // Save to DB
-      let dbId: number | undefined;
+      // If this task already has a DB record (from brain dump), update it instead of creating new
+      let dbId: number | undefined = task.dbId;
       if (studentId) {
-        const saved = await addReceptacleEvent(studentId, {
-          task_text: task.text,
-          minutes: task.minutes,
-          date: dateStr,
-          top_minutes: clampedMinutes,
-          quadrant: task.quadrant || undefined,
-        });
-        if (saved) dbId = saved.id;
+        if (dbId) {
+          // Update existing brain dump record to be a calendar event
+          await updateReceptacleEvent(dbId, {
+            date: dateStr,
+            top_minutes: clampedMinutes,
+          });
+        } else {
+          const saved = await addReceptacleEvent(studentId, {
+            task_text: task.text,
+            minutes: task.minutes,
+            date: dateStr,
+            top_minutes: clampedMinutes,
+            quadrant: task.quadrant || undefined,
+          });
+          if (saved) dbId = saved.id;
+        }
       }
 
       const newEvent: CalendarEvent = {
@@ -323,7 +373,16 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
     setSyncDone(true);
   };
 
-  const resetAll = () => {
+  const resetAll = async () => {
+    // Delete all brain dump tasks from DB
+    if (studentId) {
+      for (const t of tasks) {
+        if (t.dbId) await deleteReceptacleEvent(t.dbId);
+      }
+      for (const e of calEvents) {
+        if (e.dbId) await deleteReceptacleEvent(e.dbId);
+      }
+    }
     setStep(1); setTasks([]); setInputText(""); setInputMins("");
     setSelectedTask(null); setCalEvents([]); setDayOffset(0);
     setCompleted(new Set()); setSyncDone(false);

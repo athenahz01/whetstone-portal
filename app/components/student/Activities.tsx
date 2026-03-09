@@ -52,10 +52,10 @@ const TOTAL_SLOTS = 10;
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "10px 12px",
-  background: "#111827",
-  border: "1px solid rgba(148,163,184,0.18)",
+  background: "#252525",
+  border: "1px solid #333",
   borderRadius: 8,
-  color: "#f8fafc",
+  color: "#ebebeb",
   fontSize: 13,
   outline: "none",
   boxSizing: "border-box",
@@ -185,7 +185,7 @@ export function Activities({ activities, setActivities, readOnly = false, studen
                       style={{
                         background: isEmpty ? "#333" : "rgba(74,186,106,0.1)",
                         color: isEmpty ? "#505050" : "#4aba6a",
-                        border: isEmpty ? "1.5px dashed #cbd5e1" : "none",
+                        border: isEmpty ? "1.5px dashed #505050" : "none",
                       }}
                     >
                       {isEmpty ? "" : "✓"}
@@ -206,7 +206,7 @@ export function Activities({ activities, setActivities, readOnly = false, studen
 
                 {/* Accordion body */}
                 {isOpen && (
-                  <div className="px-5 pb-5 pt-2" style={{ background: "#fafbfc" }}>
+                  <div className="px-5 pb-5 pt-2" style={{ background: "#252525" }}>
                     {readOnly ? (
                       isEmpty ? (
                         <p className="text-sm text-sub italic py-4 text-center">This slot is empty.</p>
