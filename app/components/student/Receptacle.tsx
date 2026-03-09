@@ -296,10 +296,17 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
   };
 
   const syncToGcal = async () => {
-    if (!profileId) return;
+    if (!profileId) {
+      console.error("[Receptacle] No profileId, cannot sync");
+      return;
+    }
+    console.log("[Receptacle] Starting sync, events:", calEvents.length);
     setSyncing(true);
-    for (const ev of calEvents.filter((e) => !e.synced)) {
-      await pushToGoogleCalendar(profileId, ev.text, ev.date, `Scheduled at ${fmtMinutes(ev.topMinutes)} · ${ev.minutes}min`);
+    setSyncDone(false);
+    for (const ev of calEvents) {
+      console.log("[Receptacle] Syncing event:", ev.text, ev.date, ev.topMinutes);
+      const result = await pushToGoogleCalendar(profileId, ev.text, ev.date, `Scheduled at ${fmtMinutes(ev.topMinutes)} · ${ev.minutes}min`);
+      console.log("[Receptacle] Sync result:", result);
       if (ev.dbId) {
         await updateReceptacleEvent(ev.dbId, { synced: true });
       }
