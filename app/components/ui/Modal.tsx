@@ -7,13 +7,13 @@ interface ModalProps {
   export function Modal({ title, onClose, children }: ModalProps) {
     return (
       <div
-        className="fixed inset-0 bg-black/25 backdrop-blur-sm flex items-center justify-center z-50"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
         onClick={onClose}
       >
         <div
           onClick={(e) => e.stopPropagation()}
-          className="bg-white border border-line rounded-2xl w-[520px] max-h-[85vh] overflow-auto"
-          style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.12)" }}
+          className="bg-raised border border-line rounded-2xl w-[520px] max-h-[85vh] overflow-auto"
+          style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.4)" }}
         >
           <div className="px-6 py-4 border-b border-line flex justify-between items-center">
             <h3 className="text-lg font-bold text-heading m-0">{title}</h3>

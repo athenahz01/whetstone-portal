@@ -7,7 +7,7 @@ interface MetricCardProps {
   color?: string;
 }
 
-export function MetricCard({ label, value, detail, color = "#3b82f6" }: MetricCardProps) {
+export function MetricCard({ label, value, detail, color = "#528bff" }: MetricCardProps) {
   return (
     <Card style={{ borderTop: `3px solid ${color}` }}>
       <div className="text-xs text-sub uppercase tracking-widest font-semibold mb-2">{label}</div>

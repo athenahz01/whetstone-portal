@@ -60,8 +60,8 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
   };
 
   const inputStyle: React.CSSProperties = {
-    width: "100%", padding: "10px 14px", background: "#fff",
-    border: "1px solid #cbd5e1", borderRadius: 8, color: "#0f172a",
+    width: "100%", padding: "10px 14px", background: "#252525",
+    border: "1px solid #333", borderRadius: 8, color: "#ebebeb",
     fontSize: 14, outline: "none", boxSizing: "border-box",
   };
 
@@ -151,9 +151,9 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
   };
 
   const roleColors: Record<string, string> = {
-    strategist: "#7c3aed",
-    student: "#3b82f6",
-    parent: "#d97706",
+    strategist: "#a480f2",
+    student: "#528bff",
+    parent: "#e5a83b",
   };
 
   const strategists = allProfiles.filter((p) => p.role === "strategist");
@@ -176,9 +176,9 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3.5 mb-5">
           {[
-            { label: "Strategists", count: strategists.length, color: "#7c3aed" },
-            { label: "Students", count: studentProfiles.length, color: "#3b82f6" },
-            { label: "Parents", count: parentProfiles.length, color: "#d97706" },
+            { label: "Strategists", count: strategists.length, color: "#a480f2" },
+            { label: "Students", count: studentProfiles.length, color: "#528bff" },
+            { label: "Parents", count: parentProfiles.length, color: "#e5a83b" },
           ].map((s) => (
             <Card key={s.label}>
               <div className="text-center py-2">
@@ -207,12 +207,12 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
                   <div
                     key={p.id}
                     className="flex items-center justify-between p-3 rounded-lg"
-                    style={{ background: "#f8f9fb", border: "1px solid #e2e8f0" }}
+                    style={{ background: "#252525", border: "1px solid #2a2a2a" }}
                   >
                     <div className="flex items-center gap-3">
                       <div
                         className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                        style={{ background: roleColors[p.role] || "#94a3b8" }}
+                        style={{ background: roleColors[p.role] || "#505050" }}
                       >
                         {(p.display_name || "?").split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)}
                       </div>
@@ -227,7 +227,7 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
                           → {linkedStudent.name}
                         </span>
                       )}
-                      <Tag color={roleColors[p.role] || "#94a3b8"}>
+                      <Tag color={roleColors[p.role] || "#505050"}>
                         {p.role}
                       </Tag>
                     </div>
@@ -254,9 +254,9 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
                     onClick={() => setSelectedRole(r)}
                     className="flex-1 py-2.5 rounded-lg cursor-pointer text-sm font-semibold capitalize"
                     style={{
-                      background: selectedRole === r ? `${roleColors[r]}15` : "#fff",
-                      border: `2px solid ${selectedRole === r ? roleColors[r] : "#e2e8f0"}`,
-                      color: selectedRole === r ? roleColors[r] : "#64748b",
+                      background: selectedRole === r ? `${roleColors[r]}15` : "#252525",
+                      border: `2px solid ${selectedRole === r ? roleColors[r] : "#333"}`,
+                      color: selectedRole === r ? roleColors[r] : "#717171",
                     }}
                   >
                     {r}
@@ -293,7 +293,7 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
             {selectedRole === "parent" && (
               <div
                 className="p-4 rounded-xl mb-3"
-                style={{ background: "#fffbeb", border: "1px solid #fde68a" }}
+                style={{ background: "rgba(229,168,59,0.08)", border: "1px solid rgba(229,168,59,0.2)" }}
               >
                 <FormField label="Child's Email (must match a student's email)">
                   <input
@@ -303,13 +303,13 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
                     style={inputStyle}
                   />
                 </FormField>
-                <p className="text-xs m-0 mt-1" style={{ color: "#92400e" }}>
+                <p className="text-xs m-0 mt-1" style={{ color: "#e5a83b" }}>
                   This links the parent to the correct student profile. The student must be added first.
                 </p>
               </div>
             )}
 
-            <div className="rounded-lg px-3 py-2.5 text-xs mb-4" style={{ background: "#f0fdf4", border: "1px solid #86efac", color: "#16a34a" }}>
+            <div className="rounded-lg px-3 py-2.5 text-xs mb-4" style={{ background: "rgba(74,186,106,0.08)", border: "1px solid #4aba6a", color: "#4aba6a" }}>
               A temporary password will be generated. Share it with the user — they can change it after logging in.
             </div>
 
@@ -320,7 +320,7 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
                 disabled={saving}
                 style={{
                   padding: "9px 20px", borderRadius: 8, border: "none", fontWeight: 600, fontSize: 14,
-                  background: saving ? "#e2e8f0" : roleColors[selectedRole],
+                  background: saving ? "#333" : roleColors[selectedRole],
                   color: "#fff",
                   cursor: saving ? "not-allowed" : "pointer",
                 }}
@@ -336,12 +336,12 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
       {inviteError && !inviteResult && (
         <Modal title="Account Creation Issue" onClose={() => setInviteError(null)}>
           <div style={{ padding: "4px 0" }}>
-            <div className="rounded-lg px-4 py-3 text-sm mb-4" style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626" }}>
+            <div className="rounded-lg px-4 py-3 text-sm mb-4" style={{ background: "rgba(229,91,91,0.08)", border: "1px solid rgba(229,91,91,0.2)", color: "#e55b5b" }}>
               {inviteError}
             </div>
             <button
               onClick={() => setInviteError(null)}
-              style={{ width: "100%", padding: "10px", borderRadius: 8, border: "none", background: "#0f172a", color: "#fff", fontWeight: 600, fontSize: 14, cursor: "pointer" }}
+              style={{ width: "100%", padding: "10px", borderRadius: 8, border: "none", background: "#ebebeb", color: "#fff", fontWeight: 600, fontSize: 14, cursor: "pointer" }}
             >
               OK
             </button>
@@ -354,7 +354,7 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
         <Modal title="Account Created! 🎉" onClose={handleDismissCredentials}>
           <div style={{ padding: "4px 0" }}>
             <div className="flex items-center gap-2 mb-4">
-              <Tag color={roleColors[inviteResult.role] || "#94a3b8"}>
+              <Tag color={roleColors[inviteResult.role] || "#505050"}>
                 {inviteResult.role}
               </Tag>
               <span className="text-sm font-medium text-heading">{inviteResult.name}</span>
@@ -369,11 +369,11 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
               <div>
                 <div className="text-xs font-semibold text-sub mb-1">Email</div>
                 <div className="flex items-center gap-2">
-                  <div style={{ flex: 1, padding: "10px 14px", background: "#f8f9fb", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 13, color: "#334155", fontFamily: "monospace" }}>
+                  <div style={{ flex: 1, padding: "10px 14px", background: "#252525", border: "1px solid #2a2a2a", borderRadius: 8, fontSize: 13, color: "#a0a0a0", fontFamily: "monospace" }}>
                     {inviteResult.email}
                   </div>
                   <button onClick={() => handleCopy("email", inviteResult.email)}
-                    style={{ padding: "10px 14px", borderRadius: 8, border: "1px solid #e2e8f0", background: copied === "email" ? "#f0fdf4" : "#fff", color: copied === "email" ? "#16a34a" : "#64748b", fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>
+                    style={{ padding: "10px 14px", borderRadius: 8, border: "1px solid #2a2a2a", background: copied === "email" ? "rgba(74,186,106,0.08)" : "#252525", color: copied === "email" ? "#4aba6a" : "#717171", fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>
                     {copied === "email" ? "✓" : "Copy"}
                   </button>
                 </div>
@@ -382,11 +382,11 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
               <div>
                 <div className="text-xs font-semibold text-sub mb-1">Temporary Password</div>
                 <div className="flex items-center gap-2">
-                  <div style={{ flex: 1, padding: "10px 14px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, fontSize: 15, color: "#92400e", fontFamily: "monospace", letterSpacing: "0.05em", fontWeight: 700 }}>
+                  <div style={{ flex: 1, padding: "10px 14px", background: "rgba(229,168,59,0.08)", border: "1px solid rgba(229,168,59,0.2)", borderRadius: 8, fontSize: 15, color: "#e5a83b", fontFamily: "monospace", letterSpacing: "0.05em", fontWeight: 700 }}>
                     {inviteResult.tempPassword}
                   </div>
                   <button onClick={() => handleCopy("password", inviteResult.tempPassword)}
-                    style={{ padding: "10px 14px", borderRadius: 8, border: "1px solid #e2e8f0", background: copied === "password" ? "#f0fdf4" : "#fff", color: copied === "password" ? "#16a34a" : "#64748b", fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>
+                    style={{ padding: "10px 14px", borderRadius: 8, border: "1px solid #2a2a2a", background: copied === "password" ? "rgba(74,186,106,0.08)" : "#252525", color: copied === "password" ? "#4aba6a" : "#717171", fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>
                     {copied === "password" ? "✓" : "Copy"}
                   </button>
                 </div>
@@ -395,7 +395,7 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
 
             <button
               onClick={handleDismissCredentials}
-              style={{ width: "100%", padding: "10px", borderRadius: 8, border: "none", background: "#0f172a", color: "#fff", fontWeight: 600, fontSize: 14, cursor: "pointer" }}
+              style={{ width: "100%", padding: "10px", borderRadius: 8, border: "none", background: "#ebebeb", color: "#fff", fontWeight: 600, fontSize: 14, cursor: "pointer" }}
             >
               Done
             </button>

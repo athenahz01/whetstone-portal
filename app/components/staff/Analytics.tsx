@@ -40,7 +40,7 @@ export function Analytics({ students, onSelectStudent, onNavigate }: AnalyticsPr
           {/* Table header */}
           <div
             className="grid px-6 py-2.5 border-b border-line text-xs text-sub uppercase tracking-widest font-semibold"
-            style={{ gridTemplateColumns: "2fr 1fr 1fr 2fr 1fr 1fr 1fr 1fr", background: "#f8f9fb" }}
+            style={{ gridTemplateColumns: "2fr 1fr 1fr 2fr 1fr 1fr 1fr 1fr", background: "#252525" }}
           >
             <div>Student</div>
             <div>Grade</div>
@@ -58,23 +58,23 @@ export function Analytics({ students, onSelectStudent, onNavigate }: AnalyticsPr
             const loginDays = daysSinceLogin(s.lastLogin);
             const loginLabel = formatLastLogin(s.lastLogin);
             const loginColor =
-              loginDays === Infinity ? "#94a3b8"
-              : loginDays >= 3 ? "#ef4444"
-              : loginDays >= 1 ? "#d97706"
-              : "#16a34a";
+              loginDays === Infinity ? "#505050"
+              : loginDays >= 3 ? "#e55b5b"
+              : loginDays >= 1 ? "#e5a83b"
+              : "#4aba6a";
 
             return (
               <div
                 key={s.id}
                 onClick={() => { onSelectStudent(s); onNavigate("detail"); }}
-                className="grid px-6 py-3 border-b border-line items-center cursor-pointer hover:bg-gray-50 transition-colors"
+                className="grid px-6 py-3 border-b border-line items-center cursor-pointer hover:bg-mist transition-colors"
                 style={{ gridTemplateColumns: "2fr 1fr 1fr 2fr 1fr 1fr 1fr 1fr" }}
               >
                 {/* Student name + avatar */}
                 <div className="flex items-center gap-2.5">
                   <div
                     className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                    style={{ background: "#eff6ff", color: "#1d4ed8" }}
+                    style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}
                   >
                     {s.av}
                   </div>
@@ -89,16 +89,16 @@ export function Analytics({ students, onSelectStudent, onNavigate }: AnalyticsPr
 
                 {/* Engagement bar */}
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1.5 rounded-full bg-gray-100" style={{ maxWidth: 100 }}>
+                  <div className="flex-1 h-1.5 rounded-full bg-raised" style={{ maxWidth: 100 }}>
                     <div
                       className="h-full rounded-full"
                       style={{
                         width: `${s.engagement}%`,
-                        background: s.engagement > 80 ? "#16a34a" : s.engagement > 50 ? "#d97706" : "#ef4444",
+                        background: s.engagement > 80 ? "#4aba6a" : s.engagement > 50 ? "#e5a83b" : "#e55b5b",
                       }}
                     />
                   </div>
-                  <span className="text-sm font-semibold" style={{ color: s.engagement > 80 ? "#16a34a" : s.engagement > 50 ? "#d97706" : "#ef4444" }}>
+                  <span className="text-sm font-semibold" style={{ color: s.engagement > 80 ? "#4aba6a" : s.engagement > 50 ? "#e5a83b" : "#e55b5b" }}>
                     {s.engagement}%
                   </span>
                 </div>
@@ -112,7 +112,7 @@ export function Analytics({ students, onSelectStudent, onNavigate }: AnalyticsPr
                 {/* Overdue */}
                 <div>
                   {overdue > 0 ? (
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "#fef2f2", color: "#ef4444" }}>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(229,91,91,0.08)", color: "#e55b5b" }}>
                       {overdue}
                     </span>
                   ) : (

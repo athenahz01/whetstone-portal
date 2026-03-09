@@ -85,7 +85,7 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
           {row.avatar && (
             <div
               className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
-              style={{ background: row.avatarBg || "#eff6ff", color: row.avatarColor || "#1d4ed8" }}
+              style={{ background: row.avatarBg || "rgba(82,139,255,0.08)", color: row.avatarColor || "#7aabff" }}
             >
               {row.avatar}
             </div>
@@ -116,11 +116,11 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
                     }}
                     className="rounded px-1 py-0 cursor-pointer overflow-hidden hover:opacity-80 transition-opacity"
                     style={{
-                      background: evt.bgColor || "#eff6ff",
-                      borderLeft: "2px solid " + (evt.borderColor || evt.color || "#3b82f6"),
+                      background: evt.bgColor || "rgba(82,139,255,0.08)",
+                      borderLeft: "2px solid " + (evt.borderColor || evt.color || "#528bff"),
                       fontSize: 9,
                       fontWeight: 600,
-                      color: evt.textColor || evt.color || "#1d4ed8",
+                      color: evt.textColor || evt.color || "#7aabff",
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
@@ -156,15 +156,15 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
     <>
       <div className="bg-white border border-line rounded-xl overflow-hidden">
         {/* Header with navigation */}
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-line" style={{ background: "#f8f9fb" }}>
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-line" style={{ background: "#252525" }}>
           <div className="flex items-center gap-3">
             <button
               onClick={() => setWeekOffset(0)}
               className="px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer"
               style={{
-                background: weekOffset === 0 ? "#3b82f6" : "#fff",
-                color: weekOffset === 0 ? "#fff" : "#64748b",
-                border: "1px solid " + (weekOffset === 0 ? "#3b82f6" : "#cbd5e1"),
+                background: weekOffset === 0 ? "#528bff" : "#252525",
+                color: weekOffset === 0 ? "#fff" : "#717171",
+                border: "1px solid " + (weekOffset === 0 ? "#528bff" : "#333"),
               }}
             >
               Today
@@ -201,15 +201,15 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
               <div key={i} className="flex-1 text-center py-1.5 border-r border-line">
                 <div
                   className="text-[9px] font-semibold uppercase tracking-wide"
-                  style={{ color: isToday ? "#3b82f6" : "#94a3b8" }}
+                  style={{ color: isToday ? "#528bff" : "#505050" }}
                 >
                   {dayNames[d.getDay()]}
                 </div>
                 <div
                   className="text-sm font-bold mt-0.5 mx-auto flex items-center justify-center"
                   style={{
-                    color: isToday ? "#fff" : "#0f172a",
-                    background: isToday ? "#3b82f6" : "transparent",
+                    color: isToday ? "#fff" : "#ebebeb",
+                    background: isToday ? "#528bff" : "transparent",
                     borderRadius: "50%",
                     width: 26,
                     height: 26,
@@ -250,10 +250,10 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              background: "#fff",
-              border: "1px solid #e2e8f0",
+              background: "#252525",
+              border: "1px solid #2a2a2a",
               borderRadius: 16,
-              boxShadow: "0 20px 60px rgba(0,0,0,0.12)",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
               padding: 24,
               width: 380,
               maxWidth: "90vw",
@@ -268,7 +268,7 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
                     height: 12,
                     borderRadius: 3,
                     flexShrink: 0,
-                    background: selectedEvent.borderColor || selectedEvent.color || "#3b82f6",
+                    background: selectedEvent.borderColor || selectedEvent.color || "#528bff",
                   }}
                 />
                 {selectedEvent.label && (
@@ -278,8 +278,8 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
                       padding: "2px 8px",
                       borderRadius: 4,
                       fontWeight: 600,
-                      background: (selectedEvent.borderColor || "#3b82f6") + "15",
-                      color: selectedEvent.borderColor || "#3b82f6",
+                      background: (selectedEvent.borderColor || "#528bff") + "15",
+                      color: selectedEvent.borderColor || "#528bff",
                     }}
                   >
                     {selectedEvent.label}
@@ -289,13 +289,13 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
               <button
                 onClick={handleClosePopup}
                 style={{
-                  background: "#eef0f4",
+                  background: "#252525",
                   border: "none",
                   borderRadius: 8,
                   width: 28,
                   height: 28,
                   cursor: "pointer",
-                  color: "#64748b",
+                  color: "#717171",
                   fontSize: 14,
                   display: "flex",
                   alignItems: "center",
@@ -307,12 +307,12 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
             </div>
 
             {/* Title */}
-            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>
+            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#ebebeb", marginBottom: 4 }}>
               {selectedEvent.title}
             </h3>
 
             {/* Date */}
-            <p style={{ fontSize: 14, color: "#64748b", margin: 0, marginBottom: 12 }}>
+            <p style={{ fontSize: 14, color: "#717171", margin: 0, marginBottom: 12 }}>
               📅 {formatEventDate(selectedEvent.date)}
             </p>
 
@@ -332,8 +332,8 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
                     fontSize: 14,
                     fontWeight: 600,
                     textDecoration: "none",
-                    background: "#eff6ff",
-                    color: "#1d4ed8",
+                    background: "rgba(82,139,255,0.06)",
+                    color: "#7aabff",
                     border: "1px solid #bfdbfe",
                   }}
                 >
@@ -344,14 +344,14 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
 
             {/* Location */}
             {selectedEvent.location && selectedEvent.location.length > 0 && (
-              <p style={{ fontSize: 14, color: "#64748b", margin: 0, marginBottom: 8 }}>
+              <p style={{ fontSize: 14, color: "#717171", margin: 0, marginBottom: 8 }}>
                 📍 {selectedEvent.location}
               </p>
             )}
 
             {/* Description */}
             {selectedEvent.description && selectedEvent.description.length > 0 && (
-              <p style={{ fontSize: 14, color: "#334155", margin: 0, marginTop: 8, lineHeight: 1.6 }}>
+              <p style={{ fontSize: 14, color: "#a0a0a0", margin: 0, marginTop: 8, lineHeight: 1.6 }}>
                 {selectedEvent.description}
               </p>
             )}
@@ -366,9 +366,9 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
                   fontSize: 14,
                   fontWeight: 600,
                   cursor: "pointer",
-                  background: "#eef0f4",
+                  background: "#252525",
                   border: "none",
-                  color: "#334155",
+                  color: "#a0a0a0",
                 }}
               >
                 Close

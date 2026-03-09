@@ -18,8 +18,8 @@ interface StudentDeadlinesProps {
 }
 
 const inputStyle: React.CSSProperties = {
-  width: "100%", padding: "10px 14px", background: "#fff",
-  border: "1px solid #cbd5e1", borderRadius: 8, color: "#0f172a",
+  width: "100%", padding: "10px 14px", background: "#252525",
+  border: "1px solid #333", borderRadius: 8, color: "#ebebeb",
   fontSize: 14, outline: "none", boxSizing: "border-box",
 };
 
@@ -92,7 +92,7 @@ export function StudentDeadlines({ deadlines, studentId, onRefresh, readOnly = f
             <button
               onClick={() => setAddingDeadline(true)}
               className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
-              style={{ background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe" }}
+              style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff", border: "1px solid #bfdbfe" }}
             >
               + Add My Deadline
             </button>
@@ -113,8 +113,8 @@ export function StudentDeadlines({ deadlines, studentId, onRefresh, readOnly = f
               onClick={() => canEdit && setEditingDeadline(d)}
               className={`flex justify-between items-center p-2.5 px-3 rounded-lg mb-1.5 transition-opacity ${canEdit ? "cursor-pointer hover:opacity-80" : "cursor-default"}`}
               style={{
-                background: d.status === "overdue" ? "#fef2f2" : "#eef0f4",
-                borderLeft: `3px solid ${d.status === "overdue" ? "#ef4444" : getCategoryColor(d.cat)}`,
+                background: d.status === "overdue" ? "rgba(229,91,91,0.08)" : "#252525",
+                borderLeft: `3px solid ${d.status === "overdue" ? "#e55b5b" : getCategoryColor(d.cat)}`,
               }}
             >
               <div className="min-w-0 flex-1">
@@ -122,12 +122,12 @@ export function StudentDeadlines({ deadlines, studentId, onRefresh, readOnly = f
                   <span className="truncate">{d.title}</span>
                   {/* Lock for strategist-created, subtle indicator */}
                   {!isOwn && (
-                    <span className="text-[10px] text-gray-400 flex-shrink-0" title="Added by your strategist">
+                    <span className="text-[10px] text-faint flex-shrink-0" title="Added by your strategist">
                       🔒 Strategist
                     </span>
                   )}
                   {isOwn && (
-                    <span className="text-[10px] flex-shrink-0" style={{ color: "#7c3aed", background: "#f5f3ff", padding: "1px 5px", borderRadius: 4 }}>
+                    <span className="text-[10px] flex-shrink-0" style={{ color: "#a480f2", background: "rgba(164,128,242,0.08)", padding: "1px 5px", borderRadius: 4 }}>
                       Mine
                     </span>
                   )}
@@ -218,7 +218,7 @@ export function StudentDeadlines({ deadlines, studentId, onRefresh, readOnly = f
               <button
                 type="button"
                 onClick={() => setConfirmDeleteId(editingDeadline.id)}
-                style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: "#fef2f2", color: "#ef4444", border: "1px solid #fecaca", cursor: "pointer" }}
+                style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: "rgba(229,91,91,0.08)", color: "#e55b5b", border: "1px solid rgba(229,91,91,0.2)", cursor: "pointer" }}
               >
                 🗑 Delete
               </button>
@@ -234,16 +234,16 @@ export function StudentDeadlines({ deadlines, studentId, onRefresh, readOnly = f
       {/* Delete confirmation */}
       {confirmDeleteId !== null && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)" }}>
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4">
-            <h3 className="text-base font-bold text-gray-900 mb-2">Delete Deadline?</h3>
-            <p className="text-sm text-gray-500 mb-4">This action cannot be undone.</p>
+          <div className="rounded-2xl border border-line p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-bold text-heading mb-2">Delete Deadline?</h3>
+            <p className="text-sm text-sub mb-4">This action cannot be undone.</p>
             <div className="flex gap-2 justify-end">
               <Button onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
               <button
                 onClick={() => handleDelete(confirmDeleteId)}
                 disabled={deleting}
                 className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
-                style={{ background: "#ef4444", border: "none", cursor: "pointer" }}
+                style={{ background: "#e55b5b", border: "none", cursor: "pointer" }}
               >
                 {deleting ? "Deleting..." : "Delete"}
               </button>

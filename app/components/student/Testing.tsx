@@ -63,8 +63,8 @@ export function Testing({ tests, setTests, readOnly = false }: TestingProps) {
   }, [tests]);
 
   const inputStyle: React.CSSProperties = {
-    width: "100%", padding: "10px 14px", background: "#fff",
-    border: "1px solid #cbd5e1", borderRadius: 8, color: "#0f172a",
+    width: "100%", padding: "10px 14px", background: "#252525",
+    border: "1px solid #333", borderRadius: 8, color: "#ebebeb",
     fontSize: 14, outline: "none", boxSizing: "border-box",
   };
 
@@ -104,7 +104,7 @@ export function Testing({ tests, setTests, readOnly = false }: TestingProps) {
         sub="Standardized test scores."
         right={
           readOnly ? (
-            <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "#eff6ff", color: "#1d4ed8" }}>View Only</span>
+            <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}>View Only</span>
           ) : (
             <Button primary onClick={() => setShowModal(true)}>+ Add Score</Button>
           )
@@ -130,7 +130,7 @@ export function Testing({ tests, setTests, readOnly = false }: TestingProps) {
                 </div>
               </div>
               <div className="text-right">
-                <Tag color="#7c3aed">Best of {tests.filter((t) => t.type === "SAT").length} attempt{tests.filter((t) => t.type === "SAT").length !== 1 ? "s" : ""}</Tag>
+                <Tag color="#a480f2">Best of {tests.filter((t) => t.type === "SAT").length} attempt{tests.filter((t) => t.type === "SAT").length !== 1 ? "s" : ""}</Tag>
                 <div className="text-xs text-sub mt-1">Highest Math + Highest ERW</div>
               </div>
             </div>
@@ -146,7 +146,7 @@ export function Testing({ tests, setTests, readOnly = false }: TestingProps) {
                   <div className="text-xl font-bold text-heading">{t.type}</div>
                   <div className="text-sm text-sub mt-0.5">{new Date(t.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>
                 </div>
-                {t.v && <Tag color="#16a34a">Verified</Tag>}
+                {t.v && <Tag color="#4aba6a">Verified</Tag>}
               </div>
               <div className="mb-4">
                 <div className="text-xs text-sub uppercase tracking-widest font-semibold mb-1">Composite Score</div>
@@ -155,17 +155,17 @@ export function Testing({ tests, setTests, readOnly = false }: TestingProps) {
               {/* Split scores for SAT */}
               {t.type === "SAT" && (t.mathScore || t.englishScore) ? (
                 <div className="flex gap-3">
-                  <div className="flex-1 p-3 rounded-lg" style={{ background: "#eff6ff" }}>
+                  <div className="flex-1 p-3 rounded-lg" style={{ background: "rgba(82,139,255,0.06)" }}>
                     <div className="text-xs text-sub uppercase tracking-widest font-semibold mb-1">Math</div>
-                    <div className="text-2xl font-bold" style={{ color: "#1d4ed8" }}>{t.mathScore || "—"}</div>
+                    <div className="text-2xl font-bold" style={{ color: "#7aabff" }}>{t.mathScore || "—"}</div>
                   </div>
-                  <div className="flex-1 p-3 rounded-lg" style={{ background: "#f0fdf4" }}>
+                  <div className="flex-1 p-3 rounded-lg" style={{ background: "rgba(74,186,106,0.08)" }}>
                     <div className="text-xs text-sub uppercase tracking-widest font-semibold mb-1">ERW</div>
-                    <div className="text-2xl font-bold" style={{ color: "#16a34a" }}>{t.englishScore || "—"}</div>
+                    <div className="text-2xl font-bold" style={{ color: "#4aba6a" }}>{t.englishScore || "—"}</div>
                   </div>
                 </div>
               ) : (
-                <div className="p-3 rounded-lg" style={{ background: "#eef0f4" }}>
+                <div className="p-3 rounded-lg" style={{ background: "#252525" }}>
                   <div className="text-xs text-sub uppercase tracking-widest font-semibold mb-0.5">Breakdown</div>
                   <div className="text-sm text-body">{t.bd}</div>
                 </div>
@@ -225,9 +225,9 @@ export function Testing({ tests, setTests, readOnly = false }: TestingProps) {
                 </div>
                 {/* Auto-calculated composite */}
                 {composite && (
-                  <div className="p-3 rounded-lg mb-4 flex items-center justify-between" style={{ background: "#f5f3ff", border: "1px solid #ddd6fe" }}>
+                  <div className="p-3 rounded-lg mb-4 flex items-center justify-between" style={{ background: "rgba(164,128,242,0.08)", border: "1px solid #ddd6fe" }}>
                     <div>
-                      <div className="text-xs font-semibold" style={{ color: "#7c3aed" }}>Composite (auto-calculated)</div>
+                      <div className="text-xs font-semibold" style={{ color: "#a480f2" }}>Composite (auto-calculated)</div>
                       <div className="text-2xl font-bold text-heading">{composite}</div>
                     </div>
                     <div className="text-xs text-sub text-right">

@@ -76,7 +76,7 @@ export function Sidebar({ role, isAdmin, view, setView, collapsed, setCollapsed,
         className="border-b border-navy-edge flex items-center gap-2.5"
         style={{ padding: collapsed ? "20px 14px" : "20px 16px" }}
       >
-        <div className="w-8 h-8 rounded-lg bg-navy-hi flex items-center justify-center text-base text-white font-bold flex-shrink-0">
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-base font-bold flex-shrink-0" style={{ background: "#ebebeb", color: "#111" }}>
           W
         </div>
         {!collapsed && <span className="text-lg font-bold text-white">Whetstone</span>}
@@ -84,7 +84,7 @@ export function Sidebar({ role, isAdmin, view, setView, collapsed, setCollapsed,
 
       {/* Role Label */}
       {!collapsed && (
-        <div className="px-4 pt-3.5 pb-1 text-[10px] text-navy-hi uppercase tracking-widest font-bold">
+        <div className="px-4 pt-3.5 pb-1 text-[10px] uppercase tracking-widest font-bold" style={{ color: "#717171" }}>
           {role === "student" ? "Student" : role === "parent" ? "Parent" : isAdmin ? "Admin" : "strategist"}
           {role === "parent" && (
             <span className="ml-1.5 text-[9px] opacity-60 normal-case tracking-normal">(view only)</span>
@@ -102,9 +102,9 @@ export function Sidebar({ role, isAdmin, view, setView, collapsed, setCollapsed,
             style={{
               padding: collapsed ? "10px" : "10px 12px",
               justifyContent: collapsed ? "center" : "flex-start",
-              background: view === id ? "rgba(96,165,250,0.12)" : "transparent",
-              borderColor: view === id ? "rgba(96,165,250,0.18)" : "transparent",
-              color: view === id ? "#ffffff" : "#94a3b8",
+              background: view === id ? "rgba(255,255,255,0.06)" : "transparent",
+              borderColor: view === id ? "rgba(255,255,255,0.08)" : "transparent",
+              color: view === id ? "#ebebeb" : "#717171",
               fontWeight: view === id ? 600 : 400,
             }}
           >
@@ -118,9 +118,9 @@ export function Sidebar({ role, isAdmin, view, setView, collapsed, setCollapsed,
         <div className="px-3 mb-2">
           {gcalConnected ? (
             <div className="flex flex-col gap-1.5">
-              <div className="flex items-center gap-2 px-2 py-2 rounded-lg" style={{ background: "rgba(22,163,98,0.1)" }}>
+              <div className="flex items-center gap-2 px-2 py-2 rounded-lg" style={{ background: "rgba(74,186,106,0.08)" }}>
                 <span className="text-xs">📅</span>
-                <span className="text-xs font-medium" style={{ color: "#16a34a" }}>Calendar synced</span>
+                <span className="text-xs font-medium" style={{ color: "#4aba6a" }}>Calendar synced</span>
               </div>
               <button
                 onClick={async () => {
@@ -129,7 +129,7 @@ export function Sidebar({ role, isAdmin, view, setView, collapsed, setCollapsed,
                   }
                 }}
                 className="w-full px-2 py-1.5 rounded-lg cursor-pointer text-[10px] font-semibold border-none"
-                style={{ background: "rgba(96,165,250,0.1)", color: "#60a5fa" }}
+                style={{ background: "rgba(255,255,255,0.04)", color: "#717171" }}
               >
                 🔄 Sync Now
               </button>
@@ -140,7 +140,7 @@ export function Sidebar({ role, isAdmin, view, setView, collapsed, setCollapsed,
                 window.location.href = getGoogleAuthUrl(profileId);
               }}
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer text-xs font-semibold border-none"
-              style={{ background: "rgba(96,165,250,0.1)", color: "#60a5fa" }}
+              style={{ background: "rgba(255,255,255,0.04)", color: "#717171" }}
             >
               📅 Connect Google Calendar
             </button>
@@ -154,13 +154,13 @@ export function Sidebar({ role, isAdmin, view, setView, collapsed, setCollapsed,
           <button
             onClick={() => setShowTz(!showTz)}
             className="w-full flex items-center justify-between px-2 py-2 rounded-lg cursor-pointer text-xs border-none"
-            style={{ background: "rgba(96,165,250,0.06)", color: "#94a3b8" }}
+            style={{ background: "rgba(255,255,255,0.03)", color: "#717171" }}
           >
             <span>🕐 {currentTzLabel}</span>
             <span style={{ fontSize: 10 }}>{showTz ? "▲" : "▼"}</span>
           </button>
           {showTz && (
-            <div className="mt-1 rounded-lg overflow-hidden" style={{ background: "#1e293b", maxHeight: 200, overflowY: "auto" }}>
+            <div className="mt-1 rounded-lg overflow-hidden" style={{ background: "#1a1a1a", maxHeight: 200, overflowY: "auto" }}>
               {TIMEZONES.map((tz) => (
                 <button
                   key={tz.value}
@@ -170,8 +170,8 @@ export function Sidebar({ role, isAdmin, view, setView, collapsed, setCollapsed,
                   }}
                   className="w-full text-left px-3 py-2 border-none cursor-pointer text-xs"
                   style={{
-                    background: timezone === tz.value ? "rgba(96,165,250,0.15)" : "transparent",
-                    color: timezone === tz.value ? "#60a5fa" : "#94a3b8",
+                    background: timezone === tz.value ? "rgba(255,255,255,0.06)" : "transparent",
+                    color: timezone === tz.value ? "#ebebeb" : "#717171",
                   }}
                 >
                   {tz.label}
@@ -189,9 +189,9 @@ export function Sidebar({ role, isAdmin, view, setView, collapsed, setCollapsed,
             <div
               className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
               style={{
-                background: "rgba(96,165,250,0.15)",
-                color: "#60a5fa",
-                border: "1px solid rgba(96,165,250,0.18)",
+                background: "rgba(255,255,255,0.06)",
+                color: "#a0a0a0",
+                border: "1px solid rgba(255,255,255,0.08)",
               }}
             >
               {userInitials}

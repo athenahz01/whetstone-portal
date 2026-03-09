@@ -42,7 +42,7 @@ const QUADRANT_CONFIG = {
     tag: "URGENT · IMPORTANT",
     bg: "rgba(239,68,68,0.07)",
     border: "rgba(239,68,68,0.22)",
-    accent: "#ef4444",
+    accent: "#e55b5b",
     emoji: "🔥",
   },
   schedule: {
@@ -50,7 +50,7 @@ const QUADRANT_CONFIG = {
     tag: "IMPORTANT · NOT URGENT",
     bg: "rgba(59,130,246,0.07)",
     border: "rgba(59,130,246,0.22)",
-    accent: "#3b82f6",
+    accent: "#528bff",
     emoji: "📅",
   },
   delegate: {
@@ -66,7 +66,7 @@ const QUADRANT_CONFIG = {
     tag: "NOT URGENT · NOT IMPORTANT",
     bg: "rgba(100,116,139,0.07)",
     border: "rgba(100,116,139,0.18)",
-    accent: "#64748b",
+    accent: "#717171",
     emoji: "🗑️",
   },
 } as const;
@@ -330,7 +330,7 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
   };
 
   const card: React.CSSProperties = {
-    background: "#fff", border: "1px solid #e2e8f0", borderRadius: 16, padding: 20,
+    background: "#252525", border: "1px solid #2a2a2a", borderRadius: 16, padding: 20,
   };
 
   // Derived: DO tasks split by sub-type
@@ -360,8 +360,8 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
               <button key={n} onClick={() => setStep(n)}
                 className="flex-1 py-3.5 text-sm font-semibold border-none cursor-pointer"
                 style={{
-                  background: active ? "#0f172a" : done ? "#f0fdf4" : "#f8f9fb",
-                  color: active ? "#fff" : done ? "#16a34a" : "#64748b",
+                  background: active ? "#528bff" : done ? "rgba(74,186,106,0.08)" : "#252525",
+                  color: active ? "#fff" : done ? "#4aba6a" : "#717171",
                   borderRight: n < 3 ? "1px solid #e2e8f0" : "none",
                 }}>
                 {done ? "✓ " : ""}{label}
@@ -387,14 +387,14 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
                   onKeyDown={(e) => e.key === "Enter" && addTask()}
                   placeholder="What's on your mind?"
                   className="flex-1 px-4 py-3 rounded-lg text-sm"
-                  style={{ border: "1.5px solid #e2e8f0", outline: "none", color: "#0f172a" }} />
+                  style={{ border: "1.5px solid #e2e8f0", outline: "none", color: "#ebebeb" }} />
                 <input value={inputMins} onChange={(e) => setInputMins(e.target.value.replace(/\D/g, ""))}
                   onKeyDown={(e) => e.key === "Enter" && addTask()}
                   placeholder="min"
                   className="w-16 px-3 py-3 rounded-lg text-sm text-center"
-                  style={{ border: "1.5px solid #e2e8f0", outline: "none", color: "#0f172a" }} />
+                  style={{ border: "1.5px solid #e2e8f0", outline: "none", color: "#ebebeb" }} />
                 <button onClick={addTask}
-                  style={{ padding: "0 18px", borderRadius: 10, border: "none", background: "#0f172a", color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
+                  style={{ padding: "0 18px", borderRadius: 10, border: "none", background: "#ebebeb", color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
                 >+ Add</button>
               </div>
 
@@ -405,14 +405,14 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
               ) : (
                 <div className="flex flex-col gap-1.5">
                   {tasks.map((t) => (
-                    <div key={t.id} className="flex items-center justify-between px-4 py-3 rounded-lg group" style={{ background: "#f8f9fb", border: "1px solid #e2e8f0" }}>
+                    <div key={t.id} className="flex items-center justify-between px-4 py-3 rounded-lg group" style={{ background: "#252525", border: "1px solid #2a2a2a" }}>
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#94a3b8" }} />
+                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#505050" }} />
                         <span className="text-sm text-body truncate">{t.text}</span>
                       </div>
                       <div className="flex items-center gap-3 flex-shrink-0 ml-3">
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: "#eff6ff", color: "#3b82f6" }}>{t.minutes}m</span>
-                        <button onClick={() => setTasks((p) => p.filter((x) => x.id !== t.id))} className="text-xs opacity-0 group-hover:opacity-100 border-none bg-transparent cursor-pointer" style={{ color: "#ef4444" }}>✕</button>
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(82,139,255,0.06)", color: "#528bff" }}>{t.minutes}m</span>
+                        <button onClick={() => setTasks((p) => p.filter((x) => x.id !== t.id))} className="text-xs opacity-0 group-hover:opacity-100 border-none bg-transparent cursor-pointer" style={{ color: "#e55b5b" }}>✕</button>
                       </div>
                     </div>
                   ))}
@@ -428,7 +428,7 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
               <button
                 onClick={() => { if (tasks.length > 0) { setSelectedTask(tasks[0].id); setStep(2); } }}
                 disabled={tasks.length === 0}
-                style={{ padding: "12px 24px", borderRadius: 12, border: "none", cursor: tasks.length === 0 ? "not-allowed" : "pointer", background: tasks.length === 0 ? "#e2e8f0" : "#0f172a", color: tasks.length === 0 ? "#94a3b8" : "#fff", fontWeight: 600, fontSize: 13 }}
+                style={{ padding: "12px 24px", borderRadius: 12, border: "none", cursor: tasks.length === 0 ? "not-allowed" : "pointer", background: tasks.length === 0 ? "#333" : "#ebebeb", color: tasks.length === 0 ? "#505050" : "#111", fontWeight: 600, fontSize: 13 }}
               >Next: Timer 2 →</button>
             </div>
           </div>
@@ -454,9 +454,9 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
                       <div className="text-xs text-center text-sub py-4 rounded-lg" style={{ border: "1.5px dashed #e2e8f0" }}>All assigned!</div>
                     ) : unassigned.map((t) => (
                       <button key={t.id} onClick={() => setSelectedTask(t.id)} className="text-left px-3 py-2.5 rounded-lg text-sm border-none cursor-pointer"
-                        style={{ background: selectedTask === t.id ? "#0f172a" : "#f8f9fb", color: selectedTask === t.id ? "#fff" : "#334155", border: `1.5px solid ${selectedTask === t.id ? "#0f172a" : "#e2e8f0"}` }}>
+                        style={{ background: selectedTask === t.id ? "#528bff" : "#252525", color: selectedTask === t.id ? "#fff" : "#a0a0a0", border: `1.5px solid ${selectedTask === t.id ? "#528bff" : "#333"}` }}>
                         <div className="font-medium truncate">{t.text}</div>
-                        <div className="text-[10px] mt-0.5" style={{ color: selectedTask === t.id ? "rgba(255,255,255,0.55)" : "#94a3b8" }}>{t.minutes} min</div>
+                        <div className="text-[10px] mt-0.5" style={{ color: selectedTask === t.id ? "rgba(255,255,255,0.55)" : "#505050" }}>{t.minutes} min</div>
                       </button>
                     ))}
                   </div>
@@ -487,16 +487,16 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
                             <div key={t.id} className="flex items-center justify-between px-2 py-1.5 rounded mb-1 group"
                               style={{ background: "rgba(255,255,255,0.65)" }}
                               onClick={(e) => e.stopPropagation()}>
-                              <span className="text-xs truncate" style={{ color: "#334155" }}>{t.text}</span>
+                              <span className="text-xs truncate" style={{ color: "#a0a0a0" }}>{t.text}</span>
                               <div className="flex items-center gap-1 flex-shrink-0 ml-1">
                                 <button onClick={(e) => { e.stopPropagation(); assignDoSub(t.id, "quick"); }}
                                   className="text-[8px] px-1.5 py-0.5 rounded border-none cursor-pointer font-bold"
-                                  style={{ background: "#fef2f2", color: "#ef4444" }} title="Under 2 minutes — do immediately">⚡ &lt;2m</button>
+                                  style={{ background: "rgba(229,91,91,0.08)", color: "#e55b5b" }} title="Under 2 minutes — do immediately">⚡ &lt;2m</button>
                                 <button onClick={(e) => { e.stopPropagation(); assignDoSub(t.id, "scheduleDo"); }}
                                   className="text-[8px] px-1.5 py-0.5 rounded border-none cursor-pointer font-bold"
-                                  style={{ background: "#fef2f2", color: "#b91c1c" }} title="Schedule and do">📅</button>
+                                  style={{ background: "rgba(229,91,91,0.08)", color: "#b91c1c" }} title="Schedule and do">📅</button>
                                 <button onClick={(e) => { e.stopPropagation(); unassign(t.id); }}
-                                  className="text-[9px] opacity-0 group-hover:opacity-100 border-none bg-transparent cursor-pointer" style={{ color: "#94a3b8" }}>↩</button>
+                                  className="text-[9px] opacity-0 group-hover:opacity-100 border-none bg-transparent cursor-pointer" style={{ color: "#505050" }}>↩</button>
                               </div>
                             </div>
                           ))}
@@ -504,14 +504,14 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
                           {/* <2min section */}
                           {quickTasks.length > 0 && (
                             <div className="mt-1.5">
-                              <div className="text-[8px] font-bold uppercase tracking-wider mb-1 px-1" style={{ color: "#dc2626" }}>⚡ &lt;2min do now!</div>
+                              <div className="text-[8px] font-bold uppercase tracking-wider mb-1 px-1" style={{ color: "#e55b5b" }}>⚡ &lt;2min do now!</div>
                               {quickTasks.map((t) => (
                                 <div key={t.id} className="flex items-center justify-between px-2 py-1 rounded mb-0.5 group"
                                   style={{ background: "rgba(239,68,68,0.08)" }}
                                   onClick={(e) => e.stopPropagation()}>
                                   <span className="text-[11px] truncate" style={{ color: "#7f1d1d" }}>{t.text}</span>
                                   <button onClick={(e) => { e.stopPropagation(); unassign(t.id); }}
-                                    className="text-[9px] opacity-0 group-hover:opacity-100 border-none bg-transparent cursor-pointer" style={{ color: "#94a3b8" }}>↩</button>
+                                    className="text-[9px] opacity-0 group-hover:opacity-100 border-none bg-transparent cursor-pointer" style={{ color: "#505050" }}>↩</button>
                                 </div>
                               ))}
                             </div>
@@ -525,11 +525,11 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
                                 <div key={t.id} className="flex items-center justify-between px-2 py-1 rounded mb-0.5 group"
                                   style={{ background: "rgba(255,255,255,0.5)" }}
                                   onClick={(e) => e.stopPropagation()}>
-                                  <span className="text-[11px] truncate" style={{ color: "#334155" }}>{t.text}</span>
+                                  <span className="text-[11px] truncate" style={{ color: "#a0a0a0" }}>{t.text}</span>
                                   <div className="flex items-center gap-1 flex-shrink-0">
-                                    <span className="text-[9px]" style={{ color: "#94a3b8" }}>{t.minutes}m</span>
+                                    <span className="text-[9px]" style={{ color: "#505050" }}>{t.minutes}m</span>
                                     <button onClick={(e) => { e.stopPropagation(); unassign(t.id); }}
-                                      className="text-[9px] opacity-0 group-hover:opacity-100 border-none bg-transparent cursor-pointer" style={{ color: "#94a3b8" }}>↩</button>
+                                      className="text-[9px] opacity-0 group-hover:opacity-100 border-none bg-transparent cursor-pointer" style={{ color: "#505050" }}>↩</button>
                                   </div>
                                 </div>
                               ))}
@@ -552,10 +552,10 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
                             <div key={t.id} className="flex items-center justify-between px-2 py-1.5 rounded group"
                               style={{ background: "rgba(255,255,255,0.65)", textDecoration: key === "delete" ? "line-through" : "none" }}
                               onClick={(e) => e.stopPropagation()}>
-                              <span className="text-xs truncate" style={{ color: key === "delete" ? "#94a3b8" : "#334155" }}>{t.text}</span>
+                              <span className="text-xs truncate" style={{ color: key === "delete" ? "#505050" : "#a0a0a0" }}>{t.text}</span>
                               <div className="flex items-center gap-1.5 flex-shrink-0 ml-1">
-                                <span className="text-[9px]" style={{ color: "#94a3b8" }}>{t.minutes}m</span>
-                                <button onClick={(e) => { e.stopPropagation(); unassign(t.id); }} className="opacity-0 group-hover:opacity-100 border-none bg-transparent cursor-pointer text-xs" style={{ color: "#94a3b8" }}>↩</button>
+                                <span className="text-[9px]" style={{ color: "#505050" }}>{t.minutes}m</span>
+                                <button onClick={(e) => { e.stopPropagation(); unassign(t.id); }} className="opacity-0 group-hover:opacity-100 border-none bg-transparent cursor-pointer text-xs" style={{ color: "#505050" }}>↩</button>
                               </div>
                             </div>
                           ))}
@@ -567,8 +567,8 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
               </div>
             </div>
             <div className="flex justify-between mt-4">
-              <button onClick={() => setStep(1)} style={{ padding: "10px 20px", borderRadius: 12, border: "1px solid #cbd5e1", cursor: "pointer", background: "#fff", color: "#64748b", fontWeight: 600, fontSize: 13 }}>← Back</button>
-              <button onClick={() => setStep(3)} style={{ padding: "12px 24px", borderRadius: 12, border: "none", cursor: "pointer", background: "#0f172a", color: "#fff", fontWeight: 600, fontSize: 13 }}>Next: Timer 3 →</button>
+              <button onClick={() => setStep(1)} style={{ padding: "10px 20px", borderRadius: 12, border: "1px solid #333", cursor: "pointer", background: "#252525", color: "#717171", fontWeight: 600, fontSize: 13 }}>← Back</button>
+              <button onClick={() => setStep(3)} style={{ padding: "12px 24px", borderRadius: 12, border: "none", cursor: "pointer", background: "#ebebeb", color: "#fff", fontWeight: 600, fontSize: 13 }}>Next: Timer 3 →</button>
             </div>
           </div>
         )}
@@ -586,7 +586,7 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
                 </div>
                 {gcalConnected && (
                   <button onClick={syncToGcal} disabled={syncing || syncDone || calEvents.length === 0}
-                    style={{ padding: "8px 16px", borderRadius: 8, border: "none", fontWeight: 600, fontSize: 13, flexShrink: 0, cursor: (calEvents.length === 0 || syncDone) ? "not-allowed" : "pointer", background: syncDone ? "#dcfce7" : calEvents.length === 0 ? "#f1f5f9" : "#3b82f6", color: syncDone ? "#16a34a" : calEvents.length === 0 ? "#94a3b8" : "#fff" }}>
+                    style={{ padding: "8px 16px", borderRadius: 8, border: "none", fontWeight: 600, fontSize: 13, flexShrink: 0, cursor: (calEvents.length === 0 || syncDone) ? "not-allowed" : "pointer", background: syncDone ? "rgba(74,186,106,0.1)" : calEvents.length === 0 ? "#333" : "#528bff", color: syncDone ? "#4aba6a" : calEvents.length === 0 ? "#505050" : "#fff" }}>
                     {syncDone ? "✓ Synced!" : syncing ? "Syncing..." : "📅 Sync to Google Cal"}
                   </button>
                 )}
@@ -597,27 +597,27 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
               {/* ── 3-Day Calendar (free-form positioning) ── */}
               <div ref={calRef} style={{ flex: 1, ...card, padding: 0, overflow: "hidden", minWidth: 0 }}>
                 {/* Nav */}
-                <div className="flex items-center justify-between px-4 py-2.5 border-b border-line" style={{ background: "#f8f9fb" }}>
-                  <button onClick={() => setDayOffset((o) => o - 3)} style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid #e2e8f0", cursor: "pointer", background: "#fff", color: "#334155", fontWeight: 600 }}>‹</button>
+                <div className="flex items-center justify-between px-4 py-2.5 border-b border-line" style={{ background: "#252525" }}>
+                  <button onClick={() => setDayOffset((o) => o - 3)} style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid #2a2a2a", cursor: "pointer", background: "#252525", color: "#a0a0a0", fontWeight: 600 }}>‹</button>
                   <div className="text-sm font-semibold text-heading">
                     {days[0].toLocaleDateString("en-US", { month: "short", day: "numeric" })} – {days[2].toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                   </div>
                   <div className="flex gap-1.5">
-                    <button onClick={() => setDayOffset(0)} style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid #e2e8f0", cursor: "pointer", background: "#fff", color: "#334155", fontSize: 12, fontWeight: 600 }}>Today</button>
-                    <button onClick={() => setDayOffset((o) => o + 3)} style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid #e2e8f0", cursor: "pointer", background: "#fff", color: "#334155", fontWeight: 600 }}>›</button>
+                    <button onClick={() => setDayOffset(0)} style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid #2a2a2a", cursor: "pointer", background: "#252525", color: "#a0a0a0", fontSize: 12, fontWeight: 600 }}>Today</button>
+                    <button onClick={() => setDayOffset((o) => o + 3)} style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid #2a2a2a", cursor: "pointer", background: "#252525", color: "#a0a0a0", fontWeight: 600 }}>›</button>
                   </div>
                 </div>
 
                 {/* Day headers */}
                 <div className="grid border-b border-line" style={{ gridTemplateColumns: "52px repeat(3, 1fr)" }}>
-                  <div style={{ background: "#f8f9fb" }} />
+                  <div style={{ background: "#252525" }} />
                   {days.map((d, i) => {
                     const isToday = fmt(d) === fmt(new Date());
                     return (
-                      <div key={i} className="text-center py-2 border-l border-line" style={{ background: "#f8f9fb" }}>
+                      <div key={i} className="text-center py-2 border-l border-line" style={{ background: "#252525" }}>
                         <div className="text-[10px] font-semibold text-sub uppercase">{DAY_LABELS[d.getDay()]}</div>
                         <div className="text-sm font-bold mt-0.5 w-7 h-7 rounded-full flex items-center justify-center mx-auto"
-                          style={{ background: isToday ? "#3b82f6" : "transparent", color: isToday ? "#fff" : "#0f172a" }}>
+                          style={{ background: isToday ? "#528bff" : "transparent", color: isToday ? "#fff" : "#ebebeb" }}>
                           {d.getDate()}
                         </div>
                       </div>
@@ -656,12 +656,12 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
                                     onDragStart={() => setDraggingEvent(ev.taskId)}
                                     onDragEnd={() => setDraggingEvent(null)}
                                     className="absolute left-0.5 right-0.5 rounded-md px-1.5 pt-1 cursor-grab group z-10 overflow-hidden"
-                                    style={{ top: topPx, height: minutesToHeight(ev.minutes), background: "#eff6ff", border: "1.5px solid #3b82f6" }}>
-                                    <div className="text-[10px] font-semibold leading-tight truncate pr-4" style={{ color: "#1d4ed8" }}>{ev.text}</div>
+                                    style={{ top: topPx, height: minutesToHeight(ev.minutes), background: "rgba(82,139,255,0.06)", border: "1.5px solid #3b82f6" }}>
+                                    <div className="text-[10px] font-semibold leading-tight truncate pr-4" style={{ color: "#7aabff" }}>{ev.text}</div>
                                     <div className="text-[9px] mt-0.5" style={{ color: "#60a5fa" }}>{fmtMinutes(ev.topMinutes)} · {ev.minutes}m{ev.synced ? " · ✓" : ""}</div>
                                     <button onClick={() => removeEvent(ev.taskId)}
                                       className="absolute top-0.5 right-0.5 w-4 h-4 rounded text-[9px] hidden group-hover:flex items-center justify-center border-none cursor-pointer"
-                                      style={{ background: "#bfdbfe", color: "#1d4ed8" }}>✕</button>
+                                      style={{ background: "#bfdbfe", color: "#7aabff" }}>✕</button>
                                   </div>
                                 );
                               })}
@@ -679,17 +679,17 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
 
                 {/* <2min Do Now! — todo checklist */}
                 {doQuickTasks.length > 0 && (
-                  <div style={{ ...card, background: "#fef2f2", border: "1.5px solid #fecaca" }}>
-                    <div className="text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: "#ef4444" }}>⚡ &lt;2min Do Now!</div>
+                  <div style={{ ...card, background: "rgba(229,91,91,0.08)", border: "1.5px solid #fecaca" }}>
+                    <div className="text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: "#e55b5b" }}>⚡ &lt;2min Do Now!</div>
                     <div className="flex flex-col gap-1.5">
                       {doQuickTasks.map((t) => {
                         const done = completed.has(t.id);
                         return (
                           <label key={t.id} className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg cursor-pointer"
                             style={{ background: done ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.55)", border: "1px solid rgba(239,68,68,0.15)" }}>
-                            <input type="checkbox" checked={done} onChange={() => toggleComplete(t.id)} style={{ accentColor: "#ef4444", width: 14, height: 14, flexShrink: 0 }} />
+                            <input type="checkbox" checked={done} onChange={() => toggleComplete(t.id)} style={{ accentColor: "#e55b5b", width: 14, height: 14, flexShrink: 0 }} />
                             <div className="flex-1 min-w-0">
-                              <div className="text-xs font-medium truncate" style={{ color: done ? "#94a3b8" : "#7f1d1d", textDecoration: done ? "line-through" : "none" }}>{t.text}</div>
+                              <div className="text-xs font-medium truncate" style={{ color: done ? "#505050" : "#e55b5b", textDecoration: done ? "line-through" : "none" }}>{t.text}</div>
                             </div>
                           </label>
                         );
@@ -701,7 +701,7 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
                 {/* Schedule & Do (from DO quadrant) — draggable */}
                 {doScheduleTasks.length > 0 && (
                   <div style={card}>
-                    <div className="text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: "#ef4444" }}>
+                    <div className="text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: "#e55b5b" }}>
                       🔥 Do: Schedule & Do <span className="text-[9px] font-normal text-sub normal-case tracking-normal ml-1">(drag to calendar)</span>
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -712,9 +712,9 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
                             onDragStart={() => !onCal && setDragging(t.id)}
                             onDragEnd={() => setDragging(null)}
                             className="flex items-center justify-between px-3 py-2.5 rounded-lg select-none"
-                            style={{ background: onCal ? "#f0fdf4" : dragging === t.id ? "#fef2f2" : "#f8f9fb", border: `1.5px solid ${onCal ? "#86efac" : dragging === t.id ? "#ef4444" : "#e2e8f0"}`, cursor: onCal ? "default" : "grab", opacity: dragging === t.id ? 0.5 : 1 }}>
-                            <span className="text-xs font-medium truncate min-w-0" style={{ color: onCal ? "#16a34a" : "#334155" }}>{onCal ? "✓ " : "⠿ "}{t.text}</span>
-                            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full ml-2 flex-shrink-0" style={{ background: "#fef2f2", color: "#ef4444" }}>{t.minutes}m</span>
+                            style={{ background: onCal ? "rgba(74,186,106,0.08)" : dragging === t.id ? "rgba(229,91,91,0.08)" : "#252525", border: `1.5px solid ${onCal ? "#4aba6a" : dragging === t.id ? "#e55b5b" : "#333"}`, cursor: onCal ? "default" : "grab", opacity: dragging === t.id ? 0.5 : 1 }}>
+                            <span className="text-xs font-medium truncate min-w-0" style={{ color: onCal ? "#4aba6a" : "#a0a0a0" }}>{onCal ? "✓ " : "⠿ "}{t.text}</span>
+                            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full ml-2 flex-shrink-0" style={{ background: "rgba(229,91,91,0.08)", color: "#e55b5b" }}>{t.minutes}m</span>
                           </div>
                         );
                       })}
@@ -724,7 +724,7 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
 
                 {/* Schedule (blue) */}
                 <div style={card}>
-                  <div className="text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: "#3b82f6" }}>
+                  <div className="text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: "#528bff" }}>
                     📅 Schedule <span className="text-[9px] font-normal text-sub normal-case tracking-normal ml-1">(drag to calendar)</span>
                   </div>
                   <div className="flex flex-col gap-1.5">
@@ -738,9 +738,9 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
                           onDragStart={() => !onCal && setDragging(t.id)}
                           onDragEnd={() => setDragging(null)}
                           className="flex items-center justify-between px-3 py-2.5 rounded-lg select-none"
-                          style={{ background: onCal ? "#f0fdf4" : dragging === t.id ? "#eff6ff" : "#f8f9fb", border: `1.5px solid ${onCal ? "#86efac" : dragging === t.id ? "#3b82f6" : "#e2e8f0"}`, cursor: onCal ? "default" : "grab", opacity: dragging === t.id ? 0.5 : 1 }}>
-                          <span className="text-xs font-medium truncate min-w-0" style={{ color: onCal ? "#16a34a" : "#334155" }}>{onCal ? "✓ " : "⠿ "}{t.text}</span>
-                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full ml-2 flex-shrink-0" style={{ background: "#eff6ff", color: "#3b82f6" }}>{t.minutes}m</span>
+                          style={{ background: onCal ? "rgba(74,186,106,0.08)" : dragging === t.id ? "rgba(82,139,255,0.08)" : "#252525", border: `1.5px solid ${onCal ? "#4aba6a" : dragging === t.id ? "#528bff" : "#333"}`, cursor: onCal ? "default" : "grab", opacity: dragging === t.id ? 0.5 : 1 }}>
+                          <span className="text-xs font-medium truncate min-w-0" style={{ color: onCal ? "#4aba6a" : "#a0a0a0" }}>{onCal ? "✓ " : "⠿ "}{t.text}</span>
+                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full ml-2 flex-shrink-0" style={{ background: "rgba(82,139,255,0.06)", color: "#528bff" }}>{t.minutes}m</span>
                         </div>
                       );
                     })}
@@ -763,8 +763,8 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
                           onDragStart={() => !onCal && setDragging(t.id)}
                           onDragEnd={() => setDragging(null)}
                           className="flex items-center justify-between px-3 py-2.5 rounded-lg select-none"
-                          style={{ background: onCal ? "#fffbeb" : dragging === t.id ? "#fef3c7" : "#f8f9fb", border: `1.5px solid ${onCal ? "#fde68a" : dragging === t.id ? "#f59e0b" : "#e2e8f0"}`, cursor: onCal ? "default" : "grab", opacity: dragging === t.id ? 0.5 : 1 }}>
-                          <span className="text-xs font-medium truncate min-w-0" style={{ color: "#334155" }}>{onCal ? "✓ " : "⠿ "}{t.text}</span>
+                          style={{ background: onCal ? "rgba(229,168,59,0.08)" : dragging === t.id ? "rgba(229,168,59,0.12)" : "#252525", border: `1.5px solid ${onCal ? "#e5a83b" : dragging === t.id ? "#e5a83b" : "#333"}`, cursor: onCal ? "default" : "grab", opacity: dragging === t.id ? 0.5 : 1 }}>
+                          <span className="text-xs font-medium truncate min-w-0" style={{ color: "#a0a0a0" }}>{onCal ? "✓ " : "⠿ "}{t.text}</span>
                           <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full ml-2 flex-shrink-0" style={{ background: "#fef3c7", color: "#f59e0b" }}>{t.minutes}m</span>
                         </div>
                       );
@@ -782,8 +782,8 @@ export function Receptacle({ studentId, profileId, gcalConnected }: ReceptaclePr
                 {completed.size > 0 && ` · ${completed.size} done`}
               </div>
               <div className="flex gap-2">
-                <button onClick={() => setStep(2)} style={{ padding: "10px 20px", borderRadius: 12, border: "1px solid #cbd5e1", cursor: "pointer", background: "#fff", color: "#64748b", fontWeight: 600, fontSize: 13 }}>← Back</button>
-                <button onClick={resetAll} style={{ padding: "10px 20px", borderRadius: 12, border: "none", cursor: "pointer", background: "#f1f5f9", color: "#334155", fontWeight: 600, fontSize: 13 }}>↺ Reset</button>
+                <button onClick={() => setStep(2)} style={{ padding: "10px 20px", borderRadius: 12, border: "1px solid #333", cursor: "pointer", background: "#252525", color: "#717171", fontWeight: 600, fontSize: 13 }}>← Back</button>
+                <button onClick={resetAll} style={{ padding: "10px 20px", borderRadius: 12, border: "none", cursor: "pointer", background: "#333", color: "#a0a0a0", fontWeight: 600, fontSize: 13 }}>↺ Reset</button>
               </div>
             </div>
           </div>

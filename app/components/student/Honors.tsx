@@ -23,13 +23,13 @@ const RECOGNITION_LEVELS = ["School", "State/Regional", "National", "Internation
 const TOTAL_SLOTS = 5;
 
 const inputStyle: React.CSSProperties = {
-  width: "100%", padding: "8px 12px", background: "#fff",
-  border: "1px solid #cbd5e1", borderRadius: 6, color: "#0f172a",
+  width: "100%", padding: "8px 12px", background: "#252525",
+  border: "1px solid #333", borderRadius: 6, color: "#ebebeb",
   fontSize: 13, outline: "none", boxSizing: "border-box",
 };
 
 const labelStyle: React.CSSProperties = {
-  fontSize: 12, fontWeight: 600, color: "#64748b",
+  fontSize: 12, fontWeight: 600, color: "#717171",
   marginBottom: 4, display: "block",
 };
 
@@ -105,7 +105,7 @@ export function Honors({ honors, setHonors, readOnly = false, studentId }: Honor
         sub={`Common App format · ${honors.length}/${totalSlots} filled · 100 characters per title`}
         right={
           readOnly ? (
-            <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "#eff6ff", color: "#1d4ed8" }}>
+            <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}>
               View Only
             </span>
           ) : null
@@ -113,7 +113,7 @@ export function Honors({ honors, setHonors, readOnly = false, studentId }: Honor
       />
 
       <div className="p-6 px-8">
-        <div className="rounded-xl overflow-hidden border border-line bg-white shadow-sm">
+        <div className="rounded-xl overflow-hidden border border-line bg-white">
           {slots.map((honor, i) => {
             const isOpen = openSlot === i;
             const isEmpty = !honor;
@@ -123,22 +123,22 @@ export function Honors({ honors, setHonors, readOnly = false, studentId }: Honor
                 {/* Accordion header */}
                 <button
                   onClick={() => toggleSlot(i)}
-                  className="w-full flex items-center justify-between px-5 py-4 text-left transition-colors hover:bg-gray-50"
-                  style={{ background: isOpen ? "#f8f9fb" : "white", border: "none", cursor: "pointer" }}
+                  className="w-full flex items-center justify-between px-5 py-4 text-left transition-colors hover:bg-mist"
+                  style={{ background: isOpen ? "#2a2a2a" : "#1e1e1e", border: "none", cursor: "pointer" }}
                 >
                   <div className="flex items-center gap-3">
                     <div
                       className="w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0"
                       style={{
-                        background: isEmpty ? "#f1f5f9" : "#dcfce7",
-                        color: isEmpty ? "#94a3b8" : "#16a34a",
+                        background: isEmpty ? "#333" : "rgba(74,186,106,0.1)",
+                        color: isEmpty ? "#505050" : "#4aba6a",
                         border: isEmpty ? "1.5px dashed #cbd5e1" : "none",
                       }}
                     >
                       {isEmpty ? "" : "✓"}
                     </div>
                     <div>
-                      <div className="text-sm font-semibold" style={{ color: isEmpty ? "#94a3b8" : "#0f172a" }}>
+                      <div className="text-sm font-semibold" style={{ color: isEmpty ? "#505050" : "#ebebeb" }}>
                         {isEmpty ? `Honors ${i + 1}` : honor.title}
                       </div>
                       {isEmpty && (
@@ -149,7 +149,7 @@ export function Honors({ honors, setHonors, readOnly = false, studentId }: Honor
                       )}
                     </div>
                   </div>
-                  <span className="text-gray-400 text-sm font-bold ml-4">
+                  <span className="text-faint text-sm font-bold ml-4">
                     {isOpen ? "−" : "+"}
                   </span>
                 </button>
@@ -199,7 +199,7 @@ export function Honors({ honors, setHonors, readOnly = false, studentId }: Honor
               setOpenSlot(totalSlots);
             }}
             className="mt-3 flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg border border-dashed"
-            style={{ color: "#3b82f6", borderColor: "#93c5fd", background: "#eff6ff", cursor: "pointer" }}
+            style={{ color: "#528bff", borderColor: "#93c5fd", background: "rgba(82,139,255,0.06)", cursor: "pointer" }}
           >
             + Add Another Honor
           </button>
@@ -233,9 +233,9 @@ function HonorForm({ honor, index, onSave, onDelete, saving }: HonorFormProps) {
       {/* Title */}
       <div>
         <label style={labelStyle}>
-          Honors {index + 1} title <span style={{ color: "#ef4444" }}>*</span>
+          Honors {index + 1} title <span style={{ color: "#e55b5b" }}>*</span>
           <span style={{ fontWeight: 400 }}> (Max characters: 100)</span>
-          <span style={{ fontSize: 11, color: title.length > 100 ? "#ef4444" : "#94a3b8", marginLeft: 4 }}>
+          <span style={{ fontSize: 11, color: title.length > 100 ? "#e55b5b" : "#505050", marginLeft: 4 }}>
             {title.length}/100
           </span>
         </label>
@@ -245,7 +245,7 @@ function HonorForm({ honor, index, onSave, onDelete, saving }: HonorFormProps) {
           onChange={(e) => setTitle(e.target.value)}
           maxLength={100}
           required
-          style={{ ...inputStyle, borderColor: title.length > 100 ? "#ef4444" : "#cbd5e1" }}
+          style={{ ...inputStyle, borderColor: title.length > 100 ? "#e55b5b" : "#333" }}
         />
       </div>
 
@@ -260,7 +260,7 @@ function HonorForm({ honor, index, onSave, onDelete, saving }: HonorFormProps) {
                 name={`grade_${g}`}
                 defaultChecked={(honor?.grades ?? []).includes(g as any)}
                 className="w-4 h-4 rounded"
-                style={{ accentColor: "#3b82f6" }}
+                style={{ accentColor: "#528bff" }}
               />
               {g}
             </label>
@@ -279,7 +279,7 @@ function HonorForm({ honor, index, onSave, onDelete, saving }: HonorFormProps) {
                 name={`rec_${r}`}
                 defaultChecked={(honor?.recognition ?? []).includes(r)}
                 className="w-4 h-4 rounded"
-                style={{ accentColor: "#3b82f6" }}
+                style={{ accentColor: "#528bff" }}
               />
               {r}
             </label>
@@ -293,7 +293,7 @@ function HonorForm({ honor, index, onSave, onDelete, saving }: HonorFormProps) {
           <button
             type="button"
             onClick={onDelete}
-            style={{ padding: "8px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: "#fef2f2", color: "#ef4444", border: "1px solid #fecaca", cursor: "pointer" }}
+            style={{ padding: "8px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: "rgba(229,91,91,0.08)", color: "#e55b5b", border: "1px solid rgba(229,91,91,0.2)", cursor: "pointer" }}
           >
             Remove Honor
           </button>
@@ -301,7 +301,7 @@ function HonorForm({ honor, index, onSave, onDelete, saving }: HonorFormProps) {
         <button
           type="submit"
           disabled={saving}
-          style={{ padding: "8px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: "#3b82f6", color: "#fff", border: "none", cursor: "pointer", opacity: saving ? 0.7 : 1 }}
+          style={{ padding: "8px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: "#528bff", color: "#fff", border: "none", cursor: "pointer", opacity: saving ? 0.7 : 1 }}
         >
           {saving ? "Saving..." : honor ? "Save Changes" : "Add Honor"}
         </button>

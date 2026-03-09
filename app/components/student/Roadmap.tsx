@@ -35,15 +35,15 @@ export function Roadmap({ tasks, setTasks, deadlines = [], studentId, onRefresh,
           name: "Deadlines",
           subtitle: `${deadlines.length} deadline${deadlines.length !== 1 ? "s" : ""}`,
           avatar: "⏰",
-          avatarBg: "#fef2f2",
-          avatarColor: "#ef4444",
+          avatarBg: "rgba(229,91,91,0.08)",
+          avatarColor: "#e55b5b",
           events: deadlines.map((d) => ({
             id: d.id,
             title: d.title,
             date: d.due,
-            bgColor: d.status === "overdue" ? "#fef2f2" : d.createdBy === "student" ? "#f5f3ff" : "#fefce8",
-            borderColor: d.status === "overdue" ? "#ef4444" : d.createdBy === "student" ? "#7c3aed" : "#d97706",
-            textColor: d.status === "overdue" ? "#ef4444" : d.createdBy === "student" ? "#7c3aed" : "#d97706",
+            bgColor: d.status === "overdue" ? "rgba(229,91,91,0.08)" : d.createdBy === "student" ? "#f5f3ff" : "#fefce8",
+            borderColor: d.status === "overdue" ? "#e55b5b" : d.createdBy === "student" ? "#a480f2" : "#e5a83b",
+            textColor: d.status === "overdue" ? "#e55b5b" : d.createdBy === "student" ? "#a480f2" : "#e5a83b",
           })),
         }]
       : []),
@@ -53,15 +53,15 @@ export function Roadmap({ tasks, setTasks, deadlines = [], studentId, onRefresh,
           name: "From Strategist",
           subtitle: `${counselorEvents.length} event${counselorEvents.length !== 1 ? "s" : ""}`,
           avatar: "📅",
-          avatarBg: "#eff6ff",
-          avatarColor: "#1d4ed8",
+          avatarBg: "rgba(82,139,255,0.08)",
+          avatarColor: "#7aabff",
           events: counselorEvents.map((ce: any) => ({
             id: ce.id,
             title: ce.title,
             date: ce.date,
-            bgColor: "#eff6ff",
-            borderColor: "#3b82f6",
-            textColor: "#1d4ed8",
+            bgColor: "rgba(82,139,255,0.08)",
+            borderColor: "#528bff",
+            textColor: "#7aabff",
           })),
         }]
       : []),
@@ -74,7 +74,7 @@ export function Roadmap({ tasks, setTasks, deadlines = [], studentId, onRefresh,
         sub="Track your deadlines and schedule."
         right={
           readOnly ? (
-            <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "#eff6ff", color: "#1d4ed8" }}>
+            <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}>
               View Only
             </span>
           ) : null
@@ -89,8 +89,8 @@ export function Roadmap({ tasks, setTasks, deadlines = [], studentId, onRefresh,
               onClick={() => setViewMode(id)}
               className="px-5 py-2 rounded-lg border-none cursor-pointer text-sm font-semibold"
               style={{
-                background: viewMode === id ? "#3b82f6" : "transparent",
-                color: viewMode === id ? "#fff" : "#64748b",
+                background: viewMode === id ? "#528bff" : "transparent",
+                color: viewMode === id ? "#fff" : "#717171",
               }}
             >
               {id.charAt(0).toUpperCase() + id.slice(1)}

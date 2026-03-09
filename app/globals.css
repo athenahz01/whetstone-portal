@@ -1,44 +1,60 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-bg: #f4f5f7;
-  --color-white: #ffffff;
-  --color-raised: #f8f9fb;
-  --color-mist: #eef0f4;
+  --color-bg: #191919;
+  --color-white: #1e1e1e;
+  --color-raised: #252525;
+  --color-mist: #2a2a2a;
 
-  --color-navy: #0f172a;
-  --color-navy-mid: #1e293b;
-  --color-navy-edge: #334155;
-  --color-navy-txt: #94a3b8;
-  --color-navy-hi: #60a5fa;
+  --color-navy: #111111;
+  --color-navy-mid: #1a1a1a;
+  --color-navy-edge: #2a2a2a;
+  --color-navy-txt: #717171;
+  --color-navy-hi: #e8e8e8;
 
-  --color-heading: #0f172a;
-  --color-body: #334155;
-  --color-sub: #64748b;
-  --color-faint: #94a3b8;
+  --color-heading: #ebebeb;
+  --color-body: #a0a0a0;
+  --color-sub: #717171;
+  --color-faint: #505050;
 
-  --color-line: #e2e8f0;
-  --color-line-dk: #cbd5e1;
+  --color-line: #2a2a2a;
+  --color-line-dk: #333333;
 
-  --color-accent: #3b82f6;
-  --color-accent-ghost: #eff6ff;
-  --color-accent-ring: #bfdbfe;
-  --color-accent-ink: #1d4ed8;
+  --color-accent: #528bff;
+  --color-accent-ghost: rgba(82, 139, 255, 0.08);
+  --color-accent-ring: rgba(82, 139, 255, 0.2);
+  --color-accent-ink: #7aabff;
 
-  --color-danger: #ef4444;
-  --color-danger-ghost: #fef2f2;
-  --color-success: #16a34a;
-  --color-success-ghost: #f0fdf4;
-  --color-warn: #d97706;
-  --color-warn-ghost: #fffbeb;
-  --color-purple: #7c3aed;
-  --color-purple-ghost: #f5f3ff;
+  --color-danger: #e55b5b;
+  --color-danger-ghost: rgba(229, 91, 91, 0.08);
+  --color-success: #4aba6a;
+  --color-success-ghost: rgba(74, 186, 106, 0.08);
+  --color-warn: #e5a83b;
+  --color-warn-ghost: rgba(229, 168, 59, 0.08);
+  --color-purple: #a480f2;
+  --color-purple-ghost: rgba(164, 128, 242, 0.08);
 
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
 }
 
 body {
   background: var(--color-bg);
   color: var(--color-body);
   font-family: var(--font-sans);
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #444; }
+
+input:focus, select:focus, textarea:focus {
+  border-color: #528bff !important;
+  box-shadow: 0 0 0 2px rgba(82, 139, 255, 0.15) !important;
+  outline: none;
+}
+
+::selection {
+  background: rgba(82, 139, 255, 0.3);
+  color: #fff;
 }

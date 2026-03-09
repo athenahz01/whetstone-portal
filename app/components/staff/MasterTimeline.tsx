@@ -82,17 +82,17 @@ function FilterDropdown({
       >
         <span
           className="text-xs uppercase tracking-widest font-semibold"
-          style={{ color: isFiltered || isSorted ? "#3b82f6" : "#64748b" }}
+          style={{ color: isFiltered || isSorted ? "#528bff" : "#717171" }}
         >
           {label}
         </span>
-        <span style={{ fontSize: 10, color: isFiltered || isSorted ? "#3b82f6" : "#94a3b8" }}>
+        <span style={{ fontSize: 10, color: isFiltered || isSorted ? "#528bff" : "#505050" }}>
           {isSorted ? (sortDir === "asc" ? "▲" : "▼") : "▾"}
         </span>
         {isFiltered && (
           <span
             className="text-[9px] font-bold px-1 rounded"
-            style={{ background: "#3b82f6", color: "#fff", lineHeight: "14px" }}
+            style={{ background: "#528bff", color: "#fff", lineHeight: "14px" }}
           >
             {selected.length}
           </span>
@@ -112,8 +112,8 @@ function FilterDropdown({
                 onClick={() => { onSort(field); setOpen(false); }}
                 className="flex-1 py-1 rounded text-xs font-semibold border-none cursor-pointer"
                 style={{
-                  background: isSorted && sortDir === "asc" ? "#eff6ff" : "#f1f5f9",
-                  color: isSorted && sortDir === "asc" ? "#1d4ed8" : "#64748b",
+                  background: isSorted && sortDir === "asc" ? "rgba(82,139,255,0.08)" : "#252525",
+                  color: isSorted && sortDir === "asc" ? "#7aabff" : "#717171",
                 }}
               >
                 ▲ A→Z
@@ -122,8 +122,8 @@ function FilterDropdown({
                 onClick={() => { onSort(field); setOpen(false); }}
                 className="flex-1 py-1 rounded text-xs font-semibold border-none cursor-pointer"
                 style={{
-                  background: isSorted && sortDir === "desc" ? "#eff6ff" : "#f1f5f9",
-                  color: isSorted && sortDir === "desc" ? "#1d4ed8" : "#64748b",
+                  background: isSorted && sortDir === "desc" ? "rgba(82,139,255,0.08)" : "#252525",
+                  color: isSorted && sortDir === "desc" ? "#7aabff" : "#717171",
                 }}
               >
                 ▼ Z→A
@@ -138,7 +138,7 @@ function FilterDropdown({
               <button
                 onClick={toggleAll}
                 className="text-[10px] text-accent-ink cursor-pointer border-none bg-transparent font-semibold"
-                style={{ color: "#3b82f6" }}
+                style={{ color: "#528bff" }}
               >
                 {selected.length === options.length ? "Clear all" : "Select all"}
               </button>
@@ -151,7 +151,7 @@ function FilterDropdown({
                     checked={selected.includes(opt)}
                     onChange={() => toggleOne(opt)}
                     className="w-3.5 h-3.5 rounded"
-                    style={{ accentColor: "#3b82f6" }}
+                    style={{ accentColor: "#528bff" }}
                   />
                   <span className="text-xs text-body capitalize">{opt || "—"}</span>
                 </label>
@@ -165,7 +165,7 @@ function FilterDropdown({
               <button
                 onClick={() => { onChange([]); setOpen(false); }}
                 className="w-full py-1.5 rounded-lg text-xs font-semibold cursor-pointer border-none"
-                style={{ background: "#fef2f2", color: "#ef4444" }}
+                style={{ background: "rgba(229,91,91,0.08)", color: "#e55b5b" }}
               >
                 Clear filter
               </button>
@@ -191,11 +191,11 @@ function SortOnlyHeader({
     >
       <span
         className="text-xs uppercase tracking-widest font-semibold"
-        style={{ color: active ? "#3b82f6" : "#64748b" }}
+        style={{ color: active ? "#528bff" : "#717171" }}
       >
         {label}
       </span>
-      <span style={{ fontSize: 10, color: active ? "#3b82f6" : "#94a3b8" }}>
+      <span style={{ fontSize: 10, color: active ? "#528bff" : "#505050" }}>
         {active ? (sortDir === "asc" ? "▲" : "▼") : "▾"}
       </span>
     </div>
@@ -233,8 +233,8 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
   }, [profileId]);
 
   const inputStyle: React.CSSProperties = {
-    width: "100%", padding: "10px 14px", background: "#fff",
-    border: "1px solid #cbd5e1", borderRadius: 8, color: "#0f172a",
+    width: "100%", padding: "10px 14px", background: "#252525",
+    border: "1px solid #333", borderRadius: 8, color: "#ebebeb",
     fontSize: 14, outline: "none", boxSizing: "border-box",
   };
 
@@ -372,11 +372,11 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
     name: "My Calendar",
     subtitle: `${myGoogleEvents.length} events`,
     avatar: "📅",
-    avatarBg: "#eff6ff",
-    avatarColor: "#1d4ed8",
+    avatarBg: "rgba(82,139,255,0.08)",
+    avatarColor: "#7aabff",
     events: myGoogleEvents.map((ge: any) => ({
       id: ge.id, title: ge.title, date: ge.date,
-      bgColor: "#eff6ff", borderColor: "#3b82f6", textColor: "#1d4ed8",
+      bgColor: "rgba(82,139,255,0.08)", borderColor: "#528bff", textColor: "#7aabff",
       label: "personal", meetingLink: ge.meetingLink || "", location: ge.location || "",
     })),
   } : null;
@@ -391,14 +391,14 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
     const events = [
       ...dl.filter((d) => d.status !== "completed").map((d) => ({
         id: d.id, title: d.title, date: d.due,
-        bgColor: d.status === "overdue" ? "#fef2f2" : getCategoryColor(d.cat) + "15",
-        borderColor: d.status === "overdue" ? "#ef4444" : getCategoryColor(d.cat),
-        textColor: d.status === "overdue" ? "#ef4444" : getCategoryColor(d.cat),
+        bgColor: d.status === "overdue" ? "rgba(229,91,91,0.08)" : getCategoryColor(d.cat) + "15",
+        borderColor: d.status === "overdue" ? "#e55b5b" : getCategoryColor(d.cat),
+        textColor: d.status === "overdue" ? "#e55b5b" : getCategoryColor(d.cat),
         label: d.cat,
       })),
       ...studentCE.map((ce: any) => ({
         id: "ce-" + ce.id, title: ce.title, date: ce.date,
-        bgColor: "#eff6ff", borderColor: "#3b82f6", textColor: "#1d4ed8",
+        bgColor: "rgba(82,139,255,0.08)", borderColor: "#528bff", textColor: "#7aabff",
         label: "strategist",
         onClick: () => {
           if (confirm('Delete event "' + ce.title + '"?')) handleDeleteEvent(ce.id);
@@ -406,14 +406,14 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
       })),
       ...studentGE.map((ge: any) => ({
         id: "gcal-" + ge.id, title: ge.title, date: ge.date,
-        bgColor: "#dbeafe", borderColor: "#60a5fa", textColor: "#1d4ed8",
+        bgColor: "#dbeafe", borderColor: "#60a5fa", textColor: "#7aabff",
         label: "google", meetingLink: ge.meetingLink || "", location: ge.location || "",
       })),
     ];
 
     return {
       id: s.id, name: s.name, subtitle: "Gr. " + s.grade,
-      avatar: s.av, avatarBg: "#eff6ff", avatarColor: "#1d4ed8",
+      avatar: s.av, avatarBg: "rgba(82,139,255,0.08)", avatarColor: "#7aabff",
       events,
       onClick: () => { onSelectStudent(s); onNavigate("detail"); },
     };
@@ -438,7 +438,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
             {([["calendar", "Calendar"], ["table", "Table"]] as const).map(([id, l]) => (
               <button key={id} onClick={() => setViewMode(id)}
                 className="px-5 py-2 rounded-lg border-none cursor-pointer text-sm font-semibold"
-                style={{ background: viewMode === id ? "#3b82f6" : "transparent", color: viewMode === id ? "#fff" : "#64748b" }}>
+                style={{ background: viewMode === id ? "#528bff" : "transparent", color: viewMode === id ? "#fff" : "#717171" }}>
                 {l}
               </button>
             ))}
@@ -451,9 +451,9 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
                 <button key={c} onClick={() => setCalFilter(c)}
                   className="px-3 py-1.5 rounded-lg cursor-pointer text-xs font-semibold capitalize"
                   style={{
-                    background: calFilter === c ? "#eff6ff" : "#fff",
-                    border: "1px solid " + (calFilter === c ? "#3b82f6" : "#cbd5e1"),
-                    color: calFilter === c ? "#1d4ed8" : "#64748b",
+                    background: calFilter === c ? "rgba(82,139,255,0.08)" : "#252525",
+                    border: "1px solid " + (calFilter === c ? "#528bff" : "#333"),
+                    color: calFilter === c ? "#7aabff" : "#717171",
                   }}>
                   {c === "all" ? "All" : c}
                 </button>
@@ -471,7 +471,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
               <button
                 onClick={clearAllFilters}
                 className="text-xs font-semibold px-2.5 py-1 rounded-lg border-none cursor-pointer"
-                style={{ background: "#fef2f2", color: "#ef4444" }}
+                style={{ background: "rgba(229,91,91,0.08)", color: "#e55b5b" }}
               >
                 Clear all
               </button>
@@ -486,7 +486,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
             {/* Table Header with per-column filters */}
             <div
               className="grid px-5 py-3 border-b border-line"
-              style={{ gridTemplateColumns: "110px 2fr 1fr 1.5fr 1fr 1fr 90px", background: "#f8f9fb" }}
+              style={{ gridTemplateColumns: "110px 2fr 1fr 1.5fr 1fr 1fr 90px", background: "#252525" }}
             >
               {/* Due Date — sort only */}
               <SortOnlyHeader field="due" label="Due Date" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
@@ -552,7 +552,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
                 <button
                   onClick={clearAllFilters}
                   className="text-xs font-semibold px-3 py-1.5 rounded-lg border-none cursor-pointer"
-                  style={{ background: "#eff6ff", color: "#1d4ed8" }}
+                  style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}
                 >
                   Clear all filters
                 </button>
@@ -567,14 +567,14 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
                     className="grid px-5 py-3 border-b border-line items-center hover:bg-mist cursor-pointer"
                     style={{
                       gridTemplateColumns: "110px 2fr 1fr 1.5fr 1fr 1fr 90px",
-                      background: isOverdue ? "#fef2f2" : isCE ? "#f8faff" : "#fff",
+                      background: isOverdue ? "rgba(229,91,91,0.06)" : isCE ? "rgba(82,139,255,0.04)" : "#1e1e1e",
                     }}
                     onClick={() => {
                       const student = students.find((s) => s.id === d.studentId);
                       if (student) { onSelectStudent(student); onNavigate("detail"); }
                     }}
                   >
-                    <div className="text-sm font-medium" style={{ color: isOverdue ? "#ef4444" : "#0f172a" }}>
+                    <div className="text-sm font-medium" style={{ color: isOverdue ? "#e55b5b" : "#ebebeb" }}>
                       {new Date(d.due + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                     </div>
 
@@ -595,7 +595,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
                     <div className="flex items-center gap-2">
                       <div
                         className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0"
-                        style={{ background: "#eff6ff", color: "#1d4ed8" }}
+                        style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}
                       >
                         {d.studentAv}
                       </div>
@@ -613,7 +613,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
                         <button
                           onClick={() => handleDeleteEvent((d as any).counselorEventId)}
                           className="text-[10px] px-2 py-1 rounded cursor-pointer border-none font-semibold"
-                          style={{ background: "#fef2f2", color: "#ef4444" }}
+                          style={{ background: "rgba(229,91,91,0.08)", color: "#e55b5b" }}
                         >
                           Delete
                         </button>
@@ -625,17 +625,17 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
             )}
 
             {/* Table Footer */}
-            <div className="px-5 py-2.5 border-t border-line flex justify-between items-center" style={{ background: "#f8f9fb" }}>
+            <div className="px-5 py-2.5 border-t border-line flex justify-between items-center" style={{ background: "#252525" }}>
               <span className="text-xs text-sub">{filteredDeadlines.length} of {allDeadlines.length} items</span>
               <div className="flex gap-2 text-xs text-sub">
                 <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full" style={{ background: "#ef4444" }} /> Overdue
+                  <span className="w-2 h-2 rounded-full" style={{ background: "#e55b5b" }} /> Overdue
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full" style={{ background: "#d97706" }} /> In Progress
+                  <span className="w-2 h-2 rounded-full" style={{ background: "#e5a83b" }} /> In Progress
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full" style={{ background: "#94a3b8" }} /> Pending
+                  <span className="w-2 h-2 rounded-full" style={{ background: "#505050" }} /> Pending
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="text-[10px]">📅</span> Strategist Event
@@ -666,7 +666,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
             </div>
             <FormField label="Specialist (optional)"><input name="specialist" placeholder="e.g. Stephanie" style={inputStyle} /></FormField>
             <FormField label="Assign to Students">
-              <div className="flex flex-col gap-1.5 p-3 rounded-lg" style={{ background: "#f8f9fb", border: "1px solid #e2e8f0", maxHeight: 160, overflowY: "auto" }}>
+              <div className="flex flex-col gap-1.5 p-3 rounded-lg" style={{ background: "#252525", border: "1px solid #2a2a2a", maxHeight: 160, overflowY: "auto" }}>
                 {students.map((s) => (
                   <label key={s.id} className="flex items-center gap-2 cursor-pointer text-sm text-body">
                     <input type="checkbox" name="students" value={s.id} defaultChecked />

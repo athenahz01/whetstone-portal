@@ -30,8 +30,8 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
   const [transcripts, setTranscripts] = useState<TranscriptFile[]>([]);
 
   const inputStyle: React.CSSProperties = {
-    width: "100%", padding: "10px 14px", background: "#fff",
-    border: "1px solid #cbd5e1", borderRadius: 8, color: "#0f172a",
+    width: "100%", padding: "10px 14px", background: "#252525",
+    border: "1px solid #333", borderRadius: 8, color: "#ebebeb",
     fontSize: 14, outline: "none", boxSizing: "border-box",
   };
 
@@ -86,7 +86,7 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
         sub="Coursework and academic progress."
         right={
           readOnly ? (
-            <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "#eff6ff", color: "#1d4ed8" }}>View Only</span>
+            <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}>View Only</span>
           ) : (
             <div className="flex gap-2">
               <Button primary onClick={() => setShowModal(true)}>+ Add Course</Button>
@@ -97,15 +97,15 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
       <div className="p-6 px-8">
         {/* GPA Metrics — no class rank or AP courses */}
         <div className="grid grid-cols-2 gap-3.5 mb-5">
-          <MetricCard label="GPA (UW)" value={student.gpaUnweighted || student.gpa || "—"} color="#16a34a" />
-          <MetricCard label="GPA (W)" value={student.gpaWeighted || student.gpa || "—"} color="#3b82f6" />
+          <MetricCard label="GPA (UW)" value={student.gpaUnweighted || student.gpa || "—"} color="#4aba6a" />
+          <MetricCard label="GPA (W)" value={student.gpaWeighted || student.gpa || "—"} color="#528bff" />
         </div>
 
         {/* Coursework Table */}
         <Card noPadding style={{ overflow: "hidden" }}>
-          <div className="px-6 py-3 border-b border-line flex justify-between items-center" style={{ background: "#f8f9fb" }}>
+          <div className="px-6 py-3 border-b border-line flex justify-between items-center" style={{ background: "#252525" }}>
             <span className="text-base font-bold text-heading">{student.grade}th Grade Coursework</span>
-            <Tag color="#16a34a">Current</Tag>
+            <Tag color="#4aba6a">Current</Tag>
           </div>
           {courses.length === 0 ? (
             <p className="text-sm text-sub py-6 text-center">
@@ -116,17 +116,17 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
               <thead>
                 <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
                   {["Course", "Level", "Sem 1", "Sem 2"].map((h) => (
-                    <th key={h} style={{ padding: "10px 24px", textAlign: h.includes("Sem") ? "center" : "left", fontSize: 11, color: "#64748b", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>{h}</th>
+                    <th key={h} style={{ padding: "10px 24px", textAlign: h.includes("Sem") ? "center" : "left", fontSize: 11, color: "#717171", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {courses.map((c) => (
                   <tr key={c.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
-                    <td style={{ padding: "12px 24px", fontSize: 14, fontWeight: 500, color: "#0f172a" }}>{c.name}</td>
-                    <td style={{ padding: "12px 24px", fontSize: 13, color: "#64748b" }}>{c.lv}</td>
-                    <td style={{ padding: "12px 24px", textAlign: "center", fontSize: 14, color: "#16a34a", fontWeight: 700 }}>{c.s1}</td>
-                    <td style={{ padding: "12px 24px", textAlign: "center", fontSize: 13, color: "#94a3b8" }}>{c.s2}</td>
+                    <td style={{ padding: "12px 24px", fontSize: 14, fontWeight: 500, color: "#ebebeb" }}>{c.name}</td>
+                    <td style={{ padding: "12px 24px", fontSize: 13, color: "#717171" }}>{c.lv}</td>
+                    <td style={{ padding: "12px 24px", textAlign: "center", fontSize: 14, color: "#4aba6a", fontWeight: 700 }}>{c.s1}</td>
+                    <td style={{ padding: "12px 24px", textAlign: "center", fontSize: 13, color: "#505050" }}>{c.s2}</td>
                   </tr>
                 ))}
               </tbody>
@@ -144,7 +144,7 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
               </div>
               <label
                 className="px-4 py-2 rounded-lg text-sm font-semibold cursor-pointer"
-                style={{ background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe" }}
+                style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff", border: "1px solid #bfdbfe" }}
               >
                 {uploading ? "Uploading..." : "📎 Upload File"}
                 <input
@@ -160,7 +160,7 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
             {transcripts.length === 0 ? (
               <div
                 className="rounded-lg py-8 text-center"
-                style={{ background: "#f8f9fb", border: "2px dashed #e2e8f0" }}
+                style={{ background: "#252525", border: "2px dashed #e2e8f0" }}
               >
                 <p className="text-sm text-sub m-0">No transcript uploaded yet.</p>
                 <p className="text-xs text-sub m-0 mt-1">Accepted formats: PDF, PNG, JPG, DOC, DOCX</p>
@@ -174,7 +174,7 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 p-3 rounded-lg no-underline"
-                    style={{ background: "#f8f9fb", border: "1px solid #e2e8f0" }}
+                    style={{ background: "#252525", border: "1px solid #2a2a2a" }}
                   >
                     <span className="text-lg">📄</span>
                     <div className="flex-1 min-w-0">
@@ -185,7 +185,7 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
                         </div>
                       )}
                     </div>
-                    <span className="text-xs font-semibold" style={{ color: "#3b82f6" }}>View ↗</span>
+                    <span className="text-xs font-semibold" style={{ color: "#528bff" }}>View ↗</span>
                   </a>
                 ))}
               </div>
@@ -205,13 +205,13 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 p-3 rounded-lg no-underline"
-                  style={{ background: "#f8f9fb", border: "1px solid #e2e8f0" }}
+                  style={{ background: "#252525", border: "1px solid #2a2a2a" }}
                 >
                   <span className="text-lg">📄</span>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-heading truncate">{t.name.replace(/^\d+-/, "")}</div>
                   </div>
-                  <span className="text-xs font-semibold" style={{ color: "#3b82f6" }}>View ↗</span>
+                  <span className="text-xs font-semibold" style={{ color: "#528bff" }}>View ↗</span>
                 </a>
               ))}
             </div>

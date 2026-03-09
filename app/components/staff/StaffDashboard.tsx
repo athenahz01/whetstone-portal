@@ -72,8 +72,8 @@ export function StaffDashboard({
           <button
             onClick={onRefresh}
             disabled={refreshing}
-            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50"
-            style={{ color: "#64748b" }}
+            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-line bg-mist hover:bg-raised transition-colors disabled:opacity-50"
+            style={{ color: "#717171" }}
           >
             <span style={{ display: "inline-block", animation: refreshing ? "spin 1s linear infinite" : "none" }}>↻</span>
             {refreshing ? "Refreshing..." : "Refresh"}
@@ -84,27 +84,27 @@ export function StaffDashboard({
       <div className="p-6 px-8">
         {/* Metric Cards */}
         <div className="grid grid-cols-5 gap-3.5 mb-5">
-          <MetricCard label="Students" value={students.length} color="#3b82f6" />
-          <MetricCard label="Overdue" value={ov.length} color="#ef4444" />
-          <MetricCard label="This Week" value={wk.length} color="#d97706" />
-          <MetricCard label="Avg Engagement" value={`${avgEngagement}%`} color="#16a34a" />
+          <MetricCard label="Students" value={students.length} color="#528bff" />
+          <MetricCard label="Overdue" value={ov.length} color="#e55b5b" />
+          <MetricCard label="This Week" value={wk.length} color="#e5a83b" />
+          <MetricCard label="Avg Engagement" value={`${avgEngagement}%`} color="#4aba6a" />
 
           {/* Login Warning */}
           <div
             onClick={() => inactiveStudents.length > 0 && setShowInactiveModal(true)}
-            className={`rounded-xl p-5 border-t-4 shadow-sm transition-all select-none bg-white
+            className={`rounded-xl p-5 border-t-4 transition-all select-none bg-white border border-line
               ${inactiveStudents.length > 0
                 ? "border-t-red-500 cursor-pointer hover:shadow-md hover:bg-red-50"
                 : "border-t-green-500"
               }`}
           >
-            <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-2">
+            <p className="text-xs font-semibold tracking-widest text-faint uppercase mb-2">
               Login Warning
             </p>
             <p className={`text-4xl font-bold mb-1 ${inactiveStudents.length > 0 ? "text-red-600" : "text-green-600"}`}>
               {inactiveStudents.length}
             </p>
-            <p className="text-xs text-gray-500 leading-tight">
+            <p className="text-xs text-sub leading-tight">
               {inactiveStudents.length === 0
                 ? "All students active"
                 : inactiveStudents.length === 1
@@ -118,11 +118,11 @@ export function StaffDashboard({
         {att.length > 0 && (
           <div
             className="rounded-lg p-3 px-4 mb-4 flex items-center gap-3"
-            style={{ background: "#fef2f2", border: "1px solid rgba(239,68,68,0.12)" }}
+            style={{ background: "rgba(229,91,91,0.08)", border: "1px solid rgba(239,68,68,0.12)" }}
           >
             <span className="text-base">⚠</span>
             <div>
-              <div className="text-sm font-bold" style={{ color: "#ef4444" }}>
+              <div className="text-sm font-bold" style={{ color: "#e55b5b" }}>
                 {att.length} student{att.length > 1 ? "s" : ""} need{att.length === 1 ? "s" : ""} attention
               </div>
               <div className="text-sm text-sub">{att.map((s) => s.name).join(", ")}</div>
@@ -152,18 +152,18 @@ export function StaffDashboard({
                   onClick={() => { onSelectStudent(s); onNavigate("detail"); }}
                   className="flex justify-between items-center p-2.5 px-3 rounded-lg mb-1.5 cursor-pointer"
                   style={{
-                    background: "#eef0f4",
+                    background: "#252525",
                     borderLeft: `3px solid ${
-                      s.status === "needs-attention" ? "#ef4444"
-                      : s.engagement > 80 ? "#16a34a"
-                      : "#d97706"
+                      s.status === "needs-attention" ? "#e55b5b"
+                      : s.engagement > 80 ? "#4aba6a"
+                      : "#e5a83b"
                     }`,
                   }}
                 >
                   <div className="flex items-center gap-2.5">
                     <div
                       className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
-                      style={{ background: "#eff6ff", color: "#1d4ed8" }}
+                      style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}
                     >
                       {s.av}
                     </div>
@@ -175,11 +175,11 @@ export function StaffDashboard({
                   <div className="text-right">
                     <div
                       className="text-sm font-bold"
-                      style={{ color: s.engagement > 80 ? "#16a34a" : s.engagement > 60 ? "#d97706" : "#ef4444" }}
+                      style={{ color: s.engagement > 80 ? "#4aba6a" : s.engagement > 60 ? "#e5a83b" : "#e55b5b" }}
                     >
                       {s.engagement}%
                     </div>
-                    <div className="text-xs" style={{ color: loginWarning ? "#ef4444" : "#94a3b8" }}>
+                    <div className="text-xs" style={{ color: loginWarning ? "#e55b5b" : "#505050" }}>
                       {formatLastLogin(s.lastLogin)}
                     </div>
                   </div>
@@ -203,7 +203,7 @@ export function StaffDashboard({
               <div key={`${d.id}-${i}`} className="flex items-center gap-2.5 py-2 border-b border-line">
                 <div
                   className="w-2 h-2 rounded-full flex-shrink-0"
-                  style={{ background: d.status === "overdue" ? "#ef4444" : getCategoryColor(d.cat) }}
+                  style={{ background: d.status === "overdue" ? "#e55b5b" : getCategoryColor(d.cat) }}
                 />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-heading whitespace-nowrap overflow-hidden text-ellipsis">
@@ -211,7 +211,7 @@ export function StaffDashboard({
                   </div>
                   <div className="text-xs text-sub">{d.sn}</div>
                 </div>
-                <Tag color={d.status === "overdue" ? "#ef4444" : "#94a3b8"}>
+                <Tag color={d.status === "overdue" ? "#e55b5b" : "#505050"}>
                   {d.days < 0 ? `${Math.abs(d.days)}d late` : d.days === 0 ? "Today" : `${d.days}d`}
                 </Tag>
               </div>
@@ -230,15 +230,15 @@ export function StaffDashboard({
           style={{ background: "rgba(0,0,0,0.4)" }}
           onClick={(e) => { if (e.target === e.currentTarget) setShowInactiveModal(false); }}
         >
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
-            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
+          <div className="rounded-2xl border border-line w-full max-w-md mx-4 overflow-hidden">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-line">
               <div>
-                <h2 className="text-base font-bold text-gray-900 m-0">Login Warning</h2>
-                <p className="text-xs text-gray-400 mt-0.5">Students inactive for 3+ days</p>
+                <h2 className="text-base font-bold text-heading m-0">Login Warning</h2>
+                <p className="text-xs text-faint mt-0.5">Students inactive for 3+ days</p>
               </div>
               <button
                 onClick={() => setShowInactiveModal(false)}
-                className="w-7 h-7 flex items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors text-lg font-bold bg-transparent border-none cursor-pointer"
+                className="w-7 h-7 flex items-center justify-center rounded-full text-faint hover:bg-raised hover:text-body transition-colors text-lg font-bold bg-transparent border-none cursor-pointer"
               >
                 ×
               </button>
@@ -255,7 +255,7 @@ export function StaffDashboard({
                       onNavigate("detail");
                     }}
                     className="flex items-center justify-between p-3 rounded-lg cursor-pointer hover:bg-red-50 transition-colors"
-                    style={{ background: "#fef2f2" }}
+                    style={{ background: "rgba(229,91,91,0.08)" }}
                   >
                     <div className="flex items-center gap-3">
                       <div
@@ -265,22 +265,22 @@ export function StaffDashboard({
                         {s.av}
                       </div>
                       <div>
-                        <div className="text-sm font-semibold text-gray-800">{s.name}</div>
-                        <div className="text-xs text-gray-400">Gr. {s.grade} · {s.school}</div>
+                        <div className="text-sm font-semibold text-heading">{s.name}</div>
+                        <div className="text-xs text-faint">Gr. {s.grade} · {s.school}</div>
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0 ml-3">
                       <div className="text-xs font-semibold text-red-500">
                         {days === Infinity ? "Never" : `${days}d ago`}
                       </div>
-                      <div className="text-xs text-gray-400">{formatLastLogin(s.lastLogin)}</div>
+                      <div className="text-xs text-faint">{formatLastLogin(s.lastLogin)}</div>
                     </div>
                   </div>
                 );
               })}
             </div>
-            <div className="px-6 py-3 bg-gray-50 border-t border-gray-100">
-              <p className="text-xs text-gray-400 text-center">Click a student to view their profile</p>
+            <div className="px-6 py-3 bg-mist border-t border-line">
+              <p className="text-xs text-faint text-center">Click a student to view their profile</p>
             </div>
           </div>
         </div>

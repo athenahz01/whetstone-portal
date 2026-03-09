@@ -52,7 +52,7 @@ export function StudentDashboard({
         })}
         right={
           readOnly ? (
-            <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "#eff6ff", color: "#1d4ed8" }}>
+            <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}>
               View Only
             </span>
           ) : (
@@ -68,24 +68,24 @@ export function StudentDashboard({
             label="Next Deadline"
             value={nextDeadline ? `${nextDeadline.days}d` : "—"}
             detail={nextDeadline ? nextDeadline.title : "No deadlines"}
-            color="#d97706"
+            color="#e5a83b"
           />
           <MetricCard
             label="Schools"
             value={student.schools.length}
             detail={`${student.schools.filter((s) => s.status === "Submitted").length} submitted`}
-            color="#16a34a"
+            color="#4aba6a"
           />
           <MetricCard
             label="Weekly Goals"
             value={`${done}/${goals.length}`}
-            color="#7c3aed"
+            color="#a480f2"
           />
           <MetricCard
             label="Sessions"
             value={student.sess.length}
             detail={student.sess.length > 0 ? `Latest: ${student.sess[0].date}` : "None yet"}
-            color="#3b82f6"
+            color="#528bff"
           />
         </div>
 
@@ -116,11 +116,11 @@ export function StudentDashboard({
                   <div
                     key={ce.id}
                     className="flex justify-between items-start p-3 rounded-lg mb-1.5"
-                    style={{ background: "#eff6ff", borderLeft: "3px solid #3b82f6" }}
+                    style={{ background: "rgba(82,139,255,0.06)", borderLeft: "3px solid #528bff" }}
                   >
                     <div>
                       <div className="text-sm font-medium text-heading">{ce.title}</div>
-                      <span className="text-xs" style={{ color: "#3b82f6" }}>
+                      <span className="text-xs" style={{ color: "#528bff" }}>
                         {ce.category} · {new Date(ce.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                       </span>
                       {ce.notes && <p className="text-xs text-sub mt-1 m-0">{ce.notes}</p>}
@@ -147,7 +147,7 @@ export function StudentDashboard({
                     onClick={() => onNavigate("receptacle")}
                     style={{
                       padding: "10px 24px", borderRadius: 10, border: "none",
-                      background: "#0f172a", color: "#fff", fontWeight: 600,
+                      background: "#ebebeb", color: "#fff", fontWeight: 600,
                       fontSize: 13, cursor: "pointer",
                     }}
                   >
@@ -163,7 +163,7 @@ export function StudentDashboard({
         <Card className="mt-3.5">
           <h2 className="m-0 mb-3.5 text-lg font-bold text-heading">Latest Session</h2>
           {student.sess.length > 0 ? (
-            <div className="p-4 rounded-lg" style={{ background: "#eef0f4", borderLeft: "3px solid #3b82f6" }}>
+            <div className="p-4 rounded-lg" style={{ background: "#252525", borderLeft: "3px solid #528bff" }}>
               <div className="flex justify-between mb-2">
                 <span className="text-sm text-accent-ink font-semibold">{student.sess[0].date}</span>
                 <span className="text-sm text-sub">with {student.counselor}</span>

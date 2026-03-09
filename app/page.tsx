@@ -232,7 +232,7 @@ export default function Home() {
     return (
       <div className="flex h-screen items-center justify-center bg-bg">
         <div className="text-center">
-          <div className="w-12 h-12 rounded-xl bg-navy flex items-center justify-center mx-auto mb-4 text-2xl text-white font-bold">W</div>
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 text-2xl font-bold" style={{ background: "#ebebeb", color: "#111" }}>W</div>
           <div className="text-lg font-semibold text-heading">Loading...</div>
         </div>
       </div>
@@ -247,7 +247,7 @@ export default function Home() {
     return (
       <div className="flex h-screen items-center justify-center bg-bg">
         <div className="text-center">
-          <div className="w-12 h-12 rounded-xl bg-navy flex items-center justify-center mx-auto mb-4 text-2xl text-white font-bold">W</div>
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 text-2xl font-bold" style={{ background: "#ebebeb", color: "#111" }}>W</div>
           <div className="text-lg font-semibold text-heading">Loading data...</div>
           <div className="text-sm text-sub mt-1">Fetching student records</div>
         </div>
@@ -417,7 +417,7 @@ export default function Home() {
       className="flex h-screen text-sm"
       style={{
         fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-        color: "#334155",
+        color: "#a0a0a0",
       }}
     >
       <Sidebar

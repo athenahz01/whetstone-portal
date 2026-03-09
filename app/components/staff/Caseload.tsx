@@ -39,8 +39,8 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh, isA
   );
 
   const inputStyle: React.CSSProperties = {
-    width: "100%", padding: "10px 14px", background: "#fff",
-    border: "1px solid #cbd5e1", borderRadius: 8, color: "#0f172a",
+    width: "100%", padding: "10px 14px", background: "#252525",
+    border: "1px solid #333", borderRadius: 8, color: "#ebebeb",
     fontSize: 14, outline: "none", boxSizing: "border-box",
   };
 
@@ -122,9 +122,9 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh, isA
                 <button key={s} onClick={() => setSort(s)}
                   className="px-3.5 py-1.5 rounded-lg cursor-pointer text-xs font-semibold capitalize"
                   style={{
-                    background: sort === s ? "#eff6ff" : "#fff",
-                    border: `1px solid ${sort === s ? "#3b82f6" : "#cbd5e1"}`,
-                    color: sort === s ? "#1d4ed8" : "#64748b",
+                    background: sort === s ? "rgba(82,139,255,0.08)" : "#252525",
+                    border: `1px solid ${sort === s ? "#528bff" : "#333"}`,
+                    color: sort === s ? "#7aabff" : "#717171",
                   }}>
                   {s}
                 </button>
@@ -142,23 +142,23 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh, isA
             <Card
               key={s.id}
               onClick={() => { onSelectStudent(s); onNavigate("detail"); }}
-              style={{ borderTop: `3px solid ${s.status === "needs-attention" ? "#ef4444" : s.engagement > 80 ? "#16a34a" : "#d97706"}`, cursor: "pointer" }}
+              style={{ borderTop: `3px solid ${s.status === "needs-attention" ? "#e55b5b" : s.engagement > 80 ? "#4aba6a" : "#e5a83b"}`, cursor: "pointer" }}
             >
               <div className="flex justify-between mb-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "#eff6ff", color: "#1d4ed8" }}>{s.av}</div>
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}>{s.av}</div>
                   <div>
                     <div className="text-base font-bold text-heading">{s.name}</div>
                     <div className="text-xs text-sub">Gr. {s.grade} · {s.school}</div>
                   </div>
                 </div>
-                <Tag color={s.status === "needs-attention" ? "#ef4444" : "#16a34a"}>
+                <Tag color={s.status === "needs-attention" ? "#e55b5b" : "#4aba6a"}>
                   {s.status === "needs-attention" ? "Attention" : "On track"}
                 </Tag>
               </div>
               <div className="grid grid-cols-3 gap-2">
-                {([["Schools", s.schools.length, "#0f172a"], ["Overdue", ov, ov > 0 ? "#ef4444" : "#0f172a"], ["Engagement", `${s.engagement}%`, s.engagement > 80 ? "#16a34a" : "#d97706"]] as const).map(([l, v, c]) => (
-                  <div key={l} className="p-2 rounded-lg text-center" style={{ background: "#eef0f4" }}>
+                {([["Schools", s.schools.length, "#ebebeb"], ["Overdue", ov, ov > 0 ? "#e55b5b" : "#ebebeb"], ["Engagement", `${s.engagement}%`, s.engagement > 80 ? "#4aba6a" : "#e5a83b"]] as const).map(([l, v, c]) => (
+                  <div key={l} className="p-2 rounded-lg text-center" style={{ background: "#252525" }}>
                     <div className="text-base font-bold" style={{ color: c }}>{v}</div>
                     <div className="text-[11px] text-sub mt-0.5">{l}</div>
                   </div>
@@ -178,7 +178,7 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh, isA
             </FormField>
             <FormField label="Student Email">
               <input required name="email" type="email" placeholder="e.g. jane@email.com" style={inputStyle} />
-              <div className="text-xs mt-1.5 px-1" style={{ color: "#64748b" }}>
+              <div className="text-xs mt-1.5 px-1" style={{ color: "#717171" }}>
                 A temporary password will be generated for the student to log in.
               </div>
             </FormField>
@@ -200,8 +200,8 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh, isA
                 disabled={saving}
                 style={{
                   padding: "9px 20px", borderRadius: 8, border: "none", fontWeight: 600, fontSize: 14,
-                  background: saving ? "#e2e8f0" : "#0f172a",
-                  color: saving ? "#94a3b8" : "#fff",
+                  background: saving ? "#333" : "#ebebeb",
+                  color: saving ? "#505050" : "#111",
                   cursor: saving ? "not-allowed" : "pointer",
                 }}
               >
@@ -216,7 +216,7 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh, isA
       {inviteError && !inviteResult && (
         <Modal title="Account Creation Issue" onClose={() => setInviteError(null)}>
           <div style={{ padding: "4px 0" }}>
-            <div className="rounded-lg px-4 py-3 text-sm mb-4" style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626" }}>
+            <div className="rounded-lg px-4 py-3 text-sm mb-4" style={{ background: "rgba(229,91,91,0.08)", border: "1px solid rgba(229,91,91,0.2)", color: "#e55b5b" }}>
               {inviteError}
             </div>
             <p className="text-sm text-sub mb-4">
@@ -224,7 +224,7 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh, isA
             </p>
             <button
               onClick={() => setInviteError(null)}
-              style={{ width: "100%", padding: "10px", borderRadius: 8, border: "none", background: "#0f172a", color: "#fff", fontWeight: 600, fontSize: 14, cursor: "pointer" }}
+              style={{ width: "100%", padding: "10px", borderRadius: 8, border: "none", background: "#ebebeb", color: "#fff", fontWeight: 600, fontSize: 14, cursor: "pointer" }}
             >
               OK
             </button>
@@ -246,11 +246,11 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh, isA
               <div>
                 <div className="text-xs font-semibold text-sub mb-1">Email</div>
                 <div className="flex items-center gap-2">
-                  <div style={{ flex: 1, padding: "10px 14px", background: "#f8f9fb", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 13, color: "#334155", fontFamily: "monospace" }}>
+                  <div style={{ flex: 1, padding: "10px 14px", background: "#252525", border: "1px solid #2a2a2a", borderRadius: 8, fontSize: 13, color: "#a0a0a0", fontFamily: "monospace" }}>
                     {inviteResult.email}
                   </div>
                   <button onClick={() => handleCopy("email", inviteResult.email)}
-                    style={{ padding: "10px 14px", borderRadius: 8, border: "1px solid #e2e8f0", background: copied === "email" ? "#f0fdf4" : "#fff", color: copied === "email" ? "#16a34a" : "#64748b", fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>
+                    style={{ padding: "10px 14px", borderRadius: 8, border: "1px solid #2a2a2a", background: copied === "email" ? "rgba(74,186,106,0.08)" : "#252525", color: copied === "email" ? "#4aba6a" : "#717171", fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>
                     {copied === "email" ? "✓" : "Copy"}
                   </button>
                 </div>
@@ -260,24 +260,24 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh, isA
               <div>
                 <div className="text-xs font-semibold text-sub mb-1">Temporary Password</div>
                 <div className="flex items-center gap-2">
-                  <div style={{ flex: 1, padding: "10px 14px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, fontSize: 15, color: "#92400e", fontFamily: "monospace", letterSpacing: "0.05em", fontWeight: 700 }}>
+                  <div style={{ flex: 1, padding: "10px 14px", background: "rgba(229,168,59,0.08)", border: "1px solid rgba(229,168,59,0.2)", borderRadius: 8, fontSize: 15, color: "#e5a83b", fontFamily: "monospace", letterSpacing: "0.05em", fontWeight: 700 }}>
                     {inviteResult.tempPassword}
                   </div>
                   <button onClick={() => handleCopy("password", inviteResult.tempPassword)}
-                    style={{ padding: "10px 14px", borderRadius: 8, border: "1px solid #e2e8f0", background: copied === "password" ? "#f0fdf4" : "#fff", color: copied === "password" ? "#16a34a" : "#64748b", fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>
+                    style={{ padding: "10px 14px", borderRadius: 8, border: "1px solid #2a2a2a", background: copied === "password" ? "rgba(74,186,106,0.08)" : "#252525", color: copied === "password" ? "#4aba6a" : "#717171", fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>
                     {copied === "password" ? "✓" : "Copy"}
                   </button>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-lg px-3 py-2.5 text-xs mb-4" style={{ background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1d4ed8" }}>
+            <div className="rounded-lg px-3 py-2.5 text-xs mb-4" style={{ background: "rgba(82,139,255,0.06)", border: "1px solid #bfdbfe", color: "#7aabff" }}>
               💡 Send these credentials to the student via text or email. They can log in and update their password from account settings.
             </div>
 
             <button
               onClick={handleDismissCredentials}
-              style={{ width: "100%", padding: "10px", borderRadius: 8, border: "none", background: "#0f172a", color: "#fff", fontWeight: 600, fontSize: 14, cursor: "pointer" }}
+              style={{ width: "100%", padding: "10px", borderRadius: 8, border: "none", background: "#ebebeb", color: "#fff", fontWeight: 600, fontSize: 14, cursor: "pointer" }}
             >
               Done
             </button>

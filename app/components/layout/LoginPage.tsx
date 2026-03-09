@@ -14,8 +14,8 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   const [loading, setLoading] = useState(false);
 
   const inputStyle: React.CSSProperties = {
-    width: "100%", padding: "12px 16px", background: "#fff",
-    border: "1px solid #cbd5e1", borderRadius: 10, color: "#0f172a",
+    width: "100%", padding: "12px 16px", background: "#252525",
+    border: "1px solid #333", borderRadius: 10, color: "#ebebeb",
     fontSize: 15, outline: "none", boxSizing: "border-box",
   };
 
@@ -32,11 +32,11 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-raised flex flex-col items-center justify-center">
-      <div className="bg-white border border-line rounded-2xl p-10" style={{ width: 420, boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}>
+    <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: "#111" }}>
+      <div className="border border-line rounded-2xl p-10" style={{ width: 420, background: "#1e1e1e", boxShadow: "0 4px 24px rgba(0,0,0,0.3)" }}>
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-xl bg-navy flex items-center justify-center mx-auto mb-4 text-2xl text-white font-bold">W</div>
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 text-2xl font-bold" style={{ background: "#ebebeb", color: "#111" }}>W</div>
           <h1 className="text-2xl font-bold text-heading m-0">Whetstone</h1>
           <p className="text-sub text-sm m-0 mt-1">Refined Method. Proven Results.</p>
         </div>
@@ -44,7 +44,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         {/* Form */}
         <div className="flex flex-col gap-4">
           <div>
-            <label className="block text-sm font-semibold text-body mb-1.5">Email</label>
+            <label className="block text-sm font-semibold mb-1.5" style={{ color: "#a0a0a0" }}>Email</label>
             <input
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -56,7 +56,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-body mb-1.5">Password</label>
+            <label className="block text-sm font-semibold mb-1.5" style={{ color: "#a0a0a0" }}>Password</label>
             <input
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -68,7 +68,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
           </div>
 
           {error && (
-            <div className="text-sm p-3 rounded-lg" style={{ background: "#fef2f2", color: "#ef4444" }}>
+            <div className="text-sm p-3 rounded-lg" style={{ background: "rgba(229,91,91,0.08)", color: "#e55b5b" }}>
               {error}
             </div>
           )}
@@ -77,12 +77,12 @@ export function LoginPage({ onLogin }: LoginPageProps) {
             onClick={handleLogin}
             disabled={loading}
             className="w-full py-3 rounded-lg text-base font-semibold cursor-pointer border-none text-white mt-2"
-            style={{ background: loading ? "#94a3b8" : "#3b82f6" }}
+            style={{ background: loading ? "#505050" : "#528bff" }}
           >
             {loading ? "Please wait..." : "Log In"}
           </button>
 
-          <p className="text-xs text-center m-0 mt-1" style={{ color: "#94a3b8" }}>
+          <p className="text-xs text-center m-0 mt-1" style={{ color: "#505050" }}>
             Don&apos;t have an account? Contact your strategist or admin.
           </p>
         </div>

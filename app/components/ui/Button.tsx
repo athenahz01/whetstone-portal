@@ -13,7 +13,7 @@ interface ButtonProps {
         className={`px-5 py-2.5 rounded-lg text-sm font-semibold cursor-pointer transition-colors ${
           primary
             ? "bg-accent text-white border-none hover:opacity-90"
-            : "bg-white text-body border border-line-dk hover:bg-mist"
+            : "bg-mist text-body border border-line-dk hover:bg-raised"
         }`}
       >
         {children}

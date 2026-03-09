@@ -50,20 +50,20 @@ const GRADE_OPTIONS = [9, 10, 11, 12, "Post-graduate"] as const;
 const TOTAL_SLOTS = 10;
 
 const inputStyle: React.CSSProperties = {
-  width: "100%", padding: "8px 12px", background: "#fff",
-  border: "1px solid #cbd5e1", borderRadius: 6, color: "#0f172a",
+  width: "100%", padding: "8px 12px", background: "#252525",
+  border: "1px solid #333", borderRadius: 6, color: "#ebebeb",
   fontSize: 13, outline: "none", boxSizing: "border-box",
 };
 
 const labelStyle: React.CSSProperties = {
-  fontSize: 12, fontWeight: 600, color: "#64748b",
+  fontSize: 12, fontWeight: 600, color: "#717171",
   marginBottom: 4, display: "block",
 };
 
 function charCount(val: string, max: number) {
   const over = val.length > max;
   return (
-    <span style={{ fontSize: 11, color: over ? "#ef4444" : "#94a3b8", marginLeft: 4 }}>
+    <span style={{ fontSize: 11, color: over ? "#e55b5b" : "#505050", marginLeft: 4 }}>
       {val.length}/{max}
     </span>
   );
@@ -146,7 +146,7 @@ export function Activities({ activities, setActivities, readOnly = false, studen
         sub={`Common App format · ${activities.length}/${totalSlots} filled`}
         right={
           readOnly ? (
-            <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "#eff6ff", color: "#1d4ed8" }}>
+            <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}>
               View Only
             </span>
           ) : null
@@ -154,7 +154,7 @@ export function Activities({ activities, setActivities, readOnly = false, studen
       />
 
       <div className="p-6 px-8">
-        <div className="rounded-xl overflow-hidden border border-line bg-white shadow-sm">
+        <div className="rounded-xl overflow-hidden border border-line bg-white">
           {slots.map((act, i) => {
             const isOpen = openSlot === i;
             const isEmpty = !act;
@@ -166,22 +166,22 @@ export function Activities({ activities, setActivities, readOnly = false, studen
                 {/* Accordion header */}
                 <button
                   onClick={() => toggleSlot(i)}
-                  className="w-full flex items-center justify-between px-5 py-4 text-left transition-colors hover:bg-gray-50"
-                  style={{ background: isOpen ? "#f8f9fb" : "white", border: "none", cursor: "pointer" }}
+                  className="w-full flex items-center justify-between px-5 py-4 text-left transition-colors hover:bg-mist"
+                  style={{ background: isOpen ? "#2a2a2a" : "#1e1e1e", border: "none", cursor: "pointer" }}
                 >
                   <div className="flex items-center gap-3">
                     <div
                       className="w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0"
                       style={{
-                        background: isEmpty ? "#f1f5f9" : "#dcfce7",
-                        color: isEmpty ? "#94a3b8" : "#16a34a",
+                        background: isEmpty ? "#333" : "rgba(74,186,106,0.1)",
+                        color: isEmpty ? "#505050" : "#4aba6a",
                         border: isEmpty ? "1.5px dashed #cbd5e1" : "none",
                       }}
                     >
                       {isEmpty ? "" : "✓"}
                     </div>
                     <div>
-                      <div className="text-sm font-semibold" style={{ color: isEmpty ? "#94a3b8" : "#0f172a" }}>
+                      <div className="text-sm font-semibold" style={{ color: isEmpty ? "#505050" : "#ebebeb" }}>
                         {label}
                       </div>
                       {!isEmpty && (
@@ -189,7 +189,7 @@ export function Activities({ activities, setActivities, readOnly = false, studen
                       )}
                     </div>
                   </div>
-                  <span className="text-gray-400 text-sm font-bold ml-4">
+                  <span className="text-faint text-sm font-bold ml-4">
                     {isOpen ? "−" : "+"}
                   </span>
                 </button>
@@ -235,7 +235,7 @@ export function Activities({ activities, setActivities, readOnly = false, studen
               setOpenSlot(totalSlots);
             }}
             className="mt-3 flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg border border-dashed"
-            style={{ color: "#3b82f6", borderColor: "#93c5fd", background: "#eff6ff", cursor: "pointer" }}
+            style={{ color: "#528bff", borderColor: "#93c5fd", background: "rgba(82,139,255,0.06)", cursor: "pointer" }}
           >
             + Add Another Activity
           </button>
@@ -274,7 +274,7 @@ function ActivityForm({ act, index, onSave, onDelete, saving }: ActivityFormProp
       {/* Activity Type */}
       <div>
         <label style={labelStyle}>
-          Activity type <span style={{ color: "#ef4444" }}>*</span>
+          Activity type <span style={{ color: "#e55b5b" }}>*</span>
         </label>
         <select name="type" defaultValue={act?.type ?? ""} required style={inputStyle}>
           <option value="" disabled>Select type...</option>
@@ -288,7 +288,7 @@ function ActivityForm({ act, index, onSave, onDelete, saving }: ActivityFormProp
       <div>
         <label style={labelStyle}>
           Position/Leadership description
-          <span style={{ color: "#ef4444" }}> *</span>
+          <span style={{ color: "#e55b5b" }}> *</span>
           <span style={{ fontWeight: 400 }}> (Max characters: 50)</span>
           {charCount(position, 50)}
         </label>
@@ -298,7 +298,7 @@ function ActivityForm({ act, index, onSave, onDelete, saving }: ActivityFormProp
           onChange={(e) => setPosition(e.target.value)}
           maxLength={50}
           required
-          style={{ ...inputStyle, borderColor: position.length > 50 ? "#ef4444" : "#cbd5e1" }}
+          style={{ ...inputStyle, borderColor: position.length > 50 ? "#e55b5b" : "#333" }}
         />
       </div>
 
@@ -314,7 +314,7 @@ function ActivityForm({ act, index, onSave, onDelete, saving }: ActivityFormProp
           value={org}
           onChange={(e) => setOrg(e.target.value)}
           maxLength={100}
-          style={{ ...inputStyle, borderColor: org.length > 100 ? "#ef4444" : "#cbd5e1" }}
+          style={{ ...inputStyle, borderColor: org.length > 100 ? "#e55b5b" : "#333" }}
         />
       </div>
 
@@ -322,7 +322,7 @@ function ActivityForm({ act, index, onSave, onDelete, saving }: ActivityFormProp
       <div>
         <label style={labelStyle}>
           Please describe this activity, including what you accomplished and any recognition you received, etc.
-          <span style={{ color: "#ef4444" }}> *</span>
+          <span style={{ color: "#e55b5b" }}> *</span>
           <span style={{ fontWeight: 400 }}> (Max characters: 150)</span>
           {charCount(desc, 150)}
         </label>
@@ -333,14 +333,14 @@ function ActivityForm({ act, index, onSave, onDelete, saving }: ActivityFormProp
           maxLength={150}
           required
           rows={3}
-          style={{ ...inputStyle, resize: "vertical", borderColor: desc.length > 150 ? "#ef4444" : "#cbd5e1" }}
+          style={{ ...inputStyle, resize: "vertical", borderColor: desc.length > 150 ? "#e55b5b" : "#333" }}
         />
       </div>
 
       {/* Grade Levels */}
       <div>
         <label style={labelStyle}>
-          Participation grade levels <span style={{ color: "#ef4444" }}>*</span>
+          Participation grade levels <span style={{ color: "#e55b5b" }}>*</span>
         </label>
         <div className="flex flex-col gap-1.5 mt-1">
           {GRADE_OPTIONS.map((g) => (
@@ -350,7 +350,7 @@ function ActivityForm({ act, index, onSave, onDelete, saving }: ActivityFormProp
                 name={`grade_${g}`}
                 defaultChecked={selectedGrades.includes(g as any)}
                 className="w-4 h-4 rounded"
-                style={{ accentColor: "#3b82f6" }}
+                style={{ accentColor: "#528bff" }}
               />
               {g}
             </label>
@@ -361,7 +361,7 @@ function ActivityForm({ act, index, onSave, onDelete, saving }: ActivityFormProp
       {/* Timing */}
       <div>
         <label style={labelStyle}>
-          Timing of participation <span style={{ color: "#ef4444" }}>*</span>
+          Timing of participation <span style={{ color: "#e55b5b" }}>*</span>
         </label>
         <div className="flex flex-col gap-1.5 mt-1">
           {TIMING_OPTIONS.map((t) => (
@@ -371,7 +371,7 @@ function ActivityForm({ act, index, onSave, onDelete, saving }: ActivityFormProp
                 name={`timing_${t}`}
                 defaultChecked={selectedTiming.includes(t)}
                 className="w-4 h-4 rounded"
-                style={{ accentColor: "#3b82f6" }}
+                style={{ accentColor: "#528bff" }}
               />
               {t}
             </label>
@@ -383,7 +383,7 @@ function ActivityForm({ act, index, onSave, onDelete, saving }: ActivityFormProp
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label style={labelStyle}>
-            Hours spent per week <span style={{ color: "#ef4444" }}>*</span>
+            Hours spent per week <span style={{ color: "#e55b5b" }}>*</span>
           </label>
           <input
             name="hours"
@@ -397,7 +397,7 @@ function ActivityForm({ act, index, onSave, onDelete, saving }: ActivityFormProp
         </div>
         <div>
           <label style={labelStyle}>
-            Weeks spent per year <span style={{ color: "#ef4444" }}>*</span>
+            Weeks spent per year <span style={{ color: "#e55b5b" }}>*</span>
           </label>
           <input
             name="weeks"
@@ -417,7 +417,7 @@ function ActivityForm({ act, index, onSave, onDelete, saving }: ActivityFormProp
           <button
             type="button"
             onClick={onDelete}
-            style={{ padding: "8px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: "#fef2f2", color: "#ef4444", border: "1px solid #fecaca", cursor: "pointer" }}
+            style={{ padding: "8px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: "rgba(229,91,91,0.08)", color: "#e55b5b", border: "1px solid rgba(229,91,91,0.2)", cursor: "pointer" }}
           >
             Remove Activity
           </button>
@@ -425,7 +425,7 @@ function ActivityForm({ act, index, onSave, onDelete, saving }: ActivityFormProp
         <button
           type="submit"
           disabled={saving}
-          style={{ padding: "8px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: "#3b82f6", color: "#fff", border: "none", cursor: "pointer", opacity: saving ? 0.7 : 1 }}
+          style={{ padding: "8px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: "#528bff", color: "#fff", border: "none", cursor: "pointer", opacity: saving ? 0.7 : 1 }}
         >
           {saving ? "Saving..." : act ? "Save Changes" : "Add Activity"}
         </button>

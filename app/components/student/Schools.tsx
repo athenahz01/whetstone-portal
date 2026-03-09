@@ -11,7 +11,7 @@ interface SchoolsProps {
 }
 
 export function Schools({ student, readOnly = false }: SchoolsProps) {
-  const tc: Record<string, string> = { reach: "#ef4444", match: "#d97706", safety: "#16a34a" };
+  const tc: Record<string, string> = { reach: "#e55b5b", match: "#e5a83b", safety: "#4aba6a" };
 
   return (
     <div>
@@ -20,7 +20,7 @@ export function Schools({ student, readOnly = false }: SchoolsProps) {
         sub={`${student.schools.length} schools`}
         right={
           readOnly ? (
-            <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "#eff6ff", color: "#1d4ed8" }}>View Only</span>
+            <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}>View Only</span>
           ) : undefined
         }
       />

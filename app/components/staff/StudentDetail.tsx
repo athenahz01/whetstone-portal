@@ -71,8 +71,8 @@ function calcDaysFromToday(due: string): number {
 // Shared input style
 // ---------------------------------------------------------------------------
 const inputStyle: React.CSSProperties = {
-  width: "100%", padding: "10px 14px", background: "#fff",
-  border: "1px solid #cbd5e1", borderRadius: 8, color: "#0f172a",
+  width: "100%", padding: "10px 14px", background: "#252525",
+  border: "1px solid #333", borderRadius: 8, color: "#ebebeb",
   fontSize: 14, outline: "none", boxSizing: "border-box",
 };
 
@@ -80,7 +80,7 @@ const inputStyle: React.CSSProperties = {
 // Component
 // ---------------------------------------------------------------------------
 export function StudentDetail({ student: s, onBack, onRefresh, profileId }: StudentDetailProps) {
-  const tc: Record<string, string> = { reach: "#ef4444", match: "#d97706", safety: "#16a34a" };
+  const tc: Record<string, string> = { reach: "#e55b5b", match: "#e5a83b", safety: "#4aba6a" };
 
   const [editingDeadline, setEditingDeadline] = useState<Deadline | null>(null);
   const [addingDeadline, setAddingDeadline] = useState(false);
@@ -106,10 +106,10 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
   const loginDays = daysSinceLogin(s.lastLogin);
   const loginLabel = formatLastLogin(s.lastLogin);
   const loginColor =
-    loginDays === Infinity ? "#94a3b8"
-    : loginDays >= 3 ? "#ef4444"
-    : loginDays >= 1 ? "#d97706"
-    : "#16a34a";
+    loginDays === Infinity ? "#505050"
+    : loginDays >= 3 ? "#e55b5b"
+    : loginDays >= 1 ? "#e5a83b"
+    : "#4aba6a";
 
   const satDetail = formatSATDetail(s);
 
@@ -291,13 +291,13 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
           <div className="flex gap-2">
             <button
               onClick={() => setEditingStudent(true)}
-              style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #cbd5e1", background: "#fff", color: "#334155", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+              style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #333", background: "#252525", color: "#a0a0a0", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
             >
               ✏️ Edit
             </button>
             <button
               onClick={() => setConfirmDeleteStudent(true)}
-              style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #fecaca", background: "#fff", color: "#ef4444", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+              style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid rgba(229,91,91,0.2)", background: "#252525", color: "#e55b5b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
             >
               🗑 Delete
             </button>
@@ -312,23 +312,23 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
             label="Schools"
             value={s.schools.length}
             detail={`${s.schools.filter((x) => x.status === "Submitted").length} submitted`}
-            color="#16a34a"
+            color="#4aba6a"
           />
           <MetricCard
             label="Engagement"
             value={`${s.engagement}%`}
-            color={s.engagement > 80 ? "#16a34a" : "#ef4444"}
+            color={s.engagement > 80 ? "#4aba6a" : "#e55b5b"}
           />
 
           {/* Last Login */}
           <div className="rounded-xl p-5 border-t-4 shadow-sm bg-white" style={{ borderTopColor: loginColor }}>
-            <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-2">Last Login</p>
+            <p className="text-xs font-semibold tracking-widest text-faint uppercase mb-2">Last Login</p>
             <p className="text-2xl font-bold leading-tight" style={{ color: loginColor }}>{loginLabel}</p>
             {loginDays >= 3 && loginDays !== Infinity && (
-              <p className="text-xs mt-1" style={{ color: "#ef4444" }}>⚠ Inactive {loginDays} days</p>
+              <p className="text-xs mt-1" style={{ color: "#e55b5b" }}>⚠ Inactive {loginDays} days</p>
             )}
             {loginDays === Infinity && (
-              <p className="text-xs mt-1 text-gray-400">Has not logged in yet</p>
+              <p className="text-xs mt-1 text-faint">Has not logged in yet</p>
             )}
           </div>
 
@@ -341,13 +341,13 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
               : s.gpa || "—"
             }
             detail={s.gpaUnweighted && s.gpaWeighted ? `W: ${s.gpaWeighted}` : undefined}
-            color="#3b82f6"
+            color="#528bff"
           />
           <MetricCard
             label="SAT"
             value={formatSAT(s)}
             detail={satDetail || undefined}
-            color="#7c3aed"
+            color="#a480f2"
           />
         </div>
 
@@ -360,7 +360,7 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
               <button
                 onClick={() => setAddingDeadline(true)}
                 className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
-                style={{ background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe" }}
+                style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff", border: "1px solid #bfdbfe" }}
               >
                 + Add Deadline
               </button>
@@ -376,8 +376,8 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
                   onClick={() => setEditingDeadline(d)}
                   className="flex justify-between items-center p-2.5 px-3 rounded-lg mb-1.5 cursor-pointer hover:opacity-80 transition-opacity"
                   style={{
-                    background: d.status === "overdue" ? "#fef2f2" : "#eef0f4",
-                    borderLeft: `3px solid ${d.status === "overdue" ? "#ef4444" : getCategoryColor(d.cat)}`,
+                    background: d.status === "overdue" ? "rgba(229,91,91,0.08)" : "#252525",
+                    borderLeft: `3px solid ${d.status === "overdue" ? "#e55b5b" : getCategoryColor(d.cat)}`,
                   }}
                 >
                   <div className="min-w-0 flex-1">
@@ -385,7 +385,7 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
                       <span className="truncate">{d.title}</span>
                       {/* Lock icon for strategist-created deadlines */}
                       {isStrategistCreated && (
-                        <span className="text-[10px] flex-shrink-0 text-gray-400" title="Added by strategist">🔒</span>
+                        <span className="text-[10px] flex-shrink-0 text-faint" title="Added by strategist">🔒</span>
                       )}
                       {d.googleDocLink && (
                         <span
@@ -400,7 +400,7 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-xs text-sub">{d.cat} · {d.due}</span>
                       {d.specialist && (
-                        <span className="text-[10px] px-1.5 py-0 rounded font-semibold" style={{ background: "#f5f3ff", color: "#7c3aed" }}>
+                        <span className="text-[10px] px-1.5 py-0 rounded font-semibold" style={{ background: "rgba(164,128,242,0.08)", color: "#a480f2" }}>
                           {d.specialist}
                         </span>
                       )}
@@ -424,7 +424,7 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
               <button
                 onClick={() => setAddingSchool(true)}
                 className="px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer"
-                style={{ background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe" }}
+                style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff", border: "1px solid #bfdbfe" }}
               >
                 + Add School
               </button>
@@ -437,7 +437,7 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
                 key={sc.id}
                 onClick={() => setEditingSchool(sc)}
                 className="p-2.5 px-3 rounded-lg mb-1.5 cursor-pointer hover:opacity-80 transition-opacity"
-                style={{ background: "#eef0f4", borderLeft: `3px solid ${tc[sc.type]}` }}
+                style={{ background: "#252525", borderLeft: `3px solid ${tc[sc.type]}` }}
               >
                 <div className="flex justify-between">
                   <span className="text-sm font-medium text-heading">{sc.name}</span>
@@ -459,7 +459,7 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
             <button
               onClick={() => setAddingSession(true)}
               className="px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer"
-              style={{ background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe" }}
+              style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff", border: "1px solid #bfdbfe" }}
             >
               + Add Session
             </button>
@@ -472,15 +472,15 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
               key={ss.id}
               onClick={() => setEditingSession(ss)}
               className="p-3 px-4 rounded-lg mb-1.5 cursor-pointer hover:opacity-80 transition-opacity"
-              style={{ background: "#eef0f4", borderLeft: "3px solid #3b82f6" }}
+              style={{ background: "#252525", borderLeft: "3px solid #528bff" }}
             >
               <div className="flex justify-between mb-1.5">
-                <div className="text-sm font-bold" style={{ color: "#1d4ed8" }}>{ss.date}</div>
+                <div className="text-sm font-bold" style={{ color: "#7aabff" }}>{ss.date}</div>
                 <span className="text-[10px] text-sub">✏️</span>
               </div>
               <p className="m-0 mb-2 text-sm text-body leading-relaxed">{ss.notes}</p>
               <span className="text-xs text-sub">Action: </span>
-              <span className="text-sm font-semibold" style={{ color: "#1d4ed8" }}>{ss.action}</span>
+              <span className="text-sm font-semibold" style={{ color: "#7aabff" }}>{ss.action}</span>
             </div>
           ))}
         </Card>
@@ -567,7 +567,7 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
                     href={editingDeadline.googleDocLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: "none", background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe" }}
+                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: "none", background: "rgba(82,139,255,0.06)", color: "#7aabff", border: "1px solid #bfdbfe" }}
                   >
                     📄 Open Doc
                   </a>
@@ -576,7 +576,7 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
                 <button
                   type="button"
                   onClick={() => setConfirmDeleteId(editingDeadline.id)}
-                  style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: "#fef2f2", color: "#ef4444", border: "1px solid #fecaca", cursor: "pointer" }}
+                  style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: "rgba(229,91,91,0.08)", color: "#e55b5b", border: "1px solid rgba(229,91,91,0.2)", cursor: "pointer" }}
                 >
                   🗑 Delete
                 </button>
@@ -593,16 +593,16 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
       {/* ── Delete Deadline Confirmation ─────────────────────────────────── */}
       {confirmDeleteId !== null && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)" }}>
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4">
-            <h3 className="text-base font-bold text-gray-900 mb-2">Delete Deadline?</h3>
-            <p className="text-sm text-gray-500 mb-4">This action cannot be undone.</p>
+          <div className="rounded-2xl border border-line p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-bold text-heading mb-2">Delete Deadline?</h3>
+            <p className="text-sm text-sub mb-4">This action cannot be undone.</p>
             <div className="flex gap-2 justify-end">
               <Button onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
               <button
                 onClick={() => handleDeleteDeadline(confirmDeleteId)}
                 disabled={deleting}
                 className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors"
-                style={{ background: "#ef4444", border: "none", cursor: "pointer" }}
+                style={{ background: "#e55b5b", border: "none", cursor: "pointer" }}
               >
                 {deleting ? "Deleting..." : "Delete"}
               </button>
@@ -659,9 +659,9 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
       {/* ── Delete Student Confirmation ────────────────────────────────────── */}
       {confirmDeleteStudent && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)" }}>
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4">
-            <h3 className="text-base font-bold text-gray-900 mb-2">Delete {s.name}?</h3>
-            <p className="text-sm text-gray-500 mb-4">
+          <div className="rounded-2xl border border-line p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-bold text-heading mb-2">Delete {s.name}?</h3>
+            <p className="text-sm text-sub mb-4">
               This will permanently remove this student and all their data (deadlines, schools, sessions, etc.). This cannot be undone.
             </p>
             <div className="flex gap-2 justify-end">
@@ -670,7 +670,7 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
                 onClick={handleDeleteStudent}
                 disabled={deletingStudent}
                 className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors"
-                style={{ background: "#ef4444", border: "none", cursor: "pointer" }}
+                style={{ background: "#e55b5b", border: "none", cursor: "pointer" }}
               >
                 {deletingStudent ? "Deleting..." : "Delete Student"}
               </button>
@@ -773,7 +773,7 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
               <button
                 type="button"
                 onClick={() => setConfirmDeleteSchoolId(editingSchool.id!)}
-                style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: "#fef2f2", color: "#ef4444", border: "1px solid #fecaca", cursor: "pointer" }}
+                style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: "rgba(229,91,91,0.08)", color: "#e55b5b", border: "1px solid rgba(229,91,91,0.2)", cursor: "pointer" }}
               >
                 🗑 Delete
               </button>
@@ -789,16 +789,16 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
       {/* ── Delete School Confirmation ─────────────────────────────────────── */}
       {confirmDeleteSchoolId !== null && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)" }}>
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4">
-            <h3 className="text-base font-bold text-gray-900 mb-2">Delete School?</h3>
-            <p className="text-sm text-gray-500 mb-4">This action cannot be undone.</p>
+          <div className="rounded-2xl border border-line p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-bold text-heading mb-2">Delete School?</h3>
+            <p className="text-sm text-sub mb-4">This action cannot be undone.</p>
             <div className="flex gap-2 justify-end">
               <Button onClick={() => setConfirmDeleteSchoolId(null)}>Cancel</Button>
               <button
                 onClick={() => handleDeleteSchool(confirmDeleteSchoolId)}
                 disabled={deleting}
                 className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
-                style={{ background: "#ef4444", border: "none", cursor: "pointer" }}
+                style={{ background: "#e55b5b", border: "none", cursor: "pointer" }}
               >
                 {deleting ? "Deleting..." : "Delete"}
               </button>
@@ -845,7 +845,7 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
               <button
                 type="button"
                 onClick={() => setConfirmDeleteSessionId(editingSession.id!)}
-                style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: "#fef2f2", color: "#ef4444", border: "1px solid #fecaca", cursor: "pointer" }}
+                style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: "rgba(229,91,91,0.08)", color: "#e55b5b", border: "1px solid rgba(229,91,91,0.2)", cursor: "pointer" }}
               >
                 🗑 Delete
               </button>
@@ -861,16 +861,16 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
       {/* ── Delete Session Confirmation ────────────────────────────────────── */}
       {confirmDeleteSessionId !== null && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)" }}>
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4">
-            <h3 className="text-base font-bold text-gray-900 mb-2">Delete Session?</h3>
-            <p className="text-sm text-gray-500 mb-4">This action cannot be undone.</p>
+          <div className="rounded-2xl border border-line p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-bold text-heading mb-2">Delete Session?</h3>
+            <p className="text-sm text-sub mb-4">This action cannot be undone.</p>
             <div className="flex gap-2 justify-end">
               <Button onClick={() => setConfirmDeleteSessionId(null)}>Cancel</Button>
               <button
                 onClick={() => handleDeleteSession(confirmDeleteSessionId)}
                 disabled={deleting}
                 className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
-                style={{ background: "#ef4444", border: "none", cursor: "pointer" }}
+                style={{ background: "#e55b5b", border: "none", cursor: "pointer" }}
               >
                 {deleting ? "Deleting..." : "Delete"}
               </button>
