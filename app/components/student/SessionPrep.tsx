@@ -33,6 +33,16 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
   }, [student.id]);
 
   const todayStr = new Date().toISOString().split("T")[0];
+
+  const reloadEvents = () => {
+    Promise.all([
+      fetchCounselorEventsForStudent(student.id),
+      fetchStudentSessions(student.id),
+    ]).then(([counselorEvs, bookedSessions]) => {
+      setEvents([...counselorEvs, ...bookedSessions]);
+    });
+  };
+
   const upcoming = events.filter((e) => e.date >= todayStr).sort((a: any, b: any) => a.date.localeCompare(b.date));
   const past = events.filter((e) => e.date < todayStr).sort((a: any, b: any) => b.date.localeCompare(a.date));
   const displayEvents = sessionTab === "upcoming" ? upcoming : past;
@@ -164,30 +174,80 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
                   {new Date(date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
                 </div>
                 <div className="flex flex-col gap-2">
-                  {evs.map((ev: any) => (
-                    <div key={ev.id} className="p-4 rounded-xl flex items-center justify-between"
-                      style={{ background: "#252525", borderLeft: "3px solid #528bff" }}>
-                      <div>
-                        <div className="text-sm font-semibold text-heading">{ev.title}</div>
-                        <div className="flex items-center gap-3 mt-1.5">
-                          <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold"
-                            style={{ background: "rgba(82,139,255,0.1)", color: "#528bff" }}>
-                            {student.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2)}
+                  {evs.map((ev: any) => {
+                    const isBooked = ev.source === "booking";
+                    const rawId = isBooked ? ev.id.replace("sess-", "") : null;
+                    const isCompleted = ev.status === "completed" || (!isBooked && ev.date < todayStr);
+                    const isPending = !isCompleted;
+
+                    const toggleStatus = async () => {
+                      if (!isBooked || !rawId) return;
+                      const newStatus = isCompleted ? "pending" : "completed";
+                      await fetch("/api/session", {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ id: rawId, status: newStatus }),
+                      });
+                      reloadEvents();
+                    };
+
+                    const deleteSession = async () => {
+                      if (!isBooked || !rawId) return;
+                      if (!confirm("Delete this session?")) return;
+                      await fetch(`/api/session?id=${rawId}`, { method: "DELETE" });
+                      reloadEvents();
+                    };
+
+                    return (
+                      <div key={ev.id} className="p-4 rounded-xl group"
+                        style={{ background: "#252525", borderLeft: `3px solid ${isCompleted ? "#4aba6a" : "#528bff"}`, opacity: isCompleted ? 0.7 : 1 }}>
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-semibold text-heading">{ev.title}</div>
+                            {ev.start_time && <div className="text-xs text-sub mt-0.5">{ev.start_time}{ev.end_time ? ` — ${ev.end_time}` : ""}</div>}
+                            <div className="flex items-center gap-3 mt-2">
+                              {ev.specialist && (
+                                <>
+                                  <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold"
+                                    style={{ background: "rgba(164,128,242,0.1)", color: "#a480f2" }}>
+                                    {ev.specialist.split(" ").map((n: string) => n[0]).join("").substring(0, 2)}
+                                  </div>
+                                  <span className="text-xs text-sub">{ev.specialist}</span>
+                                </>
+                              )}
+                              {!ev.specialist && (
+                                <>
+                                  <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold"
+                                    style={{ background: "rgba(82,139,255,0.1)", color: "#528bff" }}>
+                                    {student.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2)}
+                                  </div>
+                                  <span className="text-xs text-sub">{student.name}</span>
+                                </>
+                              )}
+                            </div>
                           </div>
-                          <span className="text-xs text-sub">{student.name}</span>
+                          <div className="flex items-center gap-2">
+                            {/* Status badge — clickable for booked sessions */}
+                            <button onClick={isBooked ? toggleStatus : undefined}
+                              className="text-[10px] font-semibold px-2.5 py-1 rounded-full border-none"
+                              style={{
+                                background: isCompleted ? "rgba(74,186,106,0.08)" : "rgba(229,168,59,0.08)",
+                                color: isCompleted ? "#4aba6a" : "#e5a83b",
+                                cursor: isBooked ? "pointer" : "default",
+                              }}>
+                              {isCompleted ? "✓ Completed" : "Pending"}
+                            </button>
+                            {/* Delete button — only for booked sessions */}
+                            {isBooked && (
+                              <button onClick={deleteSession}
+                                className="w-6 h-6 rounded-full hidden group-hover:flex items-center justify-center border-none cursor-pointer"
+                                style={{ background: "rgba(229,91,91,0.1)", color: "#e55b5b", fontSize: 11 }}>✕</button>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full"
-                          style={{
-                            background: ev.date < todayStr ? "rgba(74,186,106,0.08)" : "rgba(229,168,59,0.08)",
-                            color: ev.date < todayStr ? "#4aba6a" : "#e5a83b",
-                          }}>
-                          {ev.date < todayStr ? "Completed" : "Pending"}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ));
