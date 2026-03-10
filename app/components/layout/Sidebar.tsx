@@ -62,7 +62,7 @@ export function Sidebar({
         ]
       : [
           ["dashboard", "Dashboard"],
-          ["roadmap", "Roadmap"],
+          ["tasks", "Tasks"],
           ["academics", "Academics"],
           ["testing", "Testing"],
           ["activities", "Activities"],

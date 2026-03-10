@@ -1,12 +1,12 @@
 "use client";
 
-import { Student, Goal } from "../../types";
+import { Student, Goal, Deadline } from "../../types";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
-import { MetricCard } from "../ui/MetricCard";
 import { PageHeader } from "../ui/PageHeader";
-import { StudentDeadlines } from "./StudentDeadlines";
+import { Tag } from "../ui/Tag";
 import { fetchCounselorEventsForStudent } from "../../lib/queries";
+import { getCategoryColor, getStatusColor } from "../../lib/colors";
 import { useState, useEffect } from "react";
 
 interface StudentDashboardProps {
@@ -30,18 +30,24 @@ export function StudentDashboard({
   timezone = "America/New_York",
   googleEvents = [],
 }: StudentDashboardProps) {
-  const done = goals.filter((g) => g.done).length;
-  const nextDeadline = student.dl
-    .filter((d) => d.status !== "completed")
-    .sort((a, b) => a.days - b.days)[0];
-
   const [counselorEvents, setCounselorEvents] = useState<any[]>([]);
+  const [sessionTab, setSessionTab] = useState<"upcoming" | "past">("upcoming");
 
   useEffect(() => {
     if (student.id) {
       fetchCounselorEventsForStudent(student.id).then(setCounselorEvents);
     }
   }, [student.id]);
+
+  const todayStr = new Date().toISOString().split("T")[0];
+  const upcomingSessions = counselorEvents.filter((ce) => ce.date >= todayStr).sort((a: any, b: any) => a.date.localeCompare(b.date));
+  const pastSessions = counselorEvents.filter((ce) => ce.date < todayStr).sort((a: any, b: any) => b.date.localeCompare(a.date));
+  const displaySessions = sessionTab === "upcoming" ? upcomingSessions : pastSessions;
+
+  const activeTasks = student.dl
+    .filter((d) => d.status !== "completed")
+    .sort((a, b) => a.days - b.days)
+    .slice(0, 5);
 
   return (
     <div>
@@ -52,148 +58,138 @@ export function StudentDashboard({
         })}
         right={
           readOnly ? (
-            <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}>
+            <span className="text-xs px-3 py-1.5 rounded-full font-semibold" style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}>
               View Only
             </span>
           ) : (
-            <Button primary onClick={() => onNavigate("prep")}>Prep for Session</Button>
+            <div className="flex gap-2">
+              <Button onClick={() => onNavigate("receptacle")}>🧠 Plan Day</Button>
+              <Button primary onClick={() => onNavigate("prep")}>Closing Commit</Button>
+            </div>
           )
         }
       />
 
       <div className="p-6 px-8">
-        {/* ── Metric Cards ─────────────────────────────────────────────── */}
-        <div className="grid grid-cols-4 gap-3.5 mb-5">
-          <MetricCard
-            label="Next Deadline"
-            value={nextDeadline ? `${nextDeadline.days}d` : "—"}
-            detail={nextDeadline ? nextDeadline.title : "No deadlines"}
-            color="#e5a83b"
-          />
-          <MetricCard
-            label="Schools"
-            value={student.schools.length}
-            detail={`${student.schools.filter((s) => s.status === "Submitted").length} submitted`}
-            color="#4aba6a"
-          />
-          <MetricCard
-            label="Weekly Goals"
-            value={`${done}/${goals.length}`}
-            color="#a480f2"
-          />
-          <MetricCard
-            label="Sessions"
-            value={student.sess.length}
-            detail={student.sess.length > 0 ? `Latest: ${student.sess[0].date}` : "None yet"}
-            color="#528bff"
-          />
-        </div>
+        <div className="grid gap-5" style={{ gridTemplateColumns: "1fr 1fr" }}>
 
-        <div className="grid gap-3.5" style={{ gridTemplateColumns: "3fr 2fr" }}>
-          {/* ── Deadlines (replaces old Coming Up card) ───────────────── */}
-          {/*
-            StudentDeadlines handles:
-            - Showing ALL deadlines (strategist + student-created)
-            - Students can add their own deadlines
-            - Students can edit/delete only their own (createdBy === "student")
-            - Strategist-created deadlines show 🔒 and are not clickable
-            - readOnly=true for parent view disables add/edit/delete
-          */}
-          <StudentDeadlines
-            deadlines={student.dl}
-            studentId={student.id}
-            onRefresh={onRefresh}
-            readOnly={readOnly}
-          />
+          {/* ── Upcoming Sessions ── */}
+          <Card>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="m-0 text-base font-bold text-heading">Sessions</h3>
+              <button onClick={() => onNavigate("prep")}
+                className="text-xs font-semibold bg-transparent border-none cursor-pointer"
+                style={{ color: "#528bff" }}>View all →</button>
+            </div>
+            <div className="flex gap-0.5 mb-4 p-0.5 rounded-full" style={{ background: "#1e1e1e", display: "inline-flex" }}>
+              {(["upcoming", "past"] as const).map((tab) => (
+                <button key={tab} onClick={() => setSessionTab(tab)}
+                  className="px-4 py-1.5 rounded-full border-none cursor-pointer text-xs font-semibold"
+                  style={{ background: sessionTab === tab ? "#528bff" : "transparent", color: sessionTab === tab ? "#fff" : "#717171" }}>
+                  {tab === "upcoming" ? "Upcoming" : "Past"}
+                </button>
+              ))}
+            </div>
 
-          {/* ── Right column ─────────────────────────────────────────── */}
-          <div className="flex flex-col gap-3.5">
-            {/* From Strategist */}
-            {counselorEvents.length > 0 && (
-              <Card>
-                <h2 className="m-0 mb-3.5 text-lg font-bold text-heading">From Your Strategist</h2>
-                {counselorEvents.map((ce) => (
-                  <div
-                    key={ce.id}
-                    className="flex justify-between items-start p-3 rounded-lg mb-1.5"
-                    style={{ background: "rgba(82,139,255,0.06)", borderLeft: "3px solid #528bff" }}
-                  >
-                    <div>
-                      <div className="text-sm font-medium text-heading">{ce.title}</div>
-                      <span className="text-xs" style={{ color: "#528bff" }}>
-                        {ce.category} · {new Date(ce.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                      </span>
-                      {ce.notes && <p className="text-xs text-sub mt-1 m-0">{ce.notes}</p>}
-                    </div>
-                  </div>
-                ))}
-              </Card>
+            {displaySessions.length === 0 && (
+              <p className="text-sm text-sub py-4 text-center">
+                {sessionTab === "upcoming" ? "No upcoming sessions" : "No past sessions"}
+              </p>
             )}
 
-            {/* Receptacle CTA */}
-            <Card>
-              <div
-                onClick={() => !readOnly && onNavigate("receptacle")}
-                className={readOnly ? "" : "cursor-pointer"}
-                style={{ textAlign: "center", padding: "12px 0" }}
-              >
-                <div className="text-3xl mb-3">🧠</div>
-                <h2 className="m-0 mb-1.5 text-lg font-bold text-heading">Plan Your Day</h2>
-                <p className="m-0 mb-4 text-sm text-sub leading-relaxed">
-                  Use the Receptacle to brain dump, prioritize with the Eisenhower Matrix, and schedule your tasks.
-                </p>
-                {!readOnly && (
-                  <button
-                  onClick={() => onNavigate("receptacle")}
-                  style={{
-                    padding: "10px 24px",
-                    borderRadius: 10,
-                    border: "1px solid rgba(148,163,184,0.18)",
-                    background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
-                    color: "#f8fafc",
-                    fontWeight: 700,
-                    fontSize: 13,
-                    cursor: "pointer",
-                    boxShadow: "0 8px 20px rgba(0,0,0,0.22)",
-                  }}
-                >
-                  Open Receptacle →
-                </button>
-                )}
-              </div>
-            </Card>
-          </div>
+            <div className="flex flex-col gap-2">
+              {displaySessions.slice(0, 4).map((ce: any) => (
+                <div key={ce.id} className="p-3 rounded-lg" style={{ background: "#252525", borderLeft: "3px solid #528bff" }}>
+                  <div className="text-[10px] font-semibold text-sub mb-1">
+                    {new Date(ce.date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                  </div>
+                  <div className="text-sm font-medium text-heading">{ce.title}</div>
+                  <div className="flex items-center justify-between mt-1.5">
+                    <div className="text-xs text-sub">{ce.category}</div>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                      style={{
+                        background: ce.date < todayStr ? "rgba(74,186,106,0.08)" : "rgba(82,139,255,0.08)",
+                        color: ce.date < todayStr ? "#4aba6a" : "#528bff"
+                      }}>
+                      {ce.date < todayStr ? "Completed" : "Upcoming"}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* ── Student Tasks ── */}
+          <Card>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="m-0 text-base font-bold text-heading">Student Tasks</h3>
+              <button onClick={() => onNavigate("tasks")}
+                className="text-xs font-semibold bg-transparent border-none cursor-pointer"
+                style={{ color: "#528bff" }}>View all →</button>
+            </div>
+
+            {activeTasks.length === 0 && (
+              <p className="text-sm text-sub py-4 text-center">All tasks completed! 🎉</p>
+            )}
+
+            <div className="flex flex-col gap-1.5">
+              {activeTasks.map((d) => (
+                <div key={d.id} className="flex items-start gap-2.5 p-2.5 rounded-lg"
+                  style={{ background: "#252525" }}>
+                  <input type="checkbox" checked={false} readOnly
+                    className="mt-0.5 flex-shrink-0"
+                    style={{ accentColor: "#4aba6a", width: 14, height: 14 }} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[10px] font-semibold uppercase tracking-wider mb-0.5"
+                      style={{ color: getCategoryColor(d.cat) }}>{d.cat}</div>
+                    <div className="text-sm font-medium text-heading truncate">{d.title}</div>
+                    <div className="text-xs text-sub mt-0.5">{d.due}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
         </div>
 
-        {/* ── Latest Session ───────────────────────────────────────────── */}
-        <Card className="mt-3.5">
-          <h2 className="m-0 mb-3.5 text-lg font-bold text-heading">Latest Session</h2>
-          {student.sess.length > 0 ? (
+        {/* ── Receptacle CTA ── */}
+        {!readOnly && (
+          <div className="mt-5 rounded-xl p-5 flex items-center justify-between"
+            style={{ background: "#252525", border: "1px solid #2a2a2a" }}>
+            <div className="flex items-center gap-4">
+              <div className="text-3xl">🧠</div>
+              <div>
+                <h3 className="m-0 text-base font-bold text-heading">Plan Your Day</h3>
+                <p className="m-0 text-sm text-sub mt-0.5">Brain dump, prioritize, and schedule with the Receptacle.</p>
+              </div>
+            </div>
+            <button onClick={() => onNavigate("receptacle")}
+              className="px-5 py-2.5 rounded-full border-none cursor-pointer text-sm font-semibold"
+              style={{ background: "#528bff", color: "#fff" }}>
+              Open Receptacle →
+            </button>
+          </div>
+        )}
+
+        {/* ── Latest Session Notes ── */}
+        {student.sess.length > 0 && (
+          <Card className="mt-5">
+            <h3 className="m-0 mb-3 text-base font-bold text-heading">Latest Session Notes</h3>
             <div className="p-4 rounded-lg" style={{ background: "#252525", borderLeft: "3px solid #528bff" }}>
               <div className="flex justify-between mb-2">
-                <span className="text-sm text-accent-ink font-semibold">{student.sess[0].date}</span>
-                <span className="text-sm text-sub">with {student.counselor}</span>
+                <span className="text-sm font-semibold" style={{ color: "#7aabff" }}>{student.sess[0].date}</span>
+                <span className="text-xs text-sub">with {student.counselor}</span>
               </div>
-              <p className="m-0 mb-2.5 text-sm text-body leading-relaxed">{student.sess[0].notes}</p>
-              <span className="text-xs text-sub">Action: </span>
-              <span className="text-sm text-accent-ink font-semibold">{student.sess[0].action}</span>
+              <p className="m-0 mb-2 text-sm text-body leading-relaxed">{student.sess[0].notes}</p>
+              {student.sess[0].action && (
+                <div className="mt-2 pt-2 border-t border-line">
+                  <span className="text-xs text-sub">Action: </span>
+                  <span className="text-sm font-semibold" style={{ color: "#7aabff" }}>{student.sess[0].action}</span>
+                </div>
+              )}
             </div>
-          ) : (
-            <p className="text-sm text-sub">
-              No sessions yet. Your strategist will schedule your first meeting soon.
-            </p>
-          )}
-        </Card>
+          </Card>
+        )}
       </div>
     </div>
   );
-}
-
-function getWeekRange(): string {
-  const now = new Date();
-  const sun = new Date(now);
-  sun.setDate(now.getDate() - now.getDay());
-  const sat = new Date(sun);
-  sat.setDate(sun.getDate() + 6);
-  return `${sun.toLocaleDateString("en-US", { month: "short", day: "numeric" })}–${sat.toLocaleDateString("en-US", { day: "numeric" })}`;
 }

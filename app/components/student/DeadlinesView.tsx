@@ -168,7 +168,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
   return (
     <div>
       <PageHeader
-        title="Roadmap"
+        title="Tasks"
         sub={`${todoCount} to do · ${overdueCount} overdue · ${doneCount} completed${blockedCount > 0 ? ` · ${blockedCount} blocked` : ""}`}
         right={
           <div className="flex items-center gap-3">
@@ -182,7 +182,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
                 className="flex items-center gap-1 text-xs font-semibold px-4 py-2 rounded-full transition-colors"
                 style={{ background: "#528bff", color: "#fff", border: "none", cursor: "pointer" }}
               >
-                + Add Deadline
+                + Add Task
               </button>
             )}
             {headerRight}
@@ -245,7 +245,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
         {/* Rows */}
         <div className="rounded-b-lg overflow-hidden" style={{ border: "1px solid #333", borderTop: "none" }}>
           {filtered.length === 0 && (
-            <div className="text-sm text-sub text-center py-8">No deadlines match your filters</div>
+            <div className="text-sm text-sub text-center py-8">No tasks match your filters</div>
           )}
           {nonBlocked.map((d) => {
             const isOwn = d.createdBy === "student";
@@ -352,7 +352,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
 
       {/* Add deadline modal */}
       {addingDeadline && (
-        <Modal title="Add Deadline" onClose={() => setAddingDeadline(false)}>
+        <Modal title="Add Task" onClose={() => setAddingDeadline(false)}>
           <form onSubmit={handleAdd}>
             <FormField label="Title">
               <input required name="title" placeholder="e.g. Review Common App essay" style={inputStyle} />
@@ -377,7 +377,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
             </div>
             <div className="flex gap-2 justify-end mt-3">
               <Button onClick={() => setAddingDeadline(false)}>Cancel</Button>
-              <Button primary type="submit">{saving ? "Adding..." : "Add Deadline"}</Button>
+              <Button primary type="submit">{saving ? "Adding..." : "Add Task"}</Button>
             </div>
           </form>
         </Modal>
@@ -385,7 +385,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
 
       {/* Edit deadline modal */}
       {editingDeadline && (
-        <Modal title="Edit Deadline" onClose={() => setEditingDeadline(null)}>
+        <Modal title="Edit Task" onClose={() => setEditingDeadline(null)}>
           <form onSubmit={handleEdit}>
             <FormField label="Title">
               <input required name="title" defaultValue={editingDeadline.title} style={inputStyle} />
@@ -449,7 +449,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
       {confirmDeleteId !== null && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)" }}>
           <div className="rounded-2xl border border-line p-6 w-full max-w-sm mx-4" style={{ background: "#1e1e1e" }}>
-            <h3 className="text-base font-bold text-heading mb-2">Delete Deadline?</h3>
+            <h3 className="text-base font-bold text-heading mb-2">Delete Task?</h3>
             <p className="text-sm text-sub mb-4">This action cannot be undone.</p>
             <div className="flex gap-2 justify-end">
               <Button onClick={() => setConfirmDeleteId(null)}>Cancel</Button>

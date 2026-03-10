@@ -118,7 +118,7 @@ export function Roadmap({ tasks, setTasks, deadlines = [], studentId, onRefresh,
       ) : (
         <>
           <PageHeader
-            title="Roadmap"
+            title="Tasks"
             sub="Track your deadlines and schedule."
             right={
               <div className="flex items-center gap-3">

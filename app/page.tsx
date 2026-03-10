@@ -293,7 +293,7 @@ export default function Home() {
         />
       );
     }
-    if (isStudentOrParent && view === "roadmap" && me)
+    if (isStudentOrParent && view === "tasks" && me)
       return (
         <Roadmap
           tasks={tasks}
