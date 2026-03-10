@@ -296,6 +296,7 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
             onBook={async (data) => {
               setBookingSaving(true);
               try {
+                console.log("[BookSession] studentId:", student.id, "data:", data);
                 const res = await fetch("/api/book-session", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
