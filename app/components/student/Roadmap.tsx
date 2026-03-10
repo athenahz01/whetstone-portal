@@ -97,12 +97,12 @@ export function Roadmap({ tasks, setTasks, deadlines = [], studentId, onRefresh,
             onRefresh={onRefresh}
             readOnly={readOnly}
             headerRight={
-              <div className="inline-flex gap-0.5 bg-white border border-line rounded-lg p-1">
+              <div className="inline-flex gap-0.5 bg-white border border-line rounded-full p-1">
                 {(["list", "calendar"] as const).map((id) => (
                   <button
                     key={id}
                     onClick={() => setViewMode(id)}
-                    className="px-4 py-1.5 rounded-md border-none cursor-pointer text-xs font-semibold"
+                    className="px-4 py-1.5 rounded-full border-none cursor-pointer text-xs font-semibold"
                     style={{
                       background: viewMode === id ? "#528bff" : "transparent",
                       color: viewMode === id ? "#fff" : "#717171",
@@ -127,12 +127,12 @@ export function Roadmap({ tasks, setTasks, deadlines = [], studentId, onRefresh,
                     View Only
                   </span>
                 )}
-                <div className="inline-flex gap-0.5 bg-white border border-line rounded-lg p-1">
+                <div className="inline-flex gap-0.5 bg-white border border-line rounded-full p-1">
                   {(["list", "calendar"] as const).map((id) => (
                     <button
                       key={id}
                       onClick={() => setViewMode(id)}
-                      className="px-4 py-1.5 rounded-md border-none cursor-pointer text-xs font-semibold"
+                      className="px-4 py-1.5 rounded-full border-none cursor-pointer text-xs font-semibold"
                       style={{
                         background: viewMode === id ? "#528bff" : "transparent",
                         color: viewMode === id ? "#fff" : "#717171",

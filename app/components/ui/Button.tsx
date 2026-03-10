@@ -19,7 +19,7 @@ export function Button({
 }: ButtonProps) {
   const baseStyle: React.CSSProperties = {
     padding: "10px 16px",
-    borderRadius: 10,
+    borderRadius: 15,
     border: "1px solid rgba(148,163,184,0.18)",
     background: primary ? "#3b82f6" : "#111827",
     color: "#f8fafc",

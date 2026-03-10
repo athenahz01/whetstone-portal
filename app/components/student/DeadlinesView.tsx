@@ -179,7 +179,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
             ) : (
               <button
                 onClick={() => setAddingDeadline(true)}
-                className="flex items-center gap-1 text-xs font-semibold px-4 py-2 rounded-lg transition-colors"
+                className="flex items-center gap-1 text-xs font-semibold px-4 py-2 rounded-full transition-colors"
                 style={{ background: "#528bff", color: "#fff", border: "none", cursor: "pointer" }}
               >
                 + Add Deadline
@@ -199,7 +199,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
               <button
                 key={s}
                 onClick={() => setFilterStatus(s)}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer border-none"
+                className="px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer border-none"
                 style={{
                   background: filterStatus === s ? "rgba(82,139,255,0.1)" : "#252525",
                   color: filterStatus === s ? "#7aabff" : "#717171",
