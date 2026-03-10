@@ -164,8 +164,8 @@ export function Activities({ activities, setActivities, readOnly = false, studen
           {slots.map((act, i) => {
             const isOpen = openSlot === i;
             const isEmpty = !act;
-            const label = isEmpty ? `Activity ${i + 1}` : act.type;
-            const sublabel = isEmpty ? "[EMPTY]" : act.pos;
+            const label = isEmpty ? `Activity ${i + 1}` : (act.pos || act.type);
+            const sublabel = isEmpty ? "[EMPTY]" : (act.org || act.type);
 
             return (
               <div key={i} className="border-b border-line last:border-b-0">
@@ -212,12 +212,12 @@ export function Activities({ activities, setActivities, readOnly = false, studen
                         <p className="text-sm text-sub italic py-4 text-center">This slot is empty.</p>
                       ) : (
                         <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div><span className="font-semibold text-sub text-xs uppercase">Type</span><p className="mt-1 text-body">{act.type}</p></div>
-                          <div><span className="font-semibold text-sub text-xs uppercase">Position (50 chars)</span><p className="mt-1 text-body">{act.pos}</p></div>
-                          <div className="col-span-2"><span className="font-semibold text-sub text-xs uppercase">Organization (100 chars)</span><p className="mt-1 text-body">{act.org}</p></div>
-                          <div className="col-span-2"><span className="font-semibold text-sub text-xs uppercase">Description (150 chars)</span><p className="mt-1 text-body">{act.desc}</p></div>
-                          <div><span className="font-semibold text-sub text-xs uppercase">Grade Levels</span><p className="mt-1 text-body">{(act.gr || []).join(", ") || "—"}</p></div>
+                          <div><span className="font-semibold text-sub text-xs uppercase">Position</span><p className="mt-1 text-body">{act.pos}</p></div>
+                          <div><span className="font-semibold text-sub text-xs uppercase">Organization</span><p className="mt-1 text-body">{act.org}</p></div>
+                          <div><span className="font-semibold text-sub text-xs uppercase">Activity Type</span><p className="mt-1 text-body">{act.type}</p></div>
                           <div><span className="font-semibold text-sub text-xs uppercase">Timing</span><p className="mt-1 text-body">{act.timing || "—"}</p></div>
+                          <div className="col-span-2"><span className="font-semibold text-sub text-xs uppercase">Description</span><p className="mt-1 text-body">{act.desc}</p></div>
+                          <div><span className="font-semibold text-sub text-xs uppercase">Grade Levels</span><p className="mt-1 text-body">{(act.gr || []).join(", ") || "—"}</p></div>
                           <div><span className="font-semibold text-sub text-xs uppercase">Hours/Week</span><p className="mt-1 text-body">{act.hrs || "—"}</p></div>
                           <div><span className="font-semibold text-sub text-xs uppercase">Weeks/Year</span><p className="mt-1 text-body">{act.wks || "—"}</p></div>
                         </div>
@@ -286,20 +286,7 @@ function ActivityForm({ act, index, onSave, onDelete, saving }: ActivityFormProp
       }}
       className="space-y-4"
     >
-      {/* Activity Type */}
-      <div>
-        <label style={labelStyle}>
-          Activity type <span style={{ color: "#e55b5b" }}>*</span>
-        </label>
-        <select name="type" defaultValue={act?.type ?? ""} required style={inputStyle}>
-          <option value="" disabled>Select type...</option>
-          {ACTIVITY_TYPES.map((t) => (
-            <option key={t} value={t}>{t}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Position / Leadership */}
+      {/* Position / Leadership — now first */}
       <div>
         <label style={labelStyle}>
           Position/Leadership description
@@ -311,13 +298,12 @@ function ActivityForm({ act, index, onSave, onDelete, saving }: ActivityFormProp
           name="position"
           value={position}
           onChange={(e) => setPosition(e.target.value)}
-
           required
           style={{ ...inputStyle, borderColor: position.length > 50 ? "#e55b5b" : "#333", color: position.length > 50 ? "#e55b5b" : "#ebebeb" }}
         />
       </div>
 
-      {/* Organization Name */}
+      {/* Organization Name — second */}
       <div>
         <label style={labelStyle}>
           Organization Name
@@ -328,9 +314,21 @@ function ActivityForm({ act, index, onSave, onDelete, saving }: ActivityFormProp
           name="org"
           value={org}
           onChange={(e) => setOrg(e.target.value)}
-
           style={{ ...inputStyle, borderColor: org.length > 100 ? "#e55b5b" : "#333", color: org.length > 100 ? "#e55b5b" : "#ebebeb" }}
         />
+      </div>
+
+      {/* Activity Type — third */}
+      <div>
+        <label style={labelStyle}>
+          Activity type <span style={{ color: "#e55b5b" }}>*</span>
+        </label>
+        <select name="type" defaultValue={act?.type ?? ""} required style={inputStyle}>
+          <option value="" disabled>Select type...</option>
+          {ACTIVITY_TYPES.map((t) => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </select>
       </div>
 
       {/* Description */}
@@ -345,7 +343,6 @@ function ActivityForm({ act, index, onSave, onDelete, saving }: ActivityFormProp
           name="description"
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
-
           required
           rows={3}
           style={{ ...inputStyle, resize: "vertical", borderColor: desc.length > 150 ? "#e55b5b" : "#333", color: desc.length > 150 ? "#e55b5b" : "#ebebeb" }}

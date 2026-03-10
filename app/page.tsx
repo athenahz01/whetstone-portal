@@ -338,7 +338,7 @@ export default function Home() {
       );
     }
     if (role === "student" && view === "prep" && me) {
-      return <SessionPrep student={me} />;
+      return <SessionPrep student={me} onRefresh={handleRefresh} />;
     }
 
     // ── Strategist views ──

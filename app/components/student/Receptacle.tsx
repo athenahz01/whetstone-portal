@@ -130,7 +130,7 @@ function minutesToHeight(min: number) {
 // ── Component ──────────────────────────────────────────────────────────────
 
 export function Receptacle({ studentId, profileId, gcalConnected, googleEvents = [] }: ReceptacleProps) {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<0 | 1 | 2 | 3>(1); // 0 = daily review
 
   // Step 1
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -148,6 +148,10 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
   const [completed, setCompleted] = useState<Set<string>>(new Set());
   const [syncing, setSyncing] = useState(false);
   const [syncDone, setSyncDone] = useState(false);
+
+  // Daily review
+  const [reviewItems, setReviewItems] = useState<CalendarEvent[]>([]);
+  const [reviewChecked, setReviewChecked] = useState<Set<string>>(new Set());
 
   // Drag ghost preview
   const [ghostPreview, setGhostPreview] = useState<{ date: string; topMinutes: number; minutes: number; text: string; colIndex: number } | null>(null);
@@ -199,6 +203,14 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
       // Load completed state
       const completedIds = new Set(events.filter((e) => e.completed).map((e) => `db-${e.id}`));
       setCompleted(completedIds);
+
+      // Check for yesterday's uncompleted tasks → trigger daily review
+      const todayStr = fmt(new Date());
+      const yesterdayEvents = loaded.filter((e) => e.date < todayStr && !completedIds.has(e.taskId));
+      if (yesterdayEvents.length > 0) {
+        setReviewItems(yesterdayEvents);
+        setStep(0);
+      }
 
       // Sync back from GCal: detect if user moved Whetstone events in GCal
       if (profileId && gcalConnected && events.length > 0) {
@@ -510,7 +522,8 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
       />
 
       <div className="px-8 pb-8">
-        {/* Step tabs */}
+        {/* Step tabs — hidden during daily review */}
+        {step !== 0 && (
         <div className="flex mb-6 bg-white border border-line rounded-xl overflow-hidden">
           {([
             [1, "① Brain Dump"],
@@ -532,6 +545,90 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
             );
           })}
         </div>
+        )}
+
+        {/* ── STEP 0: DAILY REVIEW ── */}
+        {step === 0 && reviewItems.length > 0 && (
+          <div>
+            <div style={{ ...card, border: "1.5px solid rgba(229,168,59,0.2)", background: "rgba(229,168,59,0.03)" }}>
+              <div className="flex gap-4 mb-4">
+                <div className="text-3xl">🌅</div>
+                <div>
+                  <h2 className="text-xl font-bold text-heading m-0">Daily Review</h2>
+                  <p className="text-sm text-sub m-0 mt-1">
+                    You have <strong>{reviewItems.length} unfinished task{reviewItems.length !== 1 ? "s" : ""}</strong> from previous days. Check off what you completed, the rest will carry over.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 mb-5">
+                {reviewItems.map((ev) => {
+                  const checked = reviewChecked.has(ev.taskId);
+                  return (
+                    <label key={ev.taskId}
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all"
+                      style={{
+                        background: checked ? "rgba(74,186,106,0.06)" : "#252525",
+                        border: checked ? "1px solid rgba(74,186,106,0.2)" : "1px solid #333",
+                        opacity: checked ? 0.6 : 1,
+                      }}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => {
+                          setReviewChecked((prev) => {
+                            const n = new Set(prev);
+                            checked ? n.delete(ev.taskId) : n.add(ev.taskId);
+                            return n;
+                          });
+                        }}
+                        className="flex-shrink-0 cursor-pointer"
+                        style={{ accentColor: "#4aba6a", width: 16, height: 16 }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium" style={{ color: checked ? "#4aba6a" : "#ebebeb", textDecoration: checked ? "line-through" : "none" }}>
+                          {ev.text}
+                        </div>
+                        <div className="text-xs text-sub mt-0.5">
+                          {ev.date} at {fmtMinutes(ev.topMinutes)} · {ev.minutes}m
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
+                        style={{ background: checked ? "rgba(74,186,106,0.1)" : "rgba(229,168,59,0.1)", color: checked ? "#4aba6a" : "#e5a83b" }}>
+                        {checked ? "Done" : "Carry over"}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="text-xs text-sub">
+                  {reviewChecked.size} of {reviewItems.length} completed
+                </div>
+                <button
+                  onClick={() => {
+                    // Mark checked items as completed in DB
+                    for (const ev of reviewItems) {
+                      if (reviewChecked.has(ev.taskId)) {
+                        setCompleted((p) => { const n = new Set(p); n.add(ev.taskId); return n; });
+                        if (ev.dbId) updateReceptacleEvent(ev.dbId, { completed: true });
+                      }
+                      // Unchecked items stay as-is (backlog)
+                    }
+                    setStep(1);
+                    setReviewItems([]);
+                    setReviewChecked(new Set());
+                  }}
+                  className="px-5 py-2.5 rounded-full border-none cursor-pointer text-sm font-semibold"
+                  style={{ background: "#528bff", color: "#fff" }}
+                >
+                  Continue to Brain Dump →
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── STEP 1 ── */}
         {step === 1 && (

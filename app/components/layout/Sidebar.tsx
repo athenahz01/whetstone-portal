@@ -69,7 +69,7 @@ export function Sidebar({
           ["honors", "Honors"],
           ["receptacle", "Receptacle"],
           ["schools", "Schools"],
-          ...(role === "student" ? [["prep", "Session Prep"]] : []),
+          ...(role === "student" ? [["prep", "Closing Commit"]] : []),
         ];
 
   const name = studentName || "User";
