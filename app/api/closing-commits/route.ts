@@ -64,3 +64,25 @@ export async function DELETE(request: NextRequest) {
 
   return NextResponse.json({ success: true });
 }
+
+// PATCH: update an existing closing commit
+export async function PATCH(request: NextRequest) {
+  const body = await request.json();
+  const { id, activeRecall, actions, sessionType, specialist } = body;
+
+  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+
+  const updateData: any = {};
+  if (activeRecall !== undefined) updateData.active_recall = activeRecall;
+  if (actions !== undefined) updateData.actions = JSON.stringify(actions);
+  if (sessionType !== undefined) updateData.session_type = sessionType;
+  if (specialist !== undefined) updateData.specialist = specialist;
+
+  const { error } = await supabase.from("closing_commits").update(updateData).eq("id", parseInt(id));
+  if (error) {
+    console.error("[closing-commits] PATCH error:", error.message);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
+}

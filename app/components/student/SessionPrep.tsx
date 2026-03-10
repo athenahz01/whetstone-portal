@@ -22,6 +22,7 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
   const [bookingSaving, setBookingSaving] = useState(false);
   const [commits, setCommits] = useState<any[]>([]);
   const [showCommitForm, setShowCommitForm] = useState(false);
+  const [editingCommit, setEditingCommit] = useState<any>(null);
   const [commitSpecialist, setCommitSpecialist] = useState("");
 
   const loadCommits = async () => {
@@ -92,38 +93,53 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
 
   const handleCommitSave = async () => {
     setSaving(true);
-    // Save closing commit to DB
     try {
-      await fetch("/api/closing-commits", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          studentId: student.id,
-          activeRecall: activeRecall,
-          actions: actions,
-          sessionType: sessionType,
-          specialist: commitSpecialist,
-        }),
-      });
-    } catch (err) { console.error("Failed to save commit:", err); }
-
-    // Also save actions as deadlines
-    for (const action of actions) {
-      if (action.title.trim() && action.due) {
-        await addDeadline(student.id, {
-          title: action.title,
-          due: action.due,
-          category: "planning",
-          status: "pending",
-          days: Math.round((new Date(action.due).getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
-          created_by: "student",
+      if (editingCommit) {
+        // Update existing commit
+        await fetch("/api/closing-commits", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: editingCommit.id,
+            activeRecall: activeRecall,
+            actions: actions,
+            sessionType: sessionType,
+            specialist: commitSpecialist,
+          }),
         });
+      } else {
+        // Create new commit
+        await fetch("/api/closing-commits", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            studentId: student.id,
+            activeRecall: activeRecall,
+            actions: actions,
+            sessionType: sessionType,
+            specialist: commitSpecialist,
+          }),
+        });
+        // Also save actions as deadlines (only on create)
+        for (const action of actions) {
+          if (action.title.trim() && action.due) {
+            await addDeadline(student.id, {
+              title: action.title,
+              due: action.due,
+              category: "planning",
+              status: "pending",
+              days: Math.round((new Date(action.due).getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+              created_by: "student",
+            });
+          }
+        }
       }
-    }
+    } catch (err) { console.error("Failed to save commit:", err); }
     if (onRefresh) await onRefresh();
     await loadCommits();
     setSaving(false);
     setSaved(true);
+    setEditingCommit(null);
   };
 
   return (
@@ -273,65 +289,81 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
       {/* ── Closing Commit Journal ── */}
       {viewMode === "commit" && (
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-5">
           <div>
-            <h3 className="m-0 text-base font-bold text-heading">Your Closing Commits</h3>
-            <p className="m-0 text-xs text-sub mt-0.5">A record of your session reflections and action items.</p>
+            <h3 className="m-0 text-lg font-bold text-heading">Your Closing Commits</h3>
+            <p className="m-0 text-sm text-sub mt-1">A record of your session reflections and action items.</p>
           </div>
-          <button onClick={() => { setShowCommitForm(true); setSaved(false); setActiveRecall(""); setActions([{ title: "", due: "", description: "" }, { title: "", due: "", description: "" }, { title: "", due: "", description: "" }]); }}
-            className="px-4 py-2 rounded-full border-none cursor-pointer text-xs font-semibold"
+          <button onClick={() => { setEditingCommit(null); setShowCommitForm(true); setSaved(false); setActiveRecall(""); setCommitSpecialist(""); setSessionType("online"); setActions([{ title: "", due: "", description: "" }, { title: "", due: "", description: "" }, { title: "", due: "", description: "" }]); }}
+            className="px-5 py-2.5 rounded-full border-none cursor-pointer text-sm font-semibold"
             style={{ background: "#528bff", color: "#fff" }}>
             + Add a Closing Commit
           </button>
         </div>
 
-        {/* Journal entries */}
         {commits.length === 0 && (
           <Card>
-            <div className="text-center py-10">
-              <div className="text-3xl mb-3">📋</div>
-              <p className="text-sm text-sub m-0">No closing commits yet.</p>
-              <p className="text-xs text-faint m-0 mt-1">After a session, add a closing commit to capture key takeaways and action items.</p>
+            <div className="text-center py-12">
+              <div className="text-4xl mb-3">📋</div>
+              <p className="text-base text-sub m-0">No closing commits yet.</p>
+              <p className="text-sm text-faint m-0 mt-1">After a session, add a closing commit to capture key takeaways and action items.</p>
             </div>
           </Card>
         )}
 
-        <div className="flex flex-col gap-3">
+        {/* 2-column grid */}
+        <div className="grid gap-4" style={{ gridTemplateColumns: "1fr 1fr" }}>
           {commits.map((c: any) => {
             const cActions = (() => { try { return JSON.parse(c.actions || "[]"); } catch { return []; } })();
             const date = new Date(c.created_at);
             return (
-              <Card key={c.id}>
+              <Card key={c.id} style={{ padding: 20 }}>
+                {/* Header */}
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <div className="text-xs font-semibold text-sub">
+                    <div className="text-sm font-bold" style={{ color: "#ebebeb" }}>
                       {date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
-                      <span className="ml-2 text-faint">{date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</span>
+                      <span className="ml-2 font-normal" style={{ color: "#717171" }}>{date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</span>
                     </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                        style={{ background: c.session_type === "in-person" ? "rgba(74,186,106,0.08)" : "rgba(82,139,255,0.08)", color: c.session_type === "in-person" ? "#4aba6a" : "#528bff" }}>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                        style={{ background: c.session_type === "in-person" ? "rgba(74,186,106,0.08)" : "rgba(82,139,255,0.08)", color: c.session_type === "in-person" ? "#4aba6a" : "#7aabff" }}>
                         {c.session_type === "in-person" ? "🤝 In-Person" : "💻 Online"}
                       </span>
                       {c.specialist && (
-                        <span className="text-[10px] text-sub">with {c.specialist}</span>
+                        <span className="text-xs" style={{ color: "#a0a0a0" }}>with {c.specialist}</span>
                       )}
                     </div>
                   </div>
-                  <button onClick={async () => {
-                    if (!confirm("Delete this commit?")) return;
-                    await fetch(`/api/closing-commits?id=${c.id}`, { method: "DELETE" });
-                    loadCommits();
-                  }}
-                    className="w-6 h-6 rounded-full flex items-center justify-center border-none cursor-pointer"
-                    style={{ background: "rgba(229,91,91,0.08)", color: "#e55b5b", fontSize: 10 }}>✕</button>
+                  <div className="flex items-center gap-1.5">
+                    {/* Edit button */}
+                    <button onClick={() => {
+                      setEditingCommit(c);
+                      setActiveRecall(c.active_recall || "");
+                      setSessionType(c.session_type || "online");
+                      setCommitSpecialist(c.specialist || "");
+                      setActions(cActions.length > 0 ? cActions : [{ title: "", due: "", description: "" }, { title: "", due: "", description: "" }, { title: "", due: "", description: "" }]);
+                      setShowCommitForm(true);
+                      setSaved(false);
+                    }}
+                      className="w-7 h-7 rounded-full flex items-center justify-center border-none cursor-pointer"
+                      style={{ background: "rgba(82,139,255,0.08)", color: "#7aabff", fontSize: 12 }}>✎</button>
+                    {/* Delete button */}
+                    <button onClick={async () => {
+                      if (!confirm("Delete this commit?")) return;
+                      await fetch(`/api/closing-commits?id=${c.id}`, { method: "DELETE" });
+                      loadCommits();
+                    }}
+                      className="w-7 h-7 rounded-full flex items-center justify-center border-none cursor-pointer"
+                      style={{ background: "rgba(229,91,91,0.08)", color: "#e55b5b", fontSize: 11 }}>✕</button>
+                  </div>
                 </div>
 
                 {/* Active Recall */}
                 {c.active_recall && (
                   <div className="mb-3">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-sub mb-1">🧠 Active Recall</div>
-                    <div className="text-sm text-body leading-relaxed p-3 rounded-lg" style={{ background: "#252525" }}>
+                    <div className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: "#717171" }}>🧠 Active Recall</div>
+                    <div className="text-sm leading-relaxed p-3 rounded-lg" style={{ background: "#1e1e1e", color: "#d0d0d0" }}>
                       {c.active_recall}
                     </div>
                   </div>
@@ -340,16 +372,16 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
                 {/* Actions */}
                 {cActions.length > 0 && cActions.some((a: any) => a.title) && (
                   <div>
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-sub mb-1.5">📋 Action Items</div>
-                    <div className="flex flex-col gap-1">
+                    <div className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "#717171" }}>📋 Action Items</div>
+                    <div className="flex flex-col gap-1.5">
                       {cActions.filter((a: any) => a.title).map((a: any, i: number) => (
-                        <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-md"
-                          style={{ background: "#252525" }}>
-                          <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0"
-                            style={{ background: "rgba(82,139,255,0.1)", color: "#528bff" }}>{i + 1}</div>
+                        <div key={i} className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg"
+                          style={{ background: "#1e1e1e" }}>
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                            style={{ background: "rgba(82,139,255,0.12)", color: "#7aabff" }}>{i + 1}</div>
                           <div className="flex-1 min-w-0">
-                            <span className="text-sm text-heading">{a.title}</span>
-                            {a.due && <span className="text-[10px] text-sub ml-2">Due: {a.due}</span>}
+                            <div className="text-sm font-medium" style={{ color: "#ebebeb" }}>{a.title}</div>
+                            {a.due && <div className="text-xs mt-0.5" style={{ color: "#717171" }}>Due: {a.due}</div>}
                           </div>
                         </div>
                       ))}
@@ -365,13 +397,13 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
 
       {/* ── Add Closing Commit Modal ── */}
       {showCommitForm && (
-        <Modal title="New Closing Commit" onClose={() => setShowCommitForm(false)}>
+        <Modal title={editingCommit ? "Edit Closing Commit" : "New Closing Commit"} onClose={() => { setShowCommitForm(false); setEditingCommit(null); }}>
           {saved ? (
             <div className="text-center py-6">
               <div className="text-4xl mb-3">✅</div>
               <h2 className="text-xl font-bold text-heading mb-2">Session Committed!</h2>
               <p className="text-sm text-sub mb-4">Your reflection and action items have been saved.</p>
-              <Button primary onClick={() => { setShowCommitForm(false); setSaved(false); }}>Done</Button>
+              <Button primary onClick={() => { setShowCommitForm(false); setSaved(false); setEditingCommit(null); }}>Done</Button>
             </div>
           ) : (
             <>
@@ -428,7 +460,7 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
               </div>
 
               <div className="flex justify-end gap-2 mt-4">
-                <Button onClick={() => setShowCommitForm(false)}>Cancel</Button>
+                <Button onClick={() => { setShowCommitForm(false); setEditingCommit(null); }}>Cancel</Button>
                 <Button primary onClick={handleCommitSave} disabled={saving || (!activeRecall.trim() && actions.every((a) => !a.title.trim()))}>
                   {saving ? "Saving..." : "Save Commit →"}
                 </Button>
