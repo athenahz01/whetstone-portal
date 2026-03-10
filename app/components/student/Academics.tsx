@@ -11,6 +11,61 @@ import { FormField } from "../ui/FormField";
 import { supabase } from "../../lib/supabase";
 import { useState, useEffect } from "react";
 
+// Inline GPA editor with save indicator
+function GpaInput({ label, defaultVal, max, color, studentId, readOnly }: {
+  label: string; defaultVal: number | null; max: number; color: string; studentId: number; readOnly?: boolean;
+}) {
+  const [val, setVal] = useState(defaultVal?.toString() || "");
+  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
+  const save = async () => {
+    const num = parseFloat(val);
+    if (isNaN(num) || num === defaultVal) return;
+    setStatus("saving");
+    try {
+      const res = await fetch("/api/update-student", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ studentId, gpa: num }),
+      });
+      const result = await res.json();
+      if (result.success || result.fallback) {
+        setStatus("saved");
+        setTimeout(() => setStatus("idle"), 2000);
+      } else {
+        console.error("GPA save failed:", result.error);
+        setStatus("error");
+      }
+    } catch (err) {
+      console.error("GPA save error:", err);
+      setStatus("error");
+    }
+  };
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between mb-1">
+        <label className="text-[10px] font-bold uppercase tracking-wider text-sub">{label}</label>
+        {status === "saving" && <span className="text-[9px]" style={{ color: "#e5a83b" }}>Saving...</span>}
+        {status === "saved" && <span className="text-[9px]" style={{ color: "#4aba6a" }}>✓ Saved</span>}
+        {status === "error" && <span className="text-[9px]" style={{ color: "#e55b5b" }}>Failed</span>}
+      </div>
+      <input
+        type="text"
+        inputMode="decimal"
+        value={val}
+        onChange={(e) => setVal(e.target.value)}
+        onBlur={save}
+        onKeyDown={(e) => e.key === "Enter" && save()}
+        placeholder="—"
+        disabled={readOnly}
+        className="text-2xl font-bold w-full bg-transparent border-none outline-none"
+        style={{ color }}
+      />
+    </Card>
+  );
+}
+
 interface AcademicsProps {
   student: Student;
   courses: Course[];
@@ -97,52 +152,22 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
       <div className="p-6 px-8">
         {/* GPA Metrics — editable */}
         <div className="grid grid-cols-2 gap-3.5 mb-5">
-          <Card>
-            <label className="text-[10px] font-bold uppercase tracking-wider text-sub mb-1 block">GPA (Unweighted)</label>
-            <input
-              type="number" step="0.01" min="0" max="4.0"
-              defaultValue={student.gpaUnweighted || student.gpa || ""}
-              placeholder="—"
-              disabled={readOnly}
-              onBlur={async (e) => {
-                const val = parseFloat(e.target.value);
-                if (!isNaN(val)) {
-                  const res = await fetch("/api/update-student", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ studentId: student.id, gpa: val }),
-                  });
-                  const result = await res.json();
-                  if (!result.success) console.error("GPA save failed:", result.error);
-                }
-              }}
-              className="text-2xl font-bold w-full bg-transparent border-none outline-none"
-              style={{ color: "#4aba6a" }}
-            />
-          </Card>
-          <Card>
-            <label className="text-[10px] font-bold uppercase tracking-wider text-sub mb-1 block">GPA (Weighted)</label>
-            <input
-              type="number" step="0.01" min="0" max="5.0"
-              defaultValue={student.gpaWeighted || student.gpa || ""}
-              placeholder="—"
-              disabled={readOnly}
-              onBlur={async (e) => {
-                const val = parseFloat(e.target.value);
-                if (!isNaN(val)) {
-                  const res = await fetch("/api/update-student", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ studentId: student.id, gpa: val }),
-                  });
-                  const result = await res.json();
-                  if (!result.success) console.error("GPA(W) save failed:", result.error);
-                }
-              }}
-              className="text-2xl font-bold w-full bg-transparent border-none outline-none"
-              style={{ color: "#528bff" }}
-            />
-          </Card>
+          <GpaInput
+            label="GPA (Unweighted)"
+            defaultVal={student.gpaUnweighted || student.gpa || null}
+            max={4.0}
+            color="#4aba6a"
+            studentId={student.id}
+            readOnly={readOnly}
+          />
+          <GpaInput
+            label="GPA (Weighted)"
+            defaultVal={student.gpaWeighted || student.gpa || null}
+            max={5.0}
+            color="#528bff"
+            studentId={student.id}
+            readOnly={readOnly}
+          />
         </div>
 
         {/* Coursework Table */}
