@@ -20,6 +20,17 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
   const [events, setEvents] = useState<any[]>([]);
   const [showBooking, setShowBooking] = useState(false);
   const [bookingSaving, setBookingSaving] = useState(false);
+  const [commits, setCommits] = useState<any[]>([]);
+  const [showCommitForm, setShowCommitForm] = useState(false);
+  const [commitSpecialist, setCommitSpecialist] = useState("");
+
+  const loadCommits = async () => {
+    try {
+      const res = await fetch(`/api/closing-commits?studentId=${student.id}`);
+      const data = await res.json();
+      setCommits(data.commits || []);
+    } catch { setCommits([]); }
+  };
 
   useEffect(() => {
     if (student.id) {
@@ -29,6 +40,7 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
       ]).then(([counselorEvs, bookedSessions]) => {
         setEvents([...counselorEvs, ...bookedSessions]);
       });
+      loadCommits();
     }
   }, [student.id]);
 
@@ -78,9 +90,24 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
     setActions((prev) => prev.map((a, j) => j === i ? { ...a, [field]: value } : a));
   };
 
-  const handleSubmit = async () => {
+  const handleCommitSave = async () => {
     setSaving(true);
-    // Save actions as deadlines
+    // Save closing commit to DB
+    try {
+      await fetch("/api/closing-commits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: student.id,
+          activeRecall: activeRecall,
+          actions: actions,
+          sessionType: sessionType,
+          specialist: commitSpecialist,
+        }),
+      });
+    } catch (err) { console.error("Failed to save commit:", err); }
+
+    // Also save actions as deadlines
     for (const action of actions) {
       if (action.title.trim() && action.due) {
         await addDeadline(student.id, {
@@ -94,6 +121,7 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
       }
     }
     if (onRefresh) await onRefresh();
+    await loadCommits();
     setSaving(false);
     setSaved(true);
   };
@@ -242,100 +270,172 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
         </div>
       )}
 
-      {/* ── Closing Commit View ── */}
+      {/* ── Closing Commit Journal ── */}
       {viewMode === "commit" && (
       <div>
-        {saved ? (
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="m-0 text-base font-bold text-heading">Your Closing Commits</h3>
+            <p className="m-0 text-xs text-sub mt-0.5">A record of your session reflections and action items.</p>
+          </div>
+          <button onClick={() => { setShowCommitForm(true); setSaved(false); setActiveRecall(""); setActions([{ title: "", due: "", description: "" }, { title: "", due: "", description: "" }, { title: "", due: "", description: "" }]); }}
+            className="px-4 py-2 rounded-full border-none cursor-pointer text-xs font-semibold"
+            style={{ background: "#528bff", color: "#fff" }}>
+            + Add a Closing Commit
+          </button>
+        </div>
+
+        {/* Journal entries */}
+        {commits.length === 0 && (
           <Card>
-            <div className="text-center py-8">
-              <div className="text-4xl mb-3">✅</div>
-              <h2 className="text-xl font-bold text-heading mb-2">Session Committed!</h2>
-              <p className="text-sm text-sub mb-4">Your action items have been added to your deadlines.</p>
-              <Button primary onClick={() => { setSaved(false); setActions([{ title: "", due: "", description: "" }, { title: "", due: "", description: "" }, { title: "", due: "", description: "" }]); setActiveRecall(""); }}>
-                Start New Session
-              </Button>
+            <div className="text-center py-10">
+              <div className="text-3xl mb-3">📋</div>
+              <p className="text-sm text-sub m-0">No closing commits yet.</p>
+              <p className="text-xs text-faint m-0 mt-1">After a session, add a closing commit to capture key takeaways and action items.</p>
             </div>
           </Card>
-        ) : (
-          <>
-            {/* Session info */}
-            <Card className="mb-4">
-              <div className="flex items-center gap-3">
-                <div className="text-2xl">{sessionType === "online" ? "💻" : "🤝"}</div>
-                <div>
-                  <div className="text-xs uppercase tracking-widest font-bold mb-1" style={{ color: "#528bff" }}>
-                    {sessionType === "online" ? "Online Session" : "In-Person Session"}
+        )}
+
+        <div className="flex flex-col gap-3">
+          {commits.map((c: any) => {
+            const cActions = (() => { try { return JSON.parse(c.actions || "[]"); } catch { return []; } })();
+            const date = new Date(c.created_at);
+            return (
+              <Card key={c.id}>
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <div className="text-xs font-semibold text-sub">
+                      {date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
+                      <span className="ml-2 text-faint">{date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                        style={{ background: c.session_type === "in-person" ? "rgba(74,186,106,0.08)" : "rgba(82,139,255,0.08)", color: c.session_type === "in-person" ? "#4aba6a" : "#528bff" }}>
+                        {c.session_type === "in-person" ? "🤝 In-Person" : "💻 Online"}
+                      </span>
+                      {c.specialist && (
+                        <span className="text-[10px] text-sub">with {c.specialist}</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-lg font-bold text-heading">with {student.counselor}</div>
-                  <div className="text-sm text-sub">{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</div>
+                  <button onClick={async () => {
+                    if (!confirm("Delete this commit?")) return;
+                    await fetch(`/api/closing-commits?id=${c.id}`, { method: "DELETE" });
+                    loadCommits();
+                  }}
+                    className="w-6 h-6 rounded-full flex items-center justify-center border-none cursor-pointer"
+                    style={{ background: "rgba(229,91,91,0.08)", color: "#e55b5b", fontSize: 10 }}>✕</button>
                 </div>
+
+                {/* Active Recall */}
+                {c.active_recall && (
+                  <div className="mb-3">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-sub mb-1">🧠 Active Recall</div>
+                    <div className="text-sm text-body leading-relaxed p-3 rounded-lg" style={{ background: "#252525" }}>
+                      {c.active_recall}
+                    </div>
+                  </div>
+                )}
+
+                {/* Actions */}
+                {cActions.length > 0 && cActions.some((a: any) => a.title) && (
+                  <div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-sub mb-1.5">📋 Action Items</div>
+                    <div className="flex flex-col gap-1">
+                      {cActions.filter((a: any) => a.title).map((a: any, i: number) => (
+                        <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-md"
+                          style={{ background: "#252525" }}>
+                          <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0"
+                            style={{ background: "rgba(82,139,255,0.1)", color: "#528bff" }}>{i + 1}</div>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-sm text-heading">{a.title}</span>
+                            {a.due && <span className="text-[10px] text-sub ml-2">Due: {a.due}</span>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+      )}
+
+      {/* ── Add Closing Commit Modal ── */}
+      {showCommitForm && (
+        <Modal title="New Closing Commit" onClose={() => setShowCommitForm(false)}>
+          {saved ? (
+            <div className="text-center py-6">
+              <div className="text-4xl mb-3">✅</div>
+              <h2 className="text-xl font-bold text-heading mb-2">Session Committed!</h2>
+              <p className="text-sm text-sub mb-4">Your reflection and action items have been saved.</p>
+              <Button primary onClick={() => { setShowCommitForm(false); setSaved(false); }}>Done</Button>
+            </div>
+          ) : (
+            <>
+              {/* Session info */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <FormField label="Session type">
+                  <select value={sessionType} onChange={(e) => setSessionType(e.target.value as any)} style={inputStyle}>
+                    <option value="online">💻 Online</option>
+                    <option value="in-person">🤝 In-Person</option>
+                  </select>
+                </FormField>
+                <FormField label="Specialist">
+                  <select value={commitSpecialist} onChange={(e) => setCommitSpecialist(e.target.value)} style={inputStyle}>
+                    <option value="">Select specialist...</option>
+                    {SPECIALISTS.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </FormField>
               </div>
-            </Card>
 
-            {/* Active Recall */}
-            <Card className="mb-4">
-              <h3 className="text-base font-bold text-heading mb-1">🧠 Active Recall</h3>
-              <p className="text-xs text-sub mb-3">What are the key takeaways from this session? Write from memory — don't look at notes.</p>
-              <textarea
-                value={activeRecall}
-                onChange={(e) => setActiveRecall(e.target.value)}
-                placeholder="What did we discuss? What did I learn? What surprised me?"
-                rows={4}
-                style={{ ...inputStyle, resize: "vertical", lineHeight: 1.7 }}
-              />
-            </Card>
+              {/* Active Recall */}
+              <FormField label="🧠 Active Recall">
+                <p className="text-xs text-sub mb-2 m-0">Write from memory — what did you discuss? What did you learn?</p>
+                <textarea
+                  value={activeRecall}
+                  onChange={(e) => setActiveRecall(e.target.value)}
+                  placeholder="What did we discuss? What did I learn? What surprised me?"
+                  rows={4}
+                  style={{ ...inputStyle, resize: "vertical", lineHeight: 1.7 }}
+                />
+              </FormField>
 
-            {/* Three Essential Actions */}
-            <Card className="mb-4">
-              <h3 className="text-base font-bold text-heading mb-1">📋 Three Essential Actions</h3>
-              <p className="text-xs text-sub mb-4">Commit to exactly three things you'll do before the next session. These will be added to your Roadmap deadlines.</p>
-
-              <div className="flex flex-col gap-4">
-                {actions.map((a, i) => (
-                  <div key={i} className="rounded-lg p-4" style={{ background: "#252525", border: "1px solid #333" }}>
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+              {/* Three Essential Actions */}
+              <div className="mb-3">
+                <label className="text-xs font-bold uppercase tracking-wider text-sub">📋 Three Essential Actions</label>
+                <p className="text-xs text-sub mb-3 mt-0.5">Commit to three things you&apos;ll do before the next session.</p>
+                <div className="flex flex-col gap-3">
+                  {actions.map((a, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-2"
                         style={{ background: a.title.trim() ? "rgba(82,139,255,0.1)" : "#333", color: a.title.trim() ? "#528bff" : "#717171" }}>
                         {i + 1}
                       </div>
-                      <span className="text-xs font-semibold text-sub uppercase tracking-wider">Action {i + 1}</span>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <input
-                        value={a.title}
-                        onChange={(e) => updateAction(i, "title", e.target.value)}
-                        placeholder={`What will you do? ${i === 0 ? "(e.g. Draft Common App essay)" : ""}`}
-                        style={inputStyle}
-                      />
-                      <div className="grid grid-cols-2 gap-2">
-                        <input
-                          type="date"
-                          value={a.due}
-                          onChange={(e) => updateAction(i, "due", e.target.value)}
-                          style={inputStyle}
-                        />
-                        <input
-                          value={a.description}
-                          onChange={(e) => updateAction(i, "description", e.target.value)}
-                          placeholder="Notes (optional)"
-                          style={inputStyle}
-                        />
+                      <div className="flex-1 flex flex-col gap-1.5">
+                        <input value={a.title} onChange={(e) => updateAction(i, "title", e.target.value)}
+                          placeholder={`Action ${i + 1}${i === 0 ? " (e.g. Draft Common App essay)" : ""}`} style={inputStyle} />
+                        <div className="grid grid-cols-2 gap-1.5">
+                          <input type="date" value={a.due} onChange={(e) => updateAction(i, "due", e.target.value)} style={inputStyle} />
+                          <input value={a.description} onChange={(e) => updateAction(i, "description", e.target.value)} placeholder="Notes" style={inputStyle} />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </Card>
 
-            {/* Submit */}
-            <div className="flex justify-end gap-3">
-              <Button primary onClick={handleSubmit} disabled={saving || actions.every((a) => !a.title.trim())}>
-                {saving ? "Saving..." : "Commit Actions →"}
-              </Button>
-            </div>
-          </>
-        )}
-      </div>
+              <div className="flex justify-end gap-2 mt-4">
+                <Button onClick={() => setShowCommitForm(false)}>Cancel</Button>
+                <Button primary onClick={handleCommitSave} disabled={saving || (!activeRecall.trim() && actions.every((a) => !a.title.trim()))}>
+                  {saving ? "Saving..." : "Save Commit →"}
+                </Button>
+              </div>
+            </>
+          )}
+        </Modal>
       )}
       </div>
 
