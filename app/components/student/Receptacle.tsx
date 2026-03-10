@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { PageHeader } from "../ui/PageHeader";
-import { pushToGoogleCalendar, pullWhetstoneEventsFromGcal } from "../../lib/calendar";
+import { pushToGoogleCalendar, pullWhetstoneEventsFromGcal, updateGoogleCalendarEvent } from "../../lib/calendar";
 import { fetchReceptacleEvents, addReceptacleEvent, updateReceptacleEvent, deleteReceptacleEvent, addBrainDumpTask, fetchBrainDumpTasks, updateBrainDumpQuadrant, ReceptacleEvent } from "../../lib/queries";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -442,6 +442,11 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
       // Update in DB
       if (existingEvent?.dbId) {
         updateReceptacleEvent(existingEvent.dbId, { date: dateStr, top_minutes: clampedMinutes });
+      }
+
+      // Re-sync to Google Calendar if connected (update existing event, don't create duplicate)
+      if (profileId && gcalConnected && existingEvent) {
+        updateGoogleCalendarEvent(profileId, existingEvent.text, dateStr, clampedMinutes, existingEvent.minutes);
       }
     }
   }, [dragging, draggingEvent, tasks, studentId, profileId, gcalConnected, calEvents, ghostPreview, getMinutesFromMouseY]);

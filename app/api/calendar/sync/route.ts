@@ -195,3 +195,53 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({ events });
 }
+
+// PATCH: Update an existing Whetstone event in Google Calendar (for repositioning)
+export async function PATCH(request: NextRequest) {
+  const body = await request.json();
+  const { profileId, title, date, startMinutes, durationMinutes } = body;
+
+  const token = await getValidToken(profileId);
+  if (!token) {
+    return NextResponse.json({ error: "Not connected to Google Calendar" }, { status: 401 });
+  }
+
+  // Search for the existing event by title
+  const searchTitle = `${title} [Whetstone]`;
+  const searchRes = await fetch(
+    `https://www.googleapis.com/calendar/v3/calendars/primary/events?q=${encodeURIComponent(searchTitle)}&maxResults=5&singleEvents=true`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  const searchData = await searchRes.json();
+  const existing = (searchData.items || []).find((e: any) => e.summary === searchTitle);
+
+  if (existing) {
+    // Update the existing event
+    const startHour = Math.floor(startMinutes / 60);
+    const startMin = startMinutes % 60;
+    const duration = durationMinutes || 30;
+    const endTotalMin = startMinutes + duration;
+    const endHour = Math.floor(endTotalMin / 60);
+    const endMin = endTotalMin % 60;
+
+    const startTime = `${date}T${String(startHour).padStart(2, "0")}:${String(startMin).padStart(2, "0")}:00`;
+    const endTime = `${date}T${String(endHour).padStart(2, "0")}:${String(endMin).padStart(2, "0")}:00`;
+
+    const updateRes = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/primary/events/${existing.id}`,
+      {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          start: { dateTime: startTime, timeZone: "America/New_York" },
+          end: { dateTime: endTime, timeZone: "America/New_York" },
+        }),
+      }
+    );
+    const result = await updateRes.json();
+    return NextResponse.json({ updated: true, ...result });
+  } else {
+    // Fallback: create new event if not found
+    return NextResponse.json({ updated: false, message: "Event not found, skipped update" });
+  }
+}

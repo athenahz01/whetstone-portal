@@ -33,6 +33,21 @@ export function getGoogleAuthUrl(profileId: string) {
       return null;
     }
   }
+
+  // Update an existing Whetstone event in GCal (for repositioning)
+  export async function updateGoogleCalendarEvent(profileId: string, title: string, date: string, startMinutes: number, durationMinutes: number) {
+    try {
+      const res = await fetch("/api/calendar/sync", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profileId, title, date, startMinutes, durationMinutes }),
+      });
+      return await res.json();
+    } catch (err) {
+      console.error("Failed to update Google Calendar event:", err);
+      return null;
+    }
+  }
   
   export async function pullFromGoogleCalendar(profileId: string) {
     try {
