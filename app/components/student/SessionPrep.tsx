@@ -102,55 +102,42 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
     <div>
       <PageHeader
         title="Sessions"
-        sub={viewMode === "sessions" ? "Your upcoming and past sessions." : "Wrap up your session with action items."}
+        sub="Manage your sessions, bookings, and post-session reflections."
         right={
-          <div className="flex items-center gap-3">
-            {viewMode === "sessions" && (
-              <button onClick={() => setShowBooking(true)}
-                className="px-4 py-2 rounded-full border-none cursor-pointer text-xs font-semibold"
-                style={{ background: "#528bff", color: "#fff" }}>
-                + Book a Session
-              </button>
-            )}
-            <div className="inline-flex gap-0.5 bg-white border border-line rounded-full p-1">
-              {(["sessions", "commit"] as const).map((m) => (
-                <button key={m} onClick={() => setViewMode(m)}
-                  className="px-4 py-1.5 rounded-full border-none cursor-pointer text-xs font-semibold"
-                  style={{ background: viewMode === m ? "#528bff" : "transparent", color: viewMode === m ? "#fff" : "#717171" }}>
-                  {m === "sessions" ? "Sessions" : "Closing Commit"}
-                </button>
-              ))}
-            </div>
-            {viewMode === "commit" && (
-              <div className="inline-flex gap-0.5 bg-white border border-line rounded-full p-1">
-                {(["online", "in-person"] as const).map((t) => (
-                  <button key={t} onClick={() => setSessionType(t)}
-                    className="px-4 py-1.5 rounded-full border-none cursor-pointer text-xs font-semibold"
-                    style={{ background: sessionType === t ? "#528bff" : "transparent", color: sessionType === t ? "#fff" : "#717171" }}>
-                    {t === "online" ? "💻 Online" : "🤝 In-Person"}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <button onClick={() => setShowBooking(true)}
+            className="px-4 py-2 rounded-full border-none cursor-pointer text-xs font-semibold"
+            style={{ background: "#528bff", color: "#fff" }}>
+            + Book a Session
+          </button>
         }
       />
 
-      {/* ── Sessions List View ── */}
-      {viewMode === "sessions" && (
-        <div className="p-6 px-8" style={{ maxWidth: 720 }}>
-          {/* Upcoming / Past toggle */}
-          <div className="flex gap-0.5 mb-5 p-0.5 rounded-full" style={{ background: "#1e1e1e", display: "inline-flex" }}>
-            {(["upcoming", "past"] as const).map((tab) => (
-              <button key={tab} onClick={() => setSessionTab(tab)}
+      <div className="p-6 px-8" style={{ maxWidth: 780 }}>
+        {/* Unified tab row: Upcoming | Past | Closing Commit */}
+        <div className="flex gap-0.5 mb-5 p-0.5 rounded-full" style={{ background: "#1e1e1e", display: "inline-flex" }}>
+          {([
+            ["upcoming", "Upcoming"],
+            ["past", "Past"],
+            ["commit", "Closing Commit"],
+          ] as const).map(([key, label]) => {
+            const isActive = (viewMode === "commit" && key === "commit") || (viewMode === "sessions" && key === sessionTab);
+            return (
+              <button key={key}
+                onClick={() => {
+                  if (key === "commit") { setViewMode("commit"); }
+                  else { setViewMode("sessions"); setSessionTab(key as "upcoming" | "past"); }
+                }}
                 className="px-5 py-2 rounded-full border-none cursor-pointer text-xs font-semibold"
-                style={{ background: sessionTab === tab ? "#528bff" : "transparent", color: sessionTab === tab ? "#fff" : "#717171" }}>
-                {tab === "upcoming" ? "Upcoming" : "Past"}
+                style={{ background: isActive ? "#528bff" : "transparent", color: isActive ? "#fff" : "#717171" }}>
+                {label}
               </button>
-            ))}
-          </div>
+            );
+          })}
+        </div>
 
-          <p className="text-xs text-sub mb-4">Tap the session cards below to view the notes.</p>
+        {/* ── Sessions List (Upcoming or Past) ── */}
+        {viewMode === "sessions" && (
+          <div>
 
           {displayEvents.length === 0 && (
             <Card>
@@ -257,7 +244,7 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
 
       {/* ── Closing Commit View ── */}
       {viewMode === "commit" && (
-      <div className="p-6 px-8" style={{ maxWidth: 720 }}>
+      <div>
         {saved ? (
           <Card>
             <div className="text-center py-8">
@@ -350,6 +337,7 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
         )}
       </div>
       )}
+      </div>
 
       {/* ── Book a Session Modal — Cal.com style ── */}
       {showBooking && (
