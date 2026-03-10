@@ -837,17 +837,40 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                               {eventsHere.map((ev) => {
                                 const offsetMin = ev.topMinutes - cellStartMin;
                                 const topPx = (offsetMin / 60) * HOUR_HEIGHT;
+                                const isDone = completed.has(ev.taskId);
                                 return (
-                                  <div key={ev.taskId} draggable
-                                    onDragStart={() => setDraggingEvent(ev.taskId)}
+                                  <div key={ev.taskId} draggable={!isDone}
+                                    onDragStart={() => !isDone && setDraggingEvent(ev.taskId)}
                                     onDragEnd={() => { setDraggingEvent(null); setGhostPreview(null); }}
-                                    className="absolute left-0.5 right-0.5 rounded-md px-1.5 pt-1 cursor-grab group z-10 overflow-hidden"
-                                    style={{ top: topPx, height: minutesToHeight(ev.minutes), background: "rgba(82,139,255,0.06)", border: "1.5px solid #3b82f6" }}>
-                                    <div className="text-[10px] font-semibold leading-tight truncate pr-4" style={{ color: "#7aabff" }}>{ev.text}</div>
-                                    <div className="text-[9px] mt-0.5" style={{ color: "#60a5fa" }}>{fmtMinutes(ev.topMinutes)} · {ev.minutes}m{ev.synced ? " · ✓" : ""}</div>
+                                    className="absolute left-0.5 right-0.5 rounded-md px-1.5 pt-0.5 group z-10 overflow-hidden"
+                                    style={{
+                                      top: topPx,
+                                      height: minutesToHeight(ev.minutes),
+                                      background: isDone ? "rgba(74,186,106,0.06)" : "rgba(82,139,255,0.06)",
+                                      borderLeft: isDone ? "3px solid #4aba6a" : "3px solid #528bff",
+                                      opacity: isDone ? 0.5 : 1,
+                                      cursor: isDone ? "default" : "grab",
+                                    }}>
+                                    <div className="flex items-start gap-1">
+                                      <input type="checkbox" checked={isDone}
+                                        onChange={() => toggleComplete(ev.taskId)}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="mt-0.5 flex-shrink-0 cursor-pointer"
+                                        style={{ accentColor: "#4aba6a", width: 12, height: 12 }} />
+                                      <div className="min-w-0 flex-1">
+                                        <div className="text-[10px] font-semibold leading-tight truncate pr-6"
+                                          style={{ color: isDone ? "#4aba6a" : "#7aabff", textDecoration: isDone ? "line-through" : "none" }}>
+                                          {ev.text}
+                                        </div>
+                                        <div className="text-[9px]" style={{ color: isDone ? "rgba(74,186,106,0.5)" : "#528bff", opacity: 0.7 }}>
+                                          {fmtMinutes(ev.topMinutes)} · {ev.minutes}m{ev.synced ? " · ✓" : ""}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    {/* Remove button */}
                                     <button onClick={() => removeEvent(ev.taskId)}
                                       className="absolute top-0.5 right-0.5 w-4 h-4 rounded text-[9px] hidden group-hover:flex items-center justify-center border-none cursor-pointer"
-                                      style={{ background: "#bfdbfe", color: "#7aabff" }}>✕</button>
+                                      style={{ background: "rgba(229,91,91,0.2)", color: "#e55b5b" }}>✕</button>
                                   </div>
                                 );
                               })}
@@ -960,6 +983,56 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
 
               </div>
             </div>
+
+            {/* ── Backlog: uncompleted tasks from past days ── */}
+            {(() => {
+              const todayStr = fmt(new Date());
+              const backlogEvents = calEvents.filter((ev) =>
+                ev.date < todayStr && !completed.has(ev.taskId)
+              );
+              if (backlogEvents.length === 0) return null;
+              return (
+                <div className="mt-3.5" style={{ ...card, border: "1.5px solid rgba(229,168,59,0.2)", background: "rgba(229,168,59,0.04)" }}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-sm">📋</span>
+                    <div>
+                      <div className="text-xs font-bold uppercase tracking-wider" style={{ color: "#e5a83b" }}>
+                        Backlog
+                        <span className="ml-1.5 font-semibold normal-case tracking-normal" style={{ color: "#a0a0a0" }}>
+                          ({backlogEvents.length} unfinished task{backlogEvents.length !== 1 ? "s" : ""})
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-sub mt-0.5">Drag onto the calendar to reschedule, or check off to complete.</div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    {backlogEvents.map((ev) => (
+                      <div key={`bl-${ev.taskId}`}
+                        draggable
+                        onDragStart={() => setDraggingEvent(ev.taskId)}
+                        onDragEnd={() => { setDraggingEvent(null); setGhostPreview(null); }}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-lg select-none"
+                        style={{ background: "#252525", border: "1.5px solid #333", cursor: "grab" }}>
+                        <input type="checkbox" checked={false}
+                          onChange={() => toggleComplete(ev.taskId)}
+                          className="flex-shrink-0 cursor-pointer"
+                          style={{ accentColor: "#4aba6a", width: 14, height: 14 }} />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-medium truncate" style={{ color: "#ebebeb" }}>{ev.text}</div>
+                          <div className="text-[10px]" style={{ color: "#717171" }}>
+                            Was: {ev.date} at {fmtMinutes(ev.topMinutes)} · {ev.minutes}m
+                          </div>
+                        </div>
+                        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0"
+                          style={{ background: "rgba(229,168,59,0.15)", color: "#e5a83b" }}>
+                          {ev.minutes}m
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Footer */}
             <div className="flex items-center justify-between mt-4">
