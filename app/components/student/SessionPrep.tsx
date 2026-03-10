@@ -6,7 +6,7 @@ import { Button } from "../ui/Button";
 import { Modal } from "../ui/Modal";
 import { FormField } from "../ui/FormField";
 import { PageHeader } from "../ui/PageHeader";
-import { addDeadline, fetchCounselorEventsForStudent } from "../../lib/queries";
+import { addDeadline, fetchCounselorEventsForStudent, fetchStudentSessions } from "../../lib/queries";
 import { useState, useEffect } from "react";
 
 interface SessionPrepProps {
@@ -23,7 +23,12 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
 
   useEffect(() => {
     if (student.id) {
-      fetchCounselorEventsForStudent(student.id).then(setEvents);
+      Promise.all([
+        fetchCounselorEventsForStudent(student.id),
+        fetchStudentSessions(student.id),
+      ]).then(([counselorEvs, bookedSessions]) => {
+        setEvents([...counselorEvs, ...bookedSessions]);
+      });
     }
   }, [student.id]);
 
@@ -305,7 +310,12 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
                 const result = await res.json();
                 if (result.success) {
                   if (onRefresh) await onRefresh();
-                  fetchCounselorEventsForStudent(student.id).then(setEvents);
+                  Promise.all([
+                    fetchCounselorEventsForStudent(student.id),
+                    fetchStudentSessions(student.id),
+                  ]).then(([counselorEvs, bookedSessions]) => {
+                    setEvents([...counselorEvs, ...bookedSessions]);
+                  });
                   setShowBooking(false);
                 } else {
                   alert("Failed to book: " + (result.error || "Unknown error"));

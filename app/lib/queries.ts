@@ -283,6 +283,30 @@ export async function deleteDeadline(deadlineId: number): Promise<boolean> {
 
 // ── Sessions ───────────────────────────────────────────────────────────────
 
+export async function fetchStudentSessions(studentId: number): Promise<any[]> {
+  const { data, error } = await supabase
+    .from("sessions")
+    .select("*")
+    .eq("student_id", studentId)
+    .order("date", { ascending: true });
+  if (error) {
+    console.error("Error fetching sessions:", error);
+    return [];
+  }
+  return (data || []).map((s: any) => ({
+    id: `sess-${s.id}`,
+    title: s.session_name || `Session on ${s.date}`,
+    date: s.date,
+    category: s.session_type || "session",
+    notes: s.notes || "",
+    specialist: s.specialist || "",
+    start_time: s.start_time || "",
+    end_time: s.end_time || "",
+    status: s.status || "pending",
+    source: "booking",
+  }));
+}
+
 export async function addSession(studentId: number, data: {
   date: string; notes: string; action: string;
   session_name?: string; start_time?: string; end_time?: string;

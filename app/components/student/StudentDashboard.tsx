@@ -5,7 +5,7 @@ import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { PageHeader } from "../ui/PageHeader";
 import { Tag } from "../ui/Tag";
-import { fetchCounselorEventsForStudent } from "../../lib/queries";
+import { fetchCounselorEventsForStudent, fetchStudentSessions } from "../../lib/queries";
 import { getCategoryColor, getStatusColor } from "../../lib/colors";
 import { useState, useEffect } from "react";
 
@@ -35,7 +35,11 @@ export function StudentDashboard({
 
   useEffect(() => {
     if (student.id) {
-      fetchCounselorEventsForStudent(student.id).then(setCounselorEvents);
+      fetchCounselorEventsForStudent(student.id).then((evs) => {
+        fetchStudentSessions(student.id).then((sess) => {
+          setCounselorEvents([...evs, ...sess]);
+        });
+      });
     }
   }, [student.id]);
 
