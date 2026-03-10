@@ -3,8 +3,10 @@
 import { Student } from "../../types";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
+import { Modal } from "../ui/Modal";
+import { FormField } from "../ui/FormField";
 import { PageHeader } from "../ui/PageHeader";
-import { addDeadline, fetchCounselorEventsForStudent } from "../../lib/queries";
+import { addDeadline, addSession, fetchCounselorEventsForStudent } from "../../lib/queries";
 import { useState, useEffect } from "react";
 
 interface SessionPrepProps {
@@ -16,6 +18,8 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
   const [viewMode, setViewMode] = useState<"sessions" | "commit">("sessions");
   const [sessionTab, setSessionTab] = useState<"upcoming" | "past">("upcoming");
   const [events, setEvents] = useState<any[]>([]);
+  const [showBooking, setShowBooking] = useState(false);
+  const [bookingSaving, setBookingSaving] = useState(false);
 
   useEffect(() => {
     if (student.id) {
@@ -27,6 +31,22 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
   const upcoming = events.filter((e) => e.date >= todayStr).sort((a: any, b: any) => a.date.localeCompare(b.date));
   const past = events.filter((e) => e.date < todayStr).sort((a: any, b: any) => b.date.localeCompare(a.date));
   const displayEvents = sessionTab === "upcoming" ? upcoming : past;
+
+  const handleBookSession = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBookingSaving(true);
+    const f = new FormData(e.target as HTMLFormElement);
+    await addSession(student.id, {
+      date: f.get("date") as string,
+      notes: f.get("notes") as string || "",
+      action: "",
+    });
+    if (onRefresh) await onRefresh();
+    // Reload events
+    fetchCounselorEventsForStudent(student.id).then(setEvents);
+    setBookingSaving(false);
+    setShowBooking(false);
+  };
   const [activeRecall, setActiveRecall] = useState("");
   const [actions, setActions] = useState([
     { title: "", due: "", description: "" },
@@ -74,6 +94,13 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
         sub={viewMode === "sessions" ? "Your upcoming and past sessions." : "Wrap up your session with action items."}
         right={
           <div className="flex items-center gap-3">
+            {viewMode === "sessions" && (
+              <button onClick={() => setShowBooking(true)}
+                className="px-4 py-2 rounded-full border-none cursor-pointer text-xs font-semibold"
+                style={{ background: "#528bff", color: "#fff" }}>
+                + Book a Session
+              </button>
+            )}
             <div className="inline-flex gap-0.5 bg-white border border-line rounded-full p-1">
               {(["sessions", "commit"] as const).map((m) => (
                 <button key={m} onClick={() => setViewMode(m)}
@@ -261,6 +288,93 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
           </>
         )}
       </div>
+      )}
+
+      {/* ── Book a Session Modal ── */}
+      {showBooking && (
+        <Modal title="New Booking Request" onClose={() => setShowBooking(false)}>
+          <form onSubmit={handleBookSession}>
+            <FormField label="Booking with">
+              <input value={student.counselor} readOnly style={{ ...inputStyle, opacity: 0.6 }} />
+            </FormField>
+
+            <FormField label="Session name">
+              <input name="session_name" required
+                defaultValue={`Session between ${student.name.split(" ")[0]} and ${student.counselor}`}
+                style={inputStyle} />
+            </FormField>
+
+            <div className="grid grid-cols-3 gap-3">
+              <FormField label="Date">
+                <input name="date" type="date" required style={inputStyle} />
+              </FormField>
+              <FormField label="Start Time">
+                <select name="start_time" style={inputStyle}>
+                  {Array.from({ length: 24 }, (_, h) => [h, 0, h, 30]).flat().reduce((acc: string[], _, i, arr) => {
+                    if (i % 2 === 0) {
+                      const h = Math.floor(i / 2 / 2 + 8);
+                      const m = (i / 2 % 2) * 30;
+                      if (h < 22) {
+                        const label = `${h > 12 ? h - 12 : h}:${String(m).padStart(2, "0")}${h >= 12 ? "pm" : "am"}`;
+                        acc.push(label);
+                      }
+                    }
+                    return acc;
+                  }, []).map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </FormField>
+              <FormField label="End Time">
+                <select name="end_time" style={inputStyle}>
+                  {Array.from({ length: 24 }, (_, h) => [h, 0, h, 30]).flat().reduce((acc: string[], _, i) => {
+                    if (i % 2 === 0) {
+                      const h = Math.floor(i / 2 / 2 + 9);
+                      const m = (i / 2 % 2) * 30;
+                      if (h < 23) {
+                        const label = `${h > 12 ? h - 12 : h}:${String(m).padStart(2, "0")}${h >= 12 ? "pm" : "am"}`;
+                        acc.push(label);
+                      }
+                    }
+                    return acc;
+                  }, []).map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </FormField>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Type">
+                <div className="flex gap-3 mt-1">
+                  {(["individual", "recurring"] as const).map((t) => (
+                    <label key={t} className="flex items-center gap-2 cursor-pointer">
+                      <input type="radio" name="booking_type" value={t} defaultChecked={t === "individual"}
+                        style={{ accentColor: "#528bff" }} />
+                      <span className="text-sm text-body">{t === "individual" ? "Individual Session" : "Recurring Session"}</span>
+                    </label>
+                  ))}
+                </div>
+              </FormField>
+              <FormField label="Session type">
+                <select name="session_category" style={inputStyle}>
+                  <option value="strategy">Strategy Meeting</option>
+                  <option value="essay_review">Essay Review</option>
+                  <option value="application_review">Application Review</option>
+                  <option value="test_prep">Test Prep</option>
+                  <option value="check_in">Check-in</option>
+                  <option value="other">Other</option>
+                </select>
+              </FormField>
+            </div>
+
+            <FormField label="Leave a quick note">
+              <textarea name="notes" rows={3} placeholder="Any context for this session..."
+                style={{ ...inputStyle, resize: "vertical" }} />
+            </FormField>
+
+            <div className="flex gap-2 justify-end mt-3">
+              <Button onClick={() => setShowBooking(false)}>Cancel</Button>
+              <Button primary type="submit">{bookingSaving ? "Booking..." : "Book Session"}</Button>
+            </div>
+          </form>
+        </Modal>
       )}
     </div>
   );

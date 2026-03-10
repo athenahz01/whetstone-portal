@@ -74,6 +74,12 @@ export interface Session {
   date: string;
   notes: string;
   action: string;
+  start_time?: string;
+  end_time?: string;
+  session_name?: string;
+  session_type?: string;
+  booking_type?: "individual" | "recurring";
+  status?: "pending" | "completed" | "cancelled";
 }
 
 export interface Student {
