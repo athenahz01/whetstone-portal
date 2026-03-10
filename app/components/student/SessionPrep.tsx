@@ -43,42 +43,6 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
     "Athena Huo",
   ];
 
-  const handleBookSession = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setBookingSaving(true);
-    const f = new FormData(e.target as HTMLFormElement);
-    try {
-      const res = await fetch("/api/book-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          studentId: student.id,
-          date: f.get("date") as string,
-          notes: f.get("notes") as string || "",
-          action: "",
-          session_name: f.get("session_name") as string || "",
-          start_time: f.get("start_time") as string || "",
-          end_time: f.get("end_time") as string || "",
-          session_type: f.get("session_category") as string || "",
-          booking_type: f.get("booking_type") as string || "individual",
-          specialist: f.get("specialist") as string || "",
-        }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        if (onRefresh) await onRefresh();
-        fetchCounselorEventsForStudent(student.id).then(setEvents);
-        setShowBooking(false);
-      } else {
-        console.error("Booking failed:", result.error);
-        alert("Failed to book session: " + (result.error || "Unknown error"));
-      }
-    } catch (err) {
-      console.error("Booking error:", err);
-      alert("Failed to book session. Please try again.");
-    }
-    setBookingSaving(false);
-  };
   const [activeRecall, setActiveRecall] = useState("");
   const [actions, setActions] = useState([
     { title: "", due: "", description: "" },
@@ -322,97 +286,255 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
       </div>
       )}
 
-      {/* ── Book a Session Modal ── */}
+      {/* ── Book a Session Modal — Cal.com style ── */}
       {showBooking && (
         <Modal title="New Booking Request" onClose={() => setShowBooking(false)}>
-          <form onSubmit={handleBookSession}>
-            <FormField label="Booking with">
-              <select name="specialist" required style={inputStyle}>
-                <option value="" disabled>Select specialist...</option>
-                {SPECIALISTS.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-            </FormField>
-
-            <FormField label="Session name">
-              <input name="session_name" required
-                defaultValue={`Session between ${student.name.split(" ")[0]} and ${student.counselor}`}
-                style={inputStyle} />
-            </FormField>
-
-            <div className="grid grid-cols-3 gap-3">
-              <FormField label="Date">
-                <input name="date" type="date" required style={inputStyle} />
-              </FormField>
-              <FormField label="Start Time">
-                <select name="start_time" style={inputStyle} defaultValue="4:00pm">
-                  {(() => {
-                    const times: string[] = [];
-                    for (let h = 8; h <= 21; h++) {
-                      for (const m of [0, 30]) {
-                        const hr = h > 12 ? h - 12 : h === 0 ? 12 : h;
-                        const ampm = h >= 12 ? "pm" : "am";
-                        times.push(`${hr}:${String(m).padStart(2, "0")}${ampm}`);
-                      }
-                    }
-                    return times.map((t) => <option key={t} value={t}>{t}</option>);
-                  })()}
-                </select>
-              </FormField>
-              <FormField label="End Time">
-                <select name="end_time" style={inputStyle} defaultValue="5:00pm">
-                  {(() => {
-                    const times: string[] = [];
-                    for (let h = 8; h <= 22; h++) {
-                      for (const m of [0, 30]) {
-                        const hr = h > 12 ? h - 12 : h === 0 ? 12 : h;
-                        const ampm = h >= 12 ? "pm" : "am";
-                        times.push(`${hr}:${String(m).padStart(2, "0")}${ampm}`);
-                      }
-                    }
-                    return times.map((t) => <option key={t} value={t}>{t}</option>);
-                  })()}
-                </select>
-              </FormField>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <FormField label="Type">
-                <div className="flex gap-3 mt-1">
-                  {(["individual", "recurring"] as const).map((t) => (
-                    <label key={t} className="flex items-center gap-2 cursor-pointer">
-                      <input type="radio" name="booking_type" value={t} defaultChecked={t === "individual"}
-                        style={{ accentColor: "#528bff" }} />
-                      <span className="text-sm text-body">{t === "individual" ? "Individual Session" : "Recurring Session"}</span>
-                    </label>
-                  ))}
-                </div>
-              </FormField>
-              <FormField label="Session type">
-                <select name="session_category" style={inputStyle}>
-                  <option value="strategy">Strategy Meeting</option>
-                  <option value="essay_review">Essay Review</option>
-                  <option value="application_review">Application Review</option>
-                  <option value="test_prep">Test Prep</option>
-                  <option value="check_in">Check-in</option>
-                  <option value="other">Other</option>
-                </select>
-              </FormField>
-            </div>
-
-            <FormField label="Leave a quick note">
-              <textarea name="notes" rows={3} placeholder="Any context for this session..."
-                style={{ ...inputStyle, resize: "vertical" }} />
-            </FormField>
-
-            <div className="flex gap-2 justify-end mt-3">
-              <Button onClick={() => setShowBooking(false)}>Cancel</Button>
-              <Button primary type="submit">{bookingSaving ? "Booking..." : "Book Session"}</Button>
-            </div>
-          </form>
+          <CalBookingForm
+            student={student}
+            specialists={SPECIALISTS}
+            inputStyle={inputStyle}
+            onBook={async (data) => {
+              setBookingSaving(true);
+              try {
+                const res = await fetch("/api/book-session", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ studentId: student.id, ...data }),
+                });
+                const result = await res.json();
+                if (result.success) {
+                  if (onRefresh) await onRefresh();
+                  fetchCounselorEventsForStudent(student.id).then(setEvents);
+                  setShowBooking(false);
+                } else {
+                  alert("Failed to book: " + (result.error || "Unknown error"));
+                }
+              } catch { alert("Booking failed."); }
+              setBookingSaving(false);
+            }}
+            saving={bookingSaving}
+          />
         </Modal>
       )}
+    </div>
+  );
+}
+
+// ── Cal.com-style Booking Form ──
+const COHORTS = [
+  { id: "harvard-a", name: "Harvard A" },
+  { id: "harvard-b", name: "Harvard B" },
+];
+
+const TIME_SLOTS = (() => {
+  const slots: string[] = [];
+  for (let h = 9; h <= 20; h++) {
+    for (const m of [0, 30]) {
+      const hr = h > 12 ? h - 12 : h;
+      const ampm = h >= 12 ? "pm" : "am";
+      slots.push(`${hr}:${String(m).padStart(2, "0")} ${ampm}`);
+    }
+  }
+  return slots;
+})();
+
+function CalBookingForm({ student, specialists, inputStyle, onBook, saving }: {
+  student: any; specialists: string[]; inputStyle: React.CSSProperties;
+  onBook: (data: any) => Promise<void>; saving: boolean;
+}) {
+  const [step, setStep] = useState<1 | 2>(1); // 1=date/time, 2=details
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedTime, setSelectedTime] = useState<string>("");
+  const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
+  const [sessionType, setSessionType] = useState("strategy");
+  const [bookingType, setBookingType] = useState<"individual" | "recurring">("individual");
+  const [specialist, setSpecialist] = useState(specialists[0] || "");
+  const [sessionName, setSessionName] = useState("");
+  const [notes, setNotes] = useState("");
+  const [cohort, setCohort] = useState("");
+  const [duration, setDuration] = useState(30);
+
+  // Calendar generation
+  const daysInMonth = new Date(calMonth.year, calMonth.month + 1, 0).getDate();
+  const firstDayOfWeek = new Date(calMonth.year, calMonth.month, 1).getDay();
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const monthLabel = new Date(calMonth.year, calMonth.month).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+
+  const prevMonth = () => setCalMonth((p) => p.month === 0 ? { year: p.year - 1, month: 11 } : { ...p, month: p.month - 1 });
+  const nextMonth = () => setCalMonth((p) => p.month === 11 ? { year: p.year + 1, month: 0 } : { ...p, month: p.month + 1 });
+
+  const getDateStr = (day: number) => `${calMonth.year}-${String(calMonth.month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
+  const selectedDayOfWeek = selectedDate ? new Date(selectedDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "short" }) : "";
+  const selectedDayNum = selectedDate ? parseInt(selectedDate.split("-")[2]) : 0;
+
+  if (step === 2) {
+    return (
+      <div>
+        <div className="mb-4 p-3 rounded-lg" style={{ background: "#252525", borderLeft: "3px solid #528bff" }}>
+          <div className="text-xs text-sub">Selected</div>
+          <div className="text-sm font-semibold text-heading">{selectedDate} at {selectedTime}</div>
+          <div className="text-xs text-sub mt-0.5">Duration: {duration}m · <button className="bg-transparent border-none cursor-pointer text-xs" style={{ color: "#528bff" }} onClick={() => setStep(1)}>Change</button></div>
+        </div>
+
+        <FormField label="Booking with">
+          <select value={specialist} onChange={(e) => setSpecialist(e.target.value)} style={inputStyle}>
+            {specialists.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </FormField>
+
+        <FormField label="Session name">
+          <input value={sessionName || `Session with ${specialist}`} onChange={(e) => setSessionName(e.target.value)} style={inputStyle} />
+        </FormField>
+
+        <div className="grid grid-cols-2 gap-3">
+          <FormField label="Type">
+            <div className="flex gap-3 mt-1">
+              {(["individual", "recurring"] as const).map((t) => (
+                <label key={t} className="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" checked={bookingType === t} onChange={() => setBookingType(t)} style={{ accentColor: "#528bff" }} />
+                  <span className="text-xs text-body">{t === "individual" ? "Individual" : "Recurring"}</span>
+                </label>
+              ))}
+            </div>
+          </FormField>
+          <FormField label="Session type">
+            <select value={sessionType} onChange={(e) => setSessionType(e.target.value)} style={inputStyle}>
+              <option value="strategy">Strategy Meeting</option>
+              <option value="essay_review">Essay Review</option>
+              <option value="application_review">Application Review</option>
+              <option value="test_prep">Test Prep</option>
+              <option value="check_in">Check-in</option>
+              <option value="cohort">Cohort Session</option>
+            </select>
+          </FormField>
+        </div>
+
+        {/* Cohort selection */}
+        <FormField label="Cohort (optional — for group sessions)">
+          <select value={cohort} onChange={(e) => setCohort(e.target.value)} style={inputStyle}>
+            <option value="">No cohort (individual)</option>
+            {COHORTS.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </FormField>
+
+        {bookingType === "recurring" && (
+          <FormField label="Recurrence">
+            <select style={inputStyle} name="recurrence" defaultValue="biweekly">
+              <option value="weekly">Weekly</option>
+              <option value="biweekly">Biweekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </FormField>
+        )}
+
+        <FormField label="Quick note">
+          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="Any context..." style={{ ...inputStyle, resize: "vertical" }} />
+        </FormField>
+
+        <div className="flex gap-2 justify-end mt-3">
+          <button onClick={() => setStep(1)} className="px-4 py-2 rounded-full text-sm font-semibold cursor-pointer" style={{ background: "#252525", color: "#717171", border: "1px solid #333" }}>← Back</button>
+          <button onClick={() => onBook({
+            date: selectedDate, start_time: selectedTime, end_time: "",
+            session_name: sessionName || `Session with ${specialist}`,
+            session_type: sessionType, booking_type: bookingType,
+            specialist, notes, cohort: cohort || undefined,
+          })} disabled={saving}
+            className="px-5 py-2 rounded-full text-sm font-semibold cursor-pointer border-none"
+            style={{ background: "#528bff", color: "#fff" }}>
+            {saving ? "Booking..." : "Confirm Booking"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Step 1: Cal.com-style date + time picker
+  return (
+    <div className="flex gap-5" style={{ minHeight: 380 }}>
+      {/* Left: Info + Calendar */}
+      <div style={{ width: 280 }}>
+        <div className="mb-4">
+          <div className="text-xs text-sub mb-1">{specialist || "Select specialist"}</div>
+          <div className="text-lg font-bold text-heading">{duration} Min Meeting</div>
+          <div className="flex items-center gap-2 mt-2 text-xs text-sub">
+            <span>🕐 {duration}m</span>
+            <span>📹 Zoom Video</span>
+          </div>
+          <div className="text-xs text-sub mt-1">🌐 America/New_York</div>
+        </div>
+
+        {/* Duration selector */}
+        <div className="flex gap-1 mb-4">
+          {[30, 60, 90].map((d) => (
+            <button key={d} onClick={() => setDuration(d)}
+              className="px-3 py-1 rounded-full text-xs font-semibold cursor-pointer border-none"
+              style={{ background: duration === d ? "#528bff" : "#252525", color: duration === d ? "#fff" : "#717171" }}>
+              {d}m
+            </button>
+          ))}
+        </div>
+
+        {/* Mini calendar */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-bold text-heading">{monthLabel}</span>
+            <div className="flex gap-1">
+              <button onClick={prevMonth} className="w-6 h-6 rounded-full bg-transparent border border-line cursor-pointer text-sub text-xs flex items-center justify-center">‹</button>
+              <button onClick={nextMonth} className="w-6 h-6 rounded-full bg-transparent border border-line cursor-pointer text-sub text-xs flex items-center justify-center">›</button>
+            </div>
+          </div>
+          <div className="grid grid-cols-7 gap-0.5 text-center text-[10px] font-semibold text-sub mb-1">
+            {["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"].map((d) => <div key={d}>{d}</div>)}
+          </div>
+          <div className="grid grid-cols-7 gap-0.5">
+            {Array.from({ length: firstDayOfWeek }).map((_, i) => <div key={`e-${i}`} />)}
+            {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
+              const dateStr = getDateStr(day);
+              const isPast = dateStr < todayStr;
+              const isSelected = dateStr === selectedDate;
+              const isToday = dateStr === todayStr;
+              return (
+                <button key={day} onClick={() => !isPast && setSelectedDate(dateStr)}
+                  disabled={isPast}
+                  className="w-8 h-8 rounded-lg text-xs font-semibold flex items-center justify-center border-none cursor-pointer"
+                  style={{
+                    background: isSelected ? "#528bff" : isPast ? "transparent" : "#333",
+                    color: isSelected ? "#fff" : isPast ? "#505050" : isToday ? "#528bff" : "#ebebeb",
+                    cursor: isPast ? "default" : "pointer",
+                  }}>
+                  {day}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Right: Time slots */}
+      <div className="flex-1" style={{ borderLeft: "1px solid #333", paddingLeft: 20 }}>
+        {!selectedDate ? (
+          <div className="text-sm text-sub text-center py-12">Select a date to see available times</div>
+        ) : (
+          <>
+            <div className="text-sm font-bold text-heading mb-3">{selectedDayOfWeek} {selectedDayNum}</div>
+            <div className="flex flex-col gap-1.5 max-h-[320px] overflow-y-auto pr-1">
+              {TIME_SLOTS.map((time) => (
+                <button key={time} onClick={() => { setSelectedTime(time); setStep(2); }}
+                  className="w-full py-2.5 rounded-lg text-sm font-medium cursor-pointer text-center"
+                  style={{
+                    background: selectedTime === time ? "#528bff" : "transparent",
+                    color: selectedTime === time ? "#fff" : "#ebebeb",
+                    border: selectedTime === time ? "1px solid #528bff" : "1px solid #333",
+                  }}>
+                  {time}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
