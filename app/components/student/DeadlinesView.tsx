@@ -272,6 +272,9 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
       />
 
       <div className="p-6 px-8">
+        {/* Heading */}
+        <h2 className="text-lg font-bold text-heading m-0 mb-4">Missions &amp; Tasks</h2>
+
         {/* Filters bar */}
         <div className="flex items-center gap-3 mb-4 flex-wrap">
           {/* Status filter pills */}
@@ -296,10 +299,28 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search tasks..."
+            placeholder="Search by Keyword"
             className="flex-1 min-w-[200px]"
-            style={{ ...inputStyle, padding: "8px 12px", fontSize: 13, maxWidth: 300 }}
+            style={{ ...inputStyle, padding: "8px 12px", fontSize: 13, maxWidth: 280 }}
           />
+
+          {/* Expand All */}
+          {groupByCategory && (
+            <label className="flex items-center gap-1.5 text-xs text-sub cursor-pointer select-none">
+              <input type="checkbox"
+                checked={collapsedGroups.size === 0}
+                onChange={() => {
+                  if (collapsedGroups.size === 0) {
+                    const allCats = [...new Set(filtered.map((d) => d.cat))];
+                    setCollapsedGroups(new Set(allCats));
+                  } else {
+                    setCollapsedGroups(new Set());
+                  }
+                }}
+                style={{ accentColor: "#528bff" }} />
+              Expand All
+            </label>
+          )}
 
           {/* Group by toggle */}
           <button

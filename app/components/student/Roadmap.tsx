@@ -90,7 +90,6 @@ export function Roadmap({ tasks, setTasks, deadlines = [], studentId, onRefresh,
     <div>
       {viewMode === "list" ? (
         <>
-          {/* DeadlinesView provides its own PageHeader */}
           <DeadlinesView
             deadlines={deadlines}
             studentId={studentId || 0}
@@ -98,7 +97,10 @@ export function Roadmap({ tasks, setTasks, deadlines = [], studentId, onRefresh,
             readOnly={readOnly}
             headerRight={
               <div className="inline-flex gap-0.5 bg-white border border-line rounded-full p-1">
-                {(["list", "calendar"] as const).map((id) => (
+                {([
+                  ["list", "📋 List View"],
+                  ["calendar", "📅 Calendar"],
+                ] as const).map(([id, label]) => (
                   <button
                     key={id}
                     onClick={() => setViewMode(id)}
@@ -108,7 +110,7 @@ export function Roadmap({ tasks, setTasks, deadlines = [], studentId, onRefresh,
                       color: viewMode === id ? "#fff" : "#717171",
                     }}
                   >
-                    {id.charAt(0).toUpperCase() + id.slice(1)}
+                    {label}
                   </button>
                 ))}
               </div>
@@ -128,7 +130,10 @@ export function Roadmap({ tasks, setTasks, deadlines = [], studentId, onRefresh,
                   </span>
                 )}
                 <div className="inline-flex gap-0.5 bg-white border border-line rounded-full p-1">
-                  {(["list", "calendar"] as const).map((id) => (
+                  {([
+                    ["list", "📋 List View"],
+                    ["calendar", "📅 Calendar"],
+                  ] as const).map(([id, label]) => (
                     <button
                       key={id}
                       onClick={() => setViewMode(id)}
@@ -138,7 +143,7 @@ export function Roadmap({ tasks, setTasks, deadlines = [], studentId, onRefresh,
                         color: viewMode === id ? "#fff" : "#717171",
                       }}
                     >
-                      {id.charAt(0).toUpperCase() + id.slice(1)}
+                      {label}
                     </button>
                   ))}
                 </div>

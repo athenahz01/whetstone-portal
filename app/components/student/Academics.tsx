@@ -83,6 +83,8 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
   const [showModal, setShowModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [transcripts, setTranscripts] = useState<TranscriptFile[]>([]);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [transcriptLabel, setTranscriptLabel] = useState("");
 
   const inputStyle: React.CSSProperties = {
     width: "100%", padding: "10px 14px", background: "#252525",
@@ -112,17 +114,26 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
     }
   };
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setPendingFile(file);
+    setTranscriptLabel("");
+    e.target.value = "";
+  };
 
+  const handleUploadConfirm = async () => {
+    if (!pendingFile) return;
     setUploading(true);
-    const fileName = `${Date.now()}-${file.name}`;
+    const label = transcriptLabel.trim() || pendingFile.name;
+    const ext = pendingFile.name.split(".").pop() || "pdf";
+    const safeName = label.replace(/[^a-zA-Z0-9 _-]/g, "").replace(/\s+/g, "_");
+    const fileName = `${Date.now()}-${safeName}.${ext}`;
     const path = `student-${student.id}/${fileName}`;
 
     const { error } = await supabase.storage
       .from("transcripts")
-      .upload(path, file);
+      .upload(path, pendingFile);
 
     if (error) {
       console.error("Upload error:", error.message);
@@ -131,7 +142,8 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
       await loadTranscripts();
     }
     setUploading(false);
-    e.target.value = "";
+    setPendingFile(null);
+    setTranscriptLabel("");
   };
 
   return (
@@ -173,8 +185,8 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
         {/* Coursework Table */}
         <Card noPadding style={{ overflow: "hidden" }}>
           <div className="px-6 py-3 border-b border-line flex justify-between items-center" style={{ background: "#252525" }}>
-            <span className="text-base font-bold text-heading">{student.grade}th Grade Coursework</span>
-            <Tag color="#4aba6a">Current</Tag>
+            <span className="text-base font-bold text-heading">Coursework</span>
+            {!readOnly && <Button onClick={() => setShowModal(true)}>+ Add Course</Button>}
           </div>
           {courses.length === 0 ? (
             <p className="text-sm text-sub py-6 text-center">
@@ -212,19 +224,48 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
                 <p className="m-0 text-xs text-sub mt-0.5">Upload your transcript instead of entering courses manually.</p>
               </div>
               <label
-                className="px-4 py-2 rounded-lg text-sm font-semibold cursor-pointer"
+                className="px-4 py-2 rounded-full text-sm font-semibold cursor-pointer"
                 style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff", border: "1px solid #bfdbfe" }}
               >
-                {uploading ? "Uploading..." : "📎 Upload File"}
+                📎 Upload File
                 <input
                   type="file"
                   accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
-                  onChange={handleUpload}
+                  onChange={handleFileSelect}
                   disabled={uploading}
                   style={{ display: "none" }}
                 />
               </label>
             </div>
+
+            {/* Label prompt for uploaded file */}
+            {pendingFile && (
+              <div className="mb-4 p-4 rounded-lg" style={{ background: "rgba(82,139,255,0.04)", border: "1px solid rgba(82,139,255,0.15)" }}>
+                <div className="text-sm font-semibold text-heading mb-2">Name this transcript</div>
+                <p className="text-xs text-sub mb-3 m-0">
+                  Give it a meaningful label (e.g. &quot;10th grade quarter 2&quot;, &quot;Junior year final&quot;)
+                </p>
+                <input
+                  value={transcriptLabel}
+                  onChange={(e) => setTranscriptLabel(e.target.value)}
+                  placeholder={pendingFile.name.replace(/\.[^.]+$/, "")}
+                  className="w-full px-3 py-2 rounded-lg text-sm mb-3"
+                  style={{ background: "#252525", border: "1px solid #333", color: "#ebebeb", outline: "none" }}
+                  autoFocus
+                  onKeyDown={(e) => e.key === "Enter" && handleUploadConfirm()}
+                />
+                <div className="flex gap-2 justify-end">
+                  <button onClick={() => { setPendingFile(null); setTranscriptLabel(""); }}
+                    className="px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer"
+                    style={{ background: "#252525", color: "#717171", border: "1px solid #333" }}>Cancel</button>
+                  <button onClick={handleUploadConfirm}
+                    className="px-4 py-1.5 rounded-full text-xs font-semibold cursor-pointer"
+                    style={{ background: "#528bff", color: "#fff", border: "none" }}>
+                    {uploading ? "Uploading..." : "Upload"}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {transcripts.length === 0 ? (
               <div
