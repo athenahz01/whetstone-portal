@@ -155,6 +155,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
   // Drag ghost preview
   const [ghostPreview, setGhostPreview] = useState<{ date: string; topMinutes: number; minutes: number; text: string; colIndex: number } | null>(null);
   const [colorPickerFor, setColorPickerFor] = useState<string | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
 
   const calRef = useRef<HTMLDivElement>(null);
   const days = get3Days(dayOffset);
@@ -517,7 +518,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
   return (
     <div>
       <PageHeader
-        title="Receptacle"
+        title="Planning"
         sub="The 3-timer daily planning algorithm. Capture, prioritize, and schedule your work."
       />
 
@@ -634,13 +635,32 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
         {step === 1 && (
           <div>
             <div style={card}>
-              <div className="flex gap-4 mb-5">
+              <div className="flex gap-4 mb-4">
                 <div className="text-3xl">🧠</div>
-                <div>
-                  <h2 className="text-xl font-bold text-heading m-0">Timer 1: Brain Dump</h2>
-                  <p className="text-sm text-sub mt-1 m-0">Write down everything on your mind. Set the timer for 5 minutes. Don&apos;t filter — just dump.</p>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-heading m-0">Planning</h2>
+                    <button onClick={() => setShowHelp(!showHelp)}
+                      className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold cursor-pointer border-none"
+                      style={{ background: "rgba(82,139,255,0.1)", color: "#528bff" }}>?</button>
+                  </div>
+                  <p className="text-sm text-sub mt-1 m-0">Write down everything on your mind. Be specific!</p>
                 </div>
               </div>
+
+              {/* Help/instructions panel */}
+              {showHelp && (
+                <div className="mb-4 p-4 rounded-lg" style={{ background: "rgba(82,139,255,0.04)", border: "1px solid rgba(82,139,255,0.15)" }}>
+                  <p className="text-sm text-body m-0 mb-2">
+                    <em style={{ color: "#a480f2" }}>Try to define the exact task, scope, and output format for each task. For example, &quot;write history paper draft&quot; becomes:</em>
+                  </p>
+                  <ul className="m-0 pl-5 text-sm" style={{ color: "#a0a0a0" }}>
+                    <li className="mb-1"><em>Find 3 primary sources on &quot;Was the Treaty of Versailles a cause of WWII?&quot; (45m)</em></li>
+                    <li className="mb-1"><em>Write three iterations of a project thesis (30m)</em></li>
+                    <li><em>Write first 5 pages of draft v1 (90m)</em></li>
+                  </ul>
+                </div>
+              )}
 
               <div className="flex gap-2 mb-4">
                 <input value={inputText} onChange={(e) => setInputText(e.target.value)}

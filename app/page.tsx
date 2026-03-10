@@ -309,7 +309,7 @@ export default function Home() {
       return <Academics student={me} courses={courses} setCourses={setCourses} readOnly={isParent} />;
     }
     if (isStudentOrParent && view === "testing") {
-      return <Testing tests={tests} setTests={setTests} readOnly={isParent} />;
+      return <Testing tests={tests} setTests={setTests} readOnly={isParent} studentId={me?.id} />;
     }
     if (isStudentOrParent && view === "activities") {
       return <Activities activities={activities} setActivities={setActivities} readOnly={isParent} studentId={me?.id} />;

@@ -67,7 +67,7 @@ export function Sidebar({
           ["testing", "Testing"],
           ["activities", "Activities"],
           ["honors", "Honors"],
-          ["receptacle", "Receptacle"],
+          ["receptacle", "Planning"],
           ["schools", "Schools"],
           ...(role === "student" ? [["prep", "Sessions"]] : []),
         ];

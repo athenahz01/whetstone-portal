@@ -95,10 +95,50 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
         }
       />
       <div className="p-6 px-8">
-        {/* GPA Metrics — no class rank or AP courses */}
+        {/* GPA Metrics — editable */}
         <div className="grid grid-cols-2 gap-3.5 mb-5">
-          <MetricCard label="GPA (UW)" value={student.gpaUnweighted || student.gpa || "—"} color="#4aba6a" />
-          <MetricCard label="GPA (W)" value={student.gpaWeighted || student.gpa || "—"} color="#528bff" />
+          <Card>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-sub mb-1 block">GPA (Unweighted)</label>
+            <input
+              type="number" step="0.01" min="0" max="4.0"
+              defaultValue={student.gpaUnweighted || student.gpa || ""}
+              placeholder="—"
+              disabled={readOnly}
+              onBlur={async (e) => {
+                const val = parseFloat(e.target.value);
+                if (!isNaN(val)) {
+                  await fetch("/api/update-student", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ studentId: student.id, gpa_unweighted: val }),
+                  });
+                }
+              }}
+              className="text-2xl font-bold w-full bg-transparent border-none outline-none"
+              style={{ color: "#4aba6a" }}
+            />
+          </Card>
+          <Card>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-sub mb-1 block">GPA (Weighted)</label>
+            <input
+              type="number" step="0.01" min="0" max="5.0"
+              defaultValue={student.gpaWeighted || student.gpa || ""}
+              placeholder="—"
+              disabled={readOnly}
+              onBlur={async (e) => {
+                const val = parseFloat(e.target.value);
+                if (!isNaN(val)) {
+                  await fetch("/api/update-student", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ studentId: student.id, gpa_weighted: val }),
+                  });
+                }
+              }}
+              className="text-2xl font-bold w-full bg-transparent border-none outline-none"
+              style={{ color: "#528bff" }}
+            />
+          </Card>
         </div>
 
         {/* Coursework Table */}

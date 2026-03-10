@@ -13,9 +13,10 @@ interface TestingProps {
   tests: Test[];
   setTests: (t: Test[]) => void;
   readOnly?: boolean;
+  studentId?: number;
 }
 
-export function Testing({ tests, setTests, readOnly = false }: TestingProps) {
+export function Testing({ tests, setTests, readOnly = false, studentId }: TestingProps) {
   const [showModal, setShowModal] = useState(false);
   const [mathScore, setMathScore] = useState("");
   const [englishScore, setEnglishScore] = useState("");
@@ -68,7 +69,7 @@ export function Testing({ tests, setTests, readOnly = false }: TestingProps) {
     fontSize: 14, outline: "none", boxSizing: "border-box",
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const f = new FormData(e.target as HTMLFormElement);
     const type = f.get("t") as string;
@@ -80,11 +81,24 @@ export function Testing({ tests, setTests, readOnly = false }: TestingProps) {
       ? `Math: ${math} · ERW: ${english}`
       : (f.get("b") as string) || "N/A";
 
+    // Persist to DB
+    if (studentId) {
+      try {
+        await fetch("/api/save-test", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            studentId, type, date, total, breakdown,
+            mathScore: type === "SAT" ? math : null,
+            englishScore: type === "SAT" ? english : null,
+          }),
+        });
+      } catch (err) { console.error("Failed to save test:", err); }
+    }
+
     setTests([...tests, {
       id: Date.now(),
-      type,
-      date,
-      total,
+      type, date, total,
       bd: breakdown,
       v: false,
       mathScore: type === "SAT" ? math : null,
