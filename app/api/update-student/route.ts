@@ -31,6 +31,24 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     console.error("[update-student] Error:", error.message);
+    // If column doesn't exist, retry with only known-safe columns
+    const safeData: Record<string, unknown> = {};
+    if (fields.gpa !== undefined) safeData.gpa = fields.gpa;
+    // Map gpa_unweighted/gpa_weighted to the main gpa field as fallback
+    if (fields.gpa_unweighted !== undefined) safeData.gpa = fields.gpa_unweighted;
+    if (fields.sat !== undefined) safeData.sat = fields.sat;
+    if (fields.name !== undefined) safeData.name = fields.name;
+    if (fields.grade !== undefined) safeData.grade = fields.grade;
+    if (fields.school !== undefined) safeData.school = fields.school;
+
+    if (Object.keys(safeData).length > 0) {
+      const { error: retryError } = await supabase.from("students").update(safeData).eq("id", studentId);
+      if (retryError) {
+        console.error("[update-student] Retry error:", retryError.message);
+        return NextResponse.json({ error: retryError.message }, { status: 500 });
+      }
+      return NextResponse.json({ success: true, fallback: true });
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

@@ -107,11 +107,13 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
               onBlur={async (e) => {
                 const val = parseFloat(e.target.value);
                 if (!isNaN(val)) {
-                  await fetch("/api/update-student", {
+                  const res = await fetch("/api/update-student", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ studentId: student.id, gpa_unweighted: val }),
+                    body: JSON.stringify({ studentId: student.id, gpa: val }),
                   });
+                  const result = await res.json();
+                  if (!result.success) console.error("GPA save failed:", result.error);
                 }
               }}
               className="text-2xl font-bold w-full bg-transparent border-none outline-none"
@@ -128,11 +130,13 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
               onBlur={async (e) => {
                 const val = parseFloat(e.target.value);
                 if (!isNaN(val)) {
-                  await fetch("/api/update-student", {
+                  const res = await fetch("/api/update-student", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ studentId: student.id, gpa_weighted: val }),
+                    body: JSON.stringify({ studentId: student.id, gpa: val }),
                   });
+                  const result = await res.json();
+                  if (!result.success) console.error("GPA(W) save failed:", result.error);
                 }
               }}
               className="text-2xl font-bold w-full bg-transparent border-none outline-none"
