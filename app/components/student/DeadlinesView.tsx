@@ -190,17 +190,19 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
     const canEdit = !readOnly;
     const isCompleted = d.status === "completed";
     const blocked = blockedItems.filter((b) => b.blockedBy === d.title);
+    const initials = d.specialist ? d.specialist.split(" ").map(n => n[0]).join("").substring(0, 2) : null;
     return (
       <div key={d.id}>
         <div
           onClick={() => canEdit && setEditingDeadline(d)}
-          className="grid items-center px-3 py-2.5 border-b border-line transition-colors"
+          className="grid items-center px-3 py-2.5 border-b border-line transition-colors hover:bg-mist"
           style={{
-            gridTemplateColumns: "2fr 1fr 1fr 1fr 80px",
+            gridTemplateColumns: "2.5fr 80px 60px 90px 70px 30px",
             cursor: canEdit ? "pointer" : "default",
             opacity: isCompleted ? 0.45 : 1,
             background: d.status === "overdue" ? "rgba(229,91,91,0.04)" : "transparent",
           }}>
+          {/* Title */}
           <div className="min-w-0 flex items-center gap-2">
             {!readOnly && (
               <input type="checkbox" checked={isCompleted}
@@ -219,25 +221,44 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
               {d.description && <div className="text-[11px] text-sub truncate mt-0.5">{d.description}</div>}
             </div>
           </div>
+          {/* Team avatar */}
+          <div className="flex items-center">
+            {initials ? (
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-bold"
+                style={{ background: "rgba(82,139,255,0.1)", color: "#528bff" }}>
+                {initials}
+              </div>
+            ) : (
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[8px]"
+                style={{ background: "#333", color: "#505050" }}>—</div>
+            )}
+          </div>
+          {/* Status */}
+          <div><Tag color={getStatusColor(d.status)}>{STATUS_LABELS[d.status] || d.status}</Tag></div>
+          {/* Due */}
           <div>
             <div className="text-xs" style={{ color: d.days < 0 ? "#e55b5b" : d.days <= 3 ? "#e5a83b" : "#717171" }}>
-              {d.days < 0 ? `${Math.abs(d.days)}d late` : d.days === 0 ? "Today" : `${d.days}d`}
+              {d.due}
             </div>
-            <div className="text-[10px] text-faint">{d.due}</div>
           </div>
-          <div className="text-xs text-sub truncate">{d.specialist || "—"}</div>
-          <div><Tag color={getStatusColor(d.status)}>{STATUS_LABELS[d.status] || d.status}</Tag></div>
+          {/* Priority */}
           <div>
             {d.priority ? (
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
                 style={{ background: `${PRIORITY_COLORS[d.priority]}15`, color: PRIORITY_COLORS[d.priority] }}>{d.priority}</span>
             ) : <span className="text-[10px] text-faint">—</span>}
           </div>
+          {/* Three-dot menu */}
+          <div>
+            <button onClick={(e) => { e.stopPropagation(); canEdit && setEditingDeadline(d); }}
+              className="w-6 h-6 rounded flex items-center justify-center bg-transparent border-none cursor-pointer text-sub hover:text-heading"
+              style={{ fontSize: 14 }}>⋯</button>
+          </div>
         </div>
         {blocked.map((b) => (
           <div key={b.id} onClick={() => canEdit && setEditingDeadline(b)}
             className="grid items-center px-3 py-2 border-b border-line"
-            style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 80px", cursor: canEdit ? "pointer" : "default", background: "rgba(229,91,91,0.03)", paddingLeft: 40 }}>
+            style={{ gridTemplateColumns: "2.5fr 80px 60px 90px 70px 30px", cursor: canEdit ? "pointer" : "default", background: "rgba(229,91,91,0.03)", paddingLeft: 40 }}>
             <div className="min-w-0 flex items-center gap-2">
               <span className="text-[10px] text-faint">↳</span>
               <div className="min-w-0">
@@ -245,10 +266,11 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
                 <div className="text-[10px]" style={{ color: "#e55b5b" }}>Blocked by: {b.blockedBy}</div>
               </div>
             </div>
-            <div className="text-xs text-sub">{b.days < 0 ? `${Math.abs(b.days)}d late` : `${b.days}d`}</div>
-            <div className="text-xs text-sub truncate">{b.specialist || "—"}</div>
+            <div />
             <div><Tag color="#e55b5b">Blocked</Tag></div>
+            <div className="text-xs text-sub">{b.due}</div>
             <div>{b.priority ? <span className="text-[10px] font-semibold" style={{ color: PRIORITY_COLORS[b.priority] }}>{b.priority}</span> : <span className="text-[10px] text-faint">—</span>}</div>
+            <div />
           </div>
         ))}
       </div>
@@ -349,22 +371,30 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
         {/* Table header */}
         <div
           className="grid items-center px-3 py-2 rounded-t-lg text-[10px] font-bold uppercase tracking-wider text-sub"
-          style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 80px", background: "#252525", borderBottom: "1px solid #333" }}
+          style={{ gridTemplateColumns: "2.5fr 80px 60px 90px 70px 30px", background: "#252525", borderBottom: "1px solid #333" }}
         >
-          {([
-            ["title", "Task"],
-            ["due", "Due"],
-            ["specialist", "Specialist"],
-            ["status", "Status"],
-            ["priority", "Priority"],
-          ] as [SortField, string][]).map(([field, label]) => (
-            <button key={field} onClick={() => handleSort(field)}
-              className="bg-transparent border-none cursor-pointer text-left text-[10px] font-bold uppercase tracking-wider flex items-center gap-1"
-              style={{ color: sortBy === field ? "#7aabff" : "#717171" }}>
-              {label}
-              {sortBy === field && <span style={{ fontSize: 8 }}>{sortAsc ? "▲" : "▼"}</span>}
-            </button>
-          ))}
+          <button onClick={() => handleSort("title")}
+            className="bg-transparent border-none cursor-pointer text-left text-[10px] font-bold uppercase tracking-wider flex items-center gap-1"
+            style={{ color: sortBy === "title" ? "#7aabff" : "#717171" }}>
+            Task {sortBy === "title" && <span style={{ fontSize: 8 }}>{sortAsc ? "▲" : "▼"}</span>}
+          </button>
+          <span>Team</span>
+          <button onClick={() => handleSort("status")}
+            className="bg-transparent border-none cursor-pointer text-left text-[10px] font-bold uppercase tracking-wider flex items-center gap-1"
+            style={{ color: sortBy === "status" ? "#7aabff" : "#717171" }}>
+            Status {sortBy === "status" && <span style={{ fontSize: 8 }}>{sortAsc ? "▲" : "▼"}</span>}
+          </button>
+          <button onClick={() => handleSort("due")}
+            className="bg-transparent border-none cursor-pointer text-left text-[10px] font-bold uppercase tracking-wider flex items-center gap-1"
+            style={{ color: sortBy === "due" ? "#7aabff" : "#717171" }}>
+            Due Date {sortBy === "due" && <span style={{ fontSize: 8 }}>{sortAsc ? "▲" : "▼"}</span>}
+          </button>
+          <button onClick={() => handleSort("priority")}
+            className="bg-transparent border-none cursor-pointer text-left text-[10px] font-bold uppercase tracking-wider flex items-center gap-1"
+            style={{ color: sortBy === "priority" ? "#7aabff" : "#717171" }}>
+            Priority {sortBy === "priority" && <span style={{ fontSize: 8 }}>{sortAsc ? "▲" : "▼"}</span>}
+          </button>
+          <span />
         </div>
 
         {/* Rows */}
