@@ -42,9 +42,10 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
   const baseDate = startDate || today;
 
   const viewStart = new Date(baseDate);
-  viewStart.setDate(viewStart.getDate() + weekOffset * 14);
+  // Start on Sunday of the current week
+  viewStart.setDate(viewStart.getDate() - viewStart.getDay() + weekOffset * 7);
 
-  const days = Array.from({ length: 14 }, (_, i) => {
+  const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(viewStart);
     d.setDate(d.getDate() + i);
     return d;
@@ -61,7 +62,7 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
 
   const monthLabel = (() => {
     const first = days[0];
-    const last = days[13];
+    const last = days[6];
     if (first.getMonth() === last.getMonth()) {
       return first.toLocaleDateString("en-US", { month: "long", year: "numeric" });
     }
@@ -73,7 +74,7 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
       1,
       ...days.map((d) => getEventsForDay(row.events, d).length)
     );
-    const rowHeight = Math.max(44, 12 + maxEventsPerDay * 22);
+    const rowHeight = Math.max(52, 16 + maxEventsPerDay * 26);
 
     return (
       <div key={row.id} className="flex border-b border-line" style={{ minHeight: rowHeight }}>
@@ -114,17 +115,17 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
                         setSelectedEvent(evt);
                       }
                     }}
-                    className="rounded px-1 py-0 cursor-pointer overflow-hidden hover:opacity-80 transition-opacity"
+                    className="rounded-md px-1.5 py-0.5 cursor-pointer overflow-hidden hover:opacity-80 transition-opacity mb-0.5"
                     style={{
                       background: evt.bgColor || "rgba(82,139,255,0.08)",
-                      borderLeft: "2px solid " + (evt.borderColor || evt.color || "#528bff"),
-                      fontSize: 9,
-                      fontWeight: 600,
+                      borderLeft: "3px solid " + (evt.borderColor || evt.color || "#528bff"),
+                      fontSize: 10,
+                      fontWeight: 500,
                       color: evt.textColor || evt.color || "#7aabff",
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
-                      lineHeight: "16px",
+                      lineHeight: "18px",
                     }}
                   >
                     {hasLink ? "🔗 " : ""}{evt.title?.replace(/\s*\[Whetstone\]\s*/g, "")}
@@ -185,7 +186,7 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
             </div>
             <span className="text-sm font-bold text-heading">{monthLabel}</span>
           </div>
-          <span className="text-[10px] text-sub">2-week view</span>
+          <span className="text-[10px] text-sub">Weekly view</span>
         </div>
 
         {/* Day headers */}

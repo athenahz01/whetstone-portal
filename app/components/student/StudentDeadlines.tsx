@@ -36,8 +36,10 @@ export function StudentDeadlines({ deadlines, studentId, onRefresh, readOnly = f
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
 
-  const sorted = [...deadlines].sort((a, b) => a.days - b.days);
+  const active = [...deadlines].filter((d) => d.status !== "completed").sort((a, b) => a.days - b.days);
+  const completedList = [...deadlines].filter((d) => d.status === "completed").sort((a, b) => a.days - b.days);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,11 +101,15 @@ export function StudentDeadlines({ deadlines, studentId, onRefresh, readOnly = f
           )}
         </div>
 
-        {sorted.length === 0 && (
+        {active.length === 0 && completedList.length === 0 && (
           <p className="text-sm text-sub py-4 text-center">No deadlines yet</p>
         )}
 
-        {sorted.map((d) => {
+        {active.length === 0 && completedList.length > 0 && (
+          <p className="text-sm text-sub py-4 text-center">All deadlines completed! 🎉</p>
+        )}
+
+        {active.map((d) => {
           const isOwn = d.createdBy === "student";
           const canEdit = !readOnly && isOwn;
 
@@ -120,7 +126,6 @@ export function StudentDeadlines({ deadlines, studentId, onRefresh, readOnly = f
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-heading flex items-center gap-2">
                   <span className="truncate">{d.title}</span>
-                  {/* Lock for strategist-created, subtle indicator */}
                   {!isOwn && (
                     <span className="text-[10px] text-faint flex-shrink-0" title="Added by your strategist">
                       🔒 Strategist
@@ -147,12 +152,49 @@ export function StudentDeadlines({ deadlines, studentId, onRefresh, readOnly = f
                 <Tag color={getStatusColor(d.status)}>
                   {d.days < 0 ? `${Math.abs(d.days)}d late` : d.days === 0 ? "Today" : `${d.days}d`}
                 </Tag>
-                {/* Only show edit icon if student owns it */}
                 {canEdit && <span className="text-[10px] text-sub">✏️</span>}
               </div>
             </div>
           );
         })}
+
+        {/* Completed section — collapsed by default */}
+        {completedList.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-line">
+            <button
+              onClick={() => setShowCompleted(!showCompleted)}
+              className="flex items-center gap-2 text-xs font-semibold cursor-pointer bg-transparent border-none w-full text-left px-1 py-1"
+              style={{ color: "#4aba6a" }}
+            >
+              <span style={{ fontSize: 10 }}>{showCompleted ? "▼" : "▶"}</span>
+              ✓ Completed ({completedList.length})
+            </button>
+            {showCompleted && (
+              <div className="mt-2">
+                {completedList.map((d) => {
+                  const isOwn = d.createdBy === "student";
+                  const canEdit = !readOnly && isOwn;
+                  return (
+                    <div
+                      key={d.id}
+                      onClick={() => canEdit && setEditingDeadline(d)}
+                      className={`flex justify-between items-center p-2 px-3 rounded-lg mb-1 ${canEdit ? "cursor-pointer" : ""}`}
+                      style={{ opacity: 0.5, background: "rgba(74,186,106,0.04)", borderLeft: "3px solid rgba(74,186,106,0.3)" }}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm text-sub flex items-center gap-2" style={{ textDecoration: "line-through" }}>
+                          <span className="truncate">{d.title}</span>
+                        </div>
+                        <div className="text-xs text-faint mt-0.5">{d.cat} · {d.due}</div>
+                      </div>
+                      <Tag color="#4aba6a">Done</Tag>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </Card>
 
       {/* Add deadline modal */}
