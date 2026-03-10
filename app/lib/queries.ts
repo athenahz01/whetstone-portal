@@ -40,6 +40,10 @@ export async function fetchAllStudents(): Promise<Student[]> {
         gradYear: s.grad_year,
         lastLogin: (!s.last_login || s.last_login === "Never") ? null : s.last_login,
         engagement: s.engagement,
+        applicationYear: s.application_year || s.grad_year,
+        intendedMajors: s.intended_majors || null,
+        hookStatement: s.hook_statement || null,
+        achievements: s.achievements || null,
         schools: (schoolsRes.data || []).map((sc) => ({
           id: sc.id,
           name: sc.name,

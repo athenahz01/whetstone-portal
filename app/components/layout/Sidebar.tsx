@@ -62,6 +62,7 @@ export function Sidebar({
         ]
       : [
           ["dashboard", "Dashboard"],
+          ["profile", "Profile"],
           ["tasks", "Tasks"],
           ["academics", "Academics"],
           ["testing", "Testing"],

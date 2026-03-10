@@ -6,6 +6,7 @@ import { fetchAllStudents, fetchCounselorEvents, fetchHonors } from "./lib/queri
 import { LoginPage } from "./components/layout/LoginPage";
 import { Sidebar } from "./components/layout/Sidebar";
 import { StudentDashboard } from "./components/student/StudentDashboard";
+import { StudentProfile } from "./components/student/StudentProfile";
 import { Roadmap } from "./components/student/Roadmap";
 import { Academics } from "./components/student/Academics";
 import { Testing } from "./components/student/Testing";
@@ -323,6 +324,9 @@ export default function Home() {
           readOnly={isParent}
         />
       );
+    }
+    if (isStudentOrParent && view === "profile" && me) {
+      return <StudentProfile student={me} readOnly={isParent} />;
     }
     if (isStudentOrParent && view === "schools" && me) {
       return <Schools student={me} readOnly={isParent} />;

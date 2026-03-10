@@ -22,6 +22,10 @@ export async function POST(request: NextRequest) {
   if (fields.name !== undefined) updateData.name = fields.name;
   if (fields.grade !== undefined) updateData.grade = fields.grade;
   if (fields.school !== undefined) updateData.school = fields.school;
+  if (fields.application_year !== undefined) updateData.application_year = fields.application_year;
+  if (fields.intended_majors !== undefined) updateData.intended_majors = fields.intended_majors;
+  if (fields.hook_statement !== undefined) updateData.hook_statement = fields.hook_statement;
+  if (fields.achievements !== undefined) updateData.achievements = fields.achievements;
 
   if (Object.keys(updateData).length === 0) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });

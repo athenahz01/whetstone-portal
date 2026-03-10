@@ -98,6 +98,10 @@ export interface Student {
   gradYear: number;
   lastLogin: string | null;
   engagement: number;
+  applicationYear?: number | null;
+  intendedMajors?: string | null;
+  hookStatement?: string | null;
+  achievements?: string | null;
   honors?: Honor[];
   schools: School[];
   dl: Deadline[];
