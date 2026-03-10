@@ -42,6 +42,8 @@ const labelStyle: React.CSSProperties = {
 export function Honors({ honors, setHonors, readOnly = false, studentId }: HonorsProps) {
   const [openSlot, setOpenSlot] = useState<number>(-1);
   const [saving, setSaving] = useState(false);
+  const [dragFrom, setDragFrom] = useState<number | null>(null);
+  const [dragOver, setDragOver] = useState<number | null>(null);
 
   const [extraSlots, setExtraSlots] = useState(0);
   const totalSlots = Math.max(TOTAL_SLOTS, honors.length) + extraSlots;
@@ -50,6 +52,19 @@ export function Honors({ honors, setHonors, readOnly = false, studentId }: Honor
   );
 
   const toggleSlot = (i: number) => setOpenSlot(openSlot === i ? -1 : i);
+
+  const handleReorder = (fromIdx: number, toIdx: number) => {
+    if (fromIdx === toIdx) return;
+    const fromHonor = honors[fromIdx];
+    if (!fromHonor) return;
+    const newHonors = [...honors];
+    newHonors.splice(fromIdx, 1);
+    const insertAt = Math.min(toIdx, newHonors.length);
+    newHonors.splice(insertAt, 0, fromHonor);
+    setHonors(newHonors);
+    setDragFrom(null);
+    setDragOver(null);
+  };
 
   const handleSave = async (index: number, formData: FormData) => {
     setSaving(true);
@@ -125,7 +140,16 @@ export function Honors({ honors, setHonors, readOnly = false, studentId }: Honor
             const isEmpty = !honor;
 
             return (
-              <div key={i} className="border-b border-line last:border-b-0">
+              <div key={i}
+                className="border-b border-line last:border-b-0"
+                draggable={!readOnly && !isEmpty && !isOpen}
+                onDragStart={() => !readOnly && !isEmpty && setDragFrom(i)}
+                onDragOver={(e) => { e.preventDefault(); setDragOver(i); }}
+                onDragLeave={() => setDragOver(null)}
+                onDrop={() => { if (dragFrom !== null) handleReorder(dragFrom, i); }}
+                onDragEnd={() => { setDragFrom(null); setDragOver(null); }}
+                style={{ background: dragOver === i && dragFrom !== null && dragFrom !== i ? "rgba(82,139,255,0.06)" : "transparent" }}
+              >
                 {/* Accordion header */}
                 <button
                   onClick={() => toggleSlot(i)}
@@ -137,6 +161,9 @@ export function Honors({ honors, setHonors, readOnly = false, studentId }: Honor
                   }}
                 >
                   <div className="flex items-center gap-3">
+                    {!readOnly && !isEmpty && (
+                      <span className="text-faint text-xs cursor-grab select-none flex-shrink-0" title="Drag to reorder">⠿</span>
+                    )}
                     <div
                       className="w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0"
                       style={{

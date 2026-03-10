@@ -8,15 +8,14 @@ import { fetchReceptacleEvents, addReceptacleEvent, updateReceptacleEvent, delet
 // ── Types ──────────────────────────────────────────────────────────────────
 
 type Quadrant = "do" | "schedule" | "delegate" | "delete" | null;
-type DoSubType = "quick" | "scheduleDo" | null; // for DO quadrant: <2min vs schedule-and-do
 
 interface Task {
   id: string;
   text: string;
   minutes: number;
   quadrant: Quadrant;
-  doSub: DoSubType;
-  dbId?: number; // ID from receptacle_events table
+  isQuick: boolean;
+  dbId?: number;
 }
 
 interface CalendarEvent {
@@ -153,6 +152,10 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
   const [reviewItems, setReviewItems] = useState<CalendarEvent[]>([]);
   const [reviewChecked, setReviewChecked] = useState<Set<string>>(new Set());
 
+  // Quick tasks popup
+  const [showQuickPopup, setShowQuickPopup] = useState(false);
+  const [quickSelections, setQuickSelections] = useState<Set<string>>(new Set());
+
   // Drag ghost preview
   const [ghostPreview, setGhostPreview] = useState<{ date: string; topMinutes: number; minutes: number; text: string; colIndex: number } | null>(null);
   const [colorPickerFor, setColorPickerFor] = useState<string | null>(null);
@@ -169,7 +172,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
         text: e.task_text,
         minutes: e.minutes,
         quadrant: (e.quadrant as Quadrant) || null,
-        doSub: null,
+        isQuick: false,
         dbId: e.id,
       }));
       setTasks((prev) => {
@@ -247,7 +250,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
     if (!text || !mins || mins <= 0) return;
 
     const tempId = Date.now().toString();
-    const newTask: Task = { id: tempId, text, minutes: mins, quadrant: null, doSub: null };
+    const newTask: Task = { id: tempId, text, minutes: mins, quadrant: null, isQuick: false };
 
     // Persist to DB if we have a studentId
     if (studentId) {
@@ -273,7 +276,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
     if (task?.dbId) {
       updateBrainDumpQuadrant(task.dbId, q);
     }
-    setTasks((p) => p.map((t) => t.id === selectedTask ? { ...t, quadrant: q, doSub: null } : t));
+    setTasks((p) => p.map((t) => t.id === selectedTask ? { ...t, quadrant: q, isQuick: false } : t));
     const remaining = tasks.filter((t) => t.quadrant === null && t.id !== selectedTask);
     setSelectedTask(remaining.length > 0 ? remaining[0].id : null);
   };
@@ -283,13 +286,28 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
     if (task?.dbId) {
       updateBrainDumpQuadrant(task.dbId, null);
     }
-    setTasks((p) => p.map((t) => t.id === id ? { ...t, quadrant: null, doSub: null } : t));
+    setTasks((p) => p.map((t) => t.id === id ? { ...t, quadrant: null, isQuick: false } : t));
     setSelectedTask(id);
   };
 
   // DO sub-assignment
-  const assignDoSub = (id: string, sub: DoSubType) => {
-    setTasks((p) => p.map((t) => t.id === id ? { ...t, doSub: sub } : t));
+  // Go to step 3 — show quick tasks popup if there are DO tasks
+  const goToStep3 = () => {
+    const doTasks = tasks.filter((t) => t.quadrant === "do");
+    if (doTasks.length > 0) {
+      setQuickSelections(new Set());
+      setShowQuickPopup(true);
+    } else {
+      setStep(3);
+    }
+  };
+
+  const confirmQuickTasks = () => {
+    setTasks((p) => p.map((t) =>
+      quickSelections.has(t.id) ? { ...t, isQuick: true } : t
+    ));
+    setShowQuickPopup(false);
+    setStep(3);
   };
 
   // ── Step 3 ──
@@ -510,9 +528,8 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
 
   // Derived: DO tasks split by sub-type
   const doTasks = tasksInSection("do");
-  const doQuickTasks = doTasks.filter((t) => t.doSub === "quick");
-  const doScheduleTasks = doTasks.filter((t) => t.doSub === "scheduleDo");
-  const doUnassigned = doTasks.filter((t) => t.doSub === null);
+  const doQuickTasks = doTasks.filter((t) => t.isQuick);
+  const doScheduleTasks = doTasks.filter((t) => !t.isQuick);
 
   return (
     <div>
@@ -533,7 +550,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
             const active = step === n;
             const done = step > n;
             return (
-              <button key={n} onClick={() => setStep(n)}
+              <button key={n} onClick={() => n === 3 ? goToStep3() : setStep(n)}
                 className="flex-1 py-3.5 text-sm font-semibold border-none cursor-pointer"
                 style={{
                   background: active ? "#528bff" : done ? "rgba(74,186,106,0.08)" : "#252525",
@@ -728,78 +745,6 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                     const cfg = QUADRANT_CONFIG[key];
                     const placed = tasks.filter((t) => t.quadrant === key);
 
-                    // DO quadrant has sub-sections
-                    if (key === "do") {
-                      const quickTasks = placed.filter((t) => t.doSub === "quick");
-                      const schedDoTasks = placed.filter((t) => t.doSub === "scheduleDo");
-                      const unsubbed = placed.filter((t) => t.doSub === null);
-
-                      return (
-                        <div key={key} onClick={() => assign(key)} className="rounded-xl p-3 cursor-pointer"
-                          style={{ background: cfg.bg, border: `1.5px solid ${selectedTask ? cfg.border : "rgba(0,0,0,0.05)"}`, minHeight: 130, opacity: selectedTask ? 1 : 0.72 }}>
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="font-bold text-sm" style={{ color: cfg.accent }}>{cfg.emoji} {cfg.label}</div>
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: `${cfg.accent}18`, color: cfg.accent }}>{cfg.tag}</span>
-                          </div>
-
-                          {/* Unsubbed tasks — click to assign sub-type */}
-                          {unsubbed.map((t) => (
-                            <div key={t.id} className="flex items-center justify-between px-2 py-1.5 rounded mb-1 group"
-                              style={{ background: "rgba(255,255,255,0.65)" }}
-                              onClick={(e) => e.stopPropagation()}>
-                              <span className="text-xs truncate" style={{ color: "#a0a0a0" }}>{t.text}</span>
-                              <div className="flex items-center gap-1 flex-shrink-0 ml-1">
-                                <button onClick={(e) => { e.stopPropagation(); assignDoSub(t.id, "quick"); }}
-                                  className="text-[8px] px-1.5 py-0.5 rounded border-none cursor-pointer font-bold"
-                                  style={{ background: "rgba(229,91,91,0.08)", color: "#e55b5b" }} title="Under 2 minutes — do immediately">⚡ &lt;2m</button>
-                                <button onClick={(e) => { e.stopPropagation(); assignDoSub(t.id, "scheduleDo"); }}
-                                  className="text-[8px] px-1.5 py-0.5 rounded border-none cursor-pointer font-bold"
-                                  style={{ background: "rgba(229,91,91,0.08)", color: "#b91c1c" }} title="Schedule and do">📅</button>
-                                <button onClick={(e) => { e.stopPropagation(); unassign(t.id); }}
-                                  className="text-[9px] opacity-0 group-hover:opacity-100 border-none bg-transparent cursor-pointer" style={{ color: "#505050" }}>↩</button>
-                              </div>
-                            </div>
-                          ))}
-
-                          {/* <2min section */}
-                          {quickTasks.length > 0 && (
-                            <div className="mt-1.5">
-                              <div className="text-[8px] font-bold uppercase tracking-wider mb-1 px-1" style={{ color: "#e55b5b" }}>⚡ &lt;2min do now!</div>
-                              {quickTasks.map((t) => (
-                                <div key={t.id} className="flex items-center justify-between px-2 py-1 rounded mb-0.5 group"
-                                  style={{ background: "rgba(239,68,68,0.08)" }}
-                                  onClick={(e) => e.stopPropagation()}>
-                                  <span className="text-[11px] truncate" style={{ color: "#7f1d1d" }}>{t.text}</span>
-                                  <button onClick={(e) => { e.stopPropagation(); unassign(t.id); }}
-                                    className="text-[9px] opacity-0 group-hover:opacity-100 border-none bg-transparent cursor-pointer" style={{ color: "#505050" }}>↩</button>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* Schedule & do section */}
-                          {schedDoTasks.length > 0 && (
-                            <div className="mt-1.5">
-                              <div className="text-[8px] font-bold uppercase tracking-wider mb-1 px-1" style={{ color: "#b91c1c" }}>📅 Schedule & Do</div>
-                              {schedDoTasks.map((t) => (
-                                <div key={t.id} className="flex items-center justify-between px-2 py-1 rounded mb-0.5 group"
-                                  style={{ background: "rgba(255,255,255,0.5)" }}
-                                  onClick={(e) => e.stopPropagation()}>
-                                  <span className="text-[11px] truncate" style={{ color: "#a0a0a0" }}>{t.text}</span>
-                                  <div className="flex items-center gap-1 flex-shrink-0">
-                                    <span className="text-[9px]" style={{ color: "#505050" }}>{t.minutes}m</span>
-                                    <button onClick={(e) => { e.stopPropagation(); unassign(t.id); }}
-                                      className="text-[9px] opacity-0 group-hover:opacity-100 border-none bg-transparent cursor-pointer" style={{ color: "#505050" }}>↩</button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    }
-
-                    // Other quadrants — same as before
                     return (
                       <div key={key} onClick={() => assign(key)} className="rounded-xl p-3 cursor-pointer"
                         style={{ background: cfg.bg, border: `1.5px solid ${selectedTask ? cfg.border : "rgba(0,0,0,0.05)"}`, minHeight: 130, opacity: selectedTask ? 1 : 0.72 }}>
@@ -828,7 +773,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
             </div>
             <div className="flex justify-between mt-4">
               <button onClick={() => setStep(1)} style={{ padding: "10px 20px", borderRadius: 12, border: "1px solid #333", cursor: "pointer", background: "#252525", color: "#717171", fontWeight: 600, fontSize: 13 }}>← Back</button>
-              <button onClick={() => setStep(3)} style={{ padding: "12px 24px", borderRadius: 12, border: "none", cursor: "pointer", background: "#ebebeb", color: "#fff", fontWeight: 600, fontSize: 13 }}>Next: Timer 3 →</button>
+              <button onClick={goToStep3} style={{ padding: "12px 24px", borderRadius: 15, border: "none", cursor: "pointer", background: "#528bff", color: "#fff", fontWeight: 600, fontSize: 13 }}>Next: Calendar Sync →</button>
             </div>
           </div>
         )}
@@ -1024,10 +969,10 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
               {/* ── Task Bar (right) — Sunsama-style todo list ── */}
               <div style={{ width: 280, flexShrink: 0, display: "flex", flexDirection: "column", gap: 10, overflowY: "auto", maxHeight: 640 }}>
 
-                {/* <2min Do Now! — quick checklist */}
+                {/* Quick DO tasks — selected via popup */}
                 {doQuickTasks.length > 0 && (
                   <div style={{ ...card, background: "rgba(229,91,91,0.05)", border: "1px solid rgba(229,91,91,0.15)" }}>
-                    <div className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#e55b5b" }}>⚡ &lt;2min Quick Tasks</div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#e55b5b" }}>⚡ PLEASE DO NOW</div>
                     <div className="flex flex-col gap-1">
                       {doQuickTasks.map((t) => {
                         const done = completed.has(t.id);
@@ -1210,6 +1155,8 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
           </div>
         )}
       </div>
+
+      {/* Quick tasks popup removed — handled via doSub assignment in step 2 */}
     </div>
   );
 }

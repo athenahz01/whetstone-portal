@@ -79,6 +79,8 @@ export function Activities({ activities, setActivities, readOnly = false, studen
   const [openSlot, setOpenSlot] = useState<number>(-1);
   const [saving, setSaving] = useState(false);
   const [extraSlots, setExtraSlots] = useState(0);
+  const [dragFrom, setDragFrom] = useState<number | null>(null);
+  const [dragOver, setDragOver] = useState<number | null>(null);
 
   const totalSlots = Math.max(TOTAL_SLOTS, activities.length) + extraSlots;
   const slots: (Activity | null)[] = Array.from({ length: totalSlots }, (_, i) =>
@@ -86,6 +88,21 @@ export function Activities({ activities, setActivities, readOnly = false, studen
   );
 
   const toggleSlot = (i: number) => setOpenSlot(openSlot === i ? -1 : i);
+
+  const handleReorder = (fromIdx: number, toIdx: number) => {
+    if (fromIdx === toIdx) return;
+    const fromAct = activities[fromIdx];
+    const toAct = activities[toIdx];
+    if (!fromAct) return; // can only drag filled slots
+    const newActivities = [...activities];
+    // Remove from old position, insert at new
+    newActivities.splice(fromIdx, 1);
+    const insertAt = toAct ? Math.min(toIdx, newActivities.length) : newActivities.length;
+    newActivities.splice(insertAt, 0, fromAct);
+    setActivities(newActivities);
+    setDragFrom(null);
+    setDragOver(null);
+  };
 
   const handleSave = async (index: number, formData: FormData) => {
     setSaving(true);
@@ -168,7 +185,16 @@ export function Activities({ activities, setActivities, readOnly = false, studen
             const sublabel = isEmpty ? "[EMPTY]" : (act.org || act.type);
 
             return (
-              <div key={i} className="border-b border-line last:border-b-0">
+              <div key={i}
+                className="border-b border-line last:border-b-0"
+                draggable={!readOnly && !isEmpty && !isOpen}
+                onDragStart={() => !readOnly && !isEmpty && setDragFrom(i)}
+                onDragOver={(e) => { e.preventDefault(); setDragOver(i); }}
+                onDragLeave={() => setDragOver(null)}
+                onDrop={() => { if (dragFrom !== null) handleReorder(dragFrom, i); }}
+                onDragEnd={() => { setDragFrom(null); setDragOver(null); }}
+                style={{ background: dragOver === i && dragFrom !== null && dragFrom !== i ? "rgba(82,139,255,0.06)" : "transparent" }}
+              >
                 {/* Accordion header */}
                 <button
                   onClick={() => toggleSlot(i)}
@@ -180,6 +206,10 @@ export function Activities({ activities, setActivities, readOnly = false, studen
                   }}
                 >
                   <div className="flex items-center gap-3">
+                    {/* Drag handle — only for filled, non-readonly */}
+                    {!readOnly && !isEmpty && (
+                      <span className="text-faint text-xs cursor-grab select-none flex-shrink-0" title="Drag to reorder">⠿</span>
+                    )}
                     <div
                       className="w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0"
                       style={{
