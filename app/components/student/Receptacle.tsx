@@ -152,10 +152,6 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
   const [reviewItems, setReviewItems] = useState<CalendarEvent[]>([]);
   const [reviewChecked, setReviewChecked] = useState<Set<string>>(new Set());
 
-  // Quick tasks popup
-  const [showQuickPopup, setShowQuickPopup] = useState(false);
-  const [quickSelections, setQuickSelections] = useState<Set<string>>(new Set());
-
   // Drag ghost preview
   const [ghostPreview, setGhostPreview] = useState<{ date: string; topMinutes: number; minutes: number; text: string; colIndex: number } | null>(null);
   const [colorPickerFor, setColorPickerFor] = useState<string | null>(null);
@@ -292,24 +288,6 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
 
   // DO sub-assignment
   // Go to step 3 — show quick tasks popup if there are DO tasks
-  const goToStep3 = () => {
-    const doTasks = tasks.filter((t) => t.quadrant === "do");
-    if (doTasks.length > 0) {
-      setQuickSelections(new Set());
-      setShowQuickPopup(true);
-    } else {
-      setStep(3);
-    }
-  };
-
-  const confirmQuickTasks = () => {
-    setTasks((p) => p.map((t) =>
-      quickSelections.has(t.id) ? { ...t, isQuick: true } : t
-    ));
-    setShowQuickPopup(false);
-    setStep(3);
-  };
-
   // ── Step 3 ──
 
   const scheduledIds = new Set(calEvents.map((e) => e.taskId));
@@ -555,7 +533,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
             const active = step === n;
             const done = step > n;
             return (
-              <button key={n} onClick={() => n === 3 ? goToStep3() : setStep(n)}
+              <button key={n} onClick={() => setStep(n)}
                 className="flex-1 py-3.5 text-sm font-semibold border-none cursor-pointer"
                 style={{
                   background: active ? "#528bff" : done ? "rgba(74,186,106,0.08)" : "#252525",
@@ -778,7 +756,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
             </div>
             <div className="flex justify-between mt-4">
               <button onClick={() => setStep(1)} style={{ padding: "10px 20px", borderRadius: 12, border: "1px solid #333", cursor: "pointer", background: "#252525", color: "#717171", fontWeight: 600, fontSize: 13 }}>← Back</button>
-              <button onClick={goToStep3} style={{ padding: "12px 24px", borderRadius: 15, border: "none", cursor: "pointer", background: "#528bff", color: "#fff", fontWeight: 600, fontSize: 13 }}>Next: Calendar Sync →</button>
+              <button onClick={() => setStep(3)} style={{ padding: "12px 24px", borderRadius: 15, border: "none", cursor: "pointer", background: "#528bff", color: "#fff", fontWeight: 600, fontSize: 13 }}>Next: Calendar Sync →</button>
             </div>
           </div>
         )}
