@@ -49,6 +49,11 @@ const STATUS_LABELS: Record<string, string> = {
 type SortField = "due" | "priority" | "title" | "specialist" | "status";
 type FilterStatus = "all" | "pending" | "in-progress" | "overdue" | "completed" | "blocked";
 
+const SPECIALISTS = [
+  "Cole Whetstone", "Stephanie Whetstone", "Eric Newman", "Christopher Colby",
+  "Brigitte Gemme", "Howard Rogatnick", "Ren Yu", "Athena Huo",
+];
+
 export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = false, headerRight }: DeadlinesViewProps) {
   const [sortBy, setSortBy] = useState<SortField>("due");
   const [sortAsc, setSortAsc] = useState(true);
@@ -125,6 +130,8 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
       status: days < 0 ? "overdue" : "pending",
       days,
       created_by: "student",
+      specialist: f.get("specialist") as string || undefined,
+      priority: f.get("priority") as string || undefined,
     });
     if (onRefresh) await onRefresh();
     setSaving(false);
@@ -144,6 +151,8 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
     };
     const priority = f.get("priority") as string;
     if (priority) (updates as any).priority = priority;
+    const specialist = f.get("specialist") as string;
+    (updates as any).specialist = specialist || "";
     const description = f.get("description") as string;
     if (description !== undefined) (updates as any).description = description;
     const blockedBy = f.get("blocked_by") as string;
@@ -433,6 +442,22 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
                 </select>
               </FormField>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Specialist">
+                <select name="specialist" defaultValue="" style={inputStyle}>
+                  <option value="">None</option>
+                  {SPECIALISTS.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </FormField>
+              <FormField label="Priority">
+                <select name="priority" defaultValue="" style={inputStyle}>
+                  <option value="">None</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+              </FormField>
+            </div>
             <div className="flex gap-2 justify-end mt-3">
               <Button onClick={() => setAddingDeadline(false)}>Cancel</Button>
               <Button primary type="submit">{saving ? "Adding..." : "Add Task"}</Button>
@@ -466,7 +491,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
                 </select>
               </FormField>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <FormField label="Status">
                 <select name="status" defaultValue={editingDeadline.status} style={inputStyle}>
                   <option value="pending">To Do</option>
@@ -481,6 +506,12 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
                   <option value="high">High</option>
                   <option value="medium">Medium</option>
                   <option value="low">Low</option>
+                </select>
+              </FormField>
+              <FormField label="Specialist">
+                <select name="specialist" defaultValue={editingDeadline.specialist || ""} style={inputStyle}>
+                  <option value="">None</option>
+                  {SPECIALISTS.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
               </FormField>
             </div>

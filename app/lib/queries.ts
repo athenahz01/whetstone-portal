@@ -222,11 +222,12 @@ export async function addDeadline(
     status: string;
     days: number;
     specialist?: string;
+    priority?: string;
     google_doc_link?: string;
     created_by?: "strategist" | "student";
   }
 ): Promise<boolean> {
-  const { error } = await supabase.from("deadlines").insert({
+  const insertData: any = {
     student_id: studentId,
     title: data.title,
     due: data.due,
@@ -236,7 +237,9 @@ export async function addDeadline(
     specialist: data.specialist || null,
     google_doc_link: data.google_doc_link || null,
     created_by: data.created_by || "strategist",
-  });
+  };
+  if (data.priority) insertData.priority = data.priority;
+  const { error } = await supabase.from("deadlines").insert(insertData);
   if (error) {
     console.error("Error adding deadline:", error);
     return false;
