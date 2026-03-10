@@ -269,6 +269,9 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
   const scheduledIds = new Set(calEvents.map((e) => e.taskId));
   const tasksInSection = (q: Quadrant) => tasks.filter((t) => t.quadrant === q);
 
+  // Find the calendar event for a given task (to show scheduled time in sidebar)
+  const getCalEvent = (taskId: string) => calEvents.find((e) => e.taskId === taskId);
+
   // Calculate time from mouse Y position on calendar
   const getMinutesFromMouseY = useCallback((e: React.DragEvent): number | null => {
     const calEl = calRef.current;
@@ -842,32 +845,20 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                                   <div key={ev.taskId} draggable={!isDone}
                                     onDragStart={() => !isDone && setDraggingEvent(ev.taskId)}
                                     onDragEnd={() => { setDraggingEvent(null); setGhostPreview(null); }}
-                                    className="absolute left-0.5 right-0.5 rounded-md px-1.5 pt-0.5 group z-10 overflow-hidden"
+                                    className="absolute left-0.5 right-0.5 rounded-md px-1.5 pt-1 group z-10 overflow-hidden"
                                     style={{
                                       top: topPx,
                                       height: minutesToHeight(ev.minutes),
-                                      background: isDone ? "rgba(74,186,106,0.06)" : "rgba(82,139,255,0.06)",
-                                      borderLeft: isDone ? "3px solid #4aba6a" : "3px solid #528bff",
-                                      opacity: isDone ? 0.5 : 1,
+                                      background: isDone ? "rgba(74,186,106,0.06)" : "rgba(82,139,255,0.08)",
+                                      borderLeft: isDone ? "3px solid rgba(74,186,106,0.4)" : "3px solid #528bff",
+                                      opacity: isDone ? 0.4 : 1,
                                       cursor: isDone ? "default" : "grab",
                                     }}>
-                                    <div className="flex items-start gap-1">
-                                      <input type="checkbox" checked={isDone}
-                                        onChange={() => toggleComplete(ev.taskId)}
-                                        onClick={(e) => e.stopPropagation()}
-                                        className="mt-0.5 flex-shrink-0 cursor-pointer"
-                                        style={{ accentColor: "#4aba6a", width: 12, height: 12 }} />
-                                      <div className="min-w-0 flex-1">
-                                        <div className="text-[10px] font-semibold leading-tight truncate pr-6"
-                                          style={{ color: isDone ? "#4aba6a" : "#7aabff", textDecoration: isDone ? "line-through" : "none" }}>
-                                          {ev.text}
-                                        </div>
-                                        <div className="text-[9px]" style={{ color: isDone ? "rgba(74,186,106,0.5)" : "#528bff", opacity: 0.7 }}>
-                                          {fmtMinutes(ev.topMinutes)} · {ev.minutes}m{ev.synced ? " · ✓" : ""}
-                                        </div>
-                                      </div>
+                                    <div className="text-[10px] font-semibold leading-tight truncate pr-4"
+                                      style={{ color: isDone ? "#4aba6a" : "#7aabff", textDecoration: isDone ? "line-through" : "none" }}>{ev.text}</div>
+                                    <div className="text-[9px] mt-0.5" style={{ color: isDone ? "rgba(74,186,106,0.5)" : "#528bff", opacity: 0.7 }}>
+                                      {fmtMinutes(ev.topMinutes)} · {ev.minutes}m{ev.synced ? " · synced" : ""}
                                     </div>
-                                    {/* Remove button */}
                                     <button onClick={() => removeEvent(ev.taskId)}
                                       className="absolute top-0.5 right-0.5 w-4 h-4 rounded text-[9px] hidden group-hover:flex items-center justify-center border-none cursor-pointer"
                                       style={{ background: "rgba(229,91,91,0.2)", color: "#e55b5b" }}>✕</button>
@@ -883,23 +874,23 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                 </div>
               </div>
 
-              {/* ── Task Bar (right) ── */}
-              <div style={{ width: 270, flexShrink: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+              {/* ── Task Bar (right) — Sunsama-style todo list ── */}
+              <div style={{ width: 280, flexShrink: 0, display: "flex", flexDirection: "column", gap: 10, overflowY: "auto", maxHeight: 640 }}>
 
-                {/* <2min Do Now! — todo checklist */}
+                {/* <2min Do Now! — quick checklist */}
                 {doQuickTasks.length > 0 && (
-                  <div style={{ ...card, background: "rgba(229,91,91,0.08)", border: "1.5px solid #fecaca" }}>
-                    <div className="text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: "#e55b5b" }}>⚡ &lt;2min Do Now!</div>
-                    <div className="flex flex-col gap-1.5">
+                  <div style={{ ...card, background: "rgba(229,91,91,0.05)", border: "1px solid rgba(229,91,91,0.15)" }}>
+                    <div className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#e55b5b" }}>⚡ &lt;2min Quick Tasks</div>
+                    <div className="flex flex-col gap-1">
                       {doQuickTasks.map((t) => {
                         const done = completed.has(t.id);
                         return (
-                          <label key={t.id} className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg cursor-pointer"
-                            style={{ background: done ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.55)", border: "1px solid rgba(239,68,68,0.15)" }}>
-                            <input type="checkbox" checked={done} onChange={() => toggleComplete(t.id)} style={{ accentColor: "#e55b5b", width: 14, height: 14, flexShrink: 0 }} />
-                            <div className="flex-1 min-w-0">
-                              <div className="text-xs font-medium truncate" style={{ color: done ? "#505050" : "#e55b5b", textDecoration: done ? "line-through" : "none" }}>{t.text}</div>
-                            </div>
+                          <label key={t.id} className="flex items-center gap-2 px-2.5 py-2 rounded-lg cursor-pointer"
+                            style={{ background: done ? "transparent" : "rgba(255,255,255,0.03)" }}>
+                            <input type="checkbox" checked={done} onChange={() => toggleComplete(t.id)}
+                              style={{ accentColor: "#4aba6a", width: 14, height: 14, flexShrink: 0 }} />
+                            <span className="text-xs font-medium truncate" style={{ color: done ? "#505050" : "#ebebeb", textDecoration: done ? "line-through" : "none" }}>{t.text}</span>
+                            <span className="text-[9px] ml-auto pl-2 flex-shrink-0" style={{ color: "#717171" }}>{t.minutes}m</span>
                           </label>
                         );
                       })}
@@ -907,23 +898,31 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                   </div>
                 )}
 
-                {/* Schedule & Do (from DO quadrant) — draggable */}
+                {/* Schedule & Do (from DO quadrant) */}
                 {doScheduleTasks.length > 0 && (
                   <div style={card}>
-                    <div className="text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: "#e55b5b" }}>
-                      🔥 Do: Schedule & Do <span className="text-[9px] font-normal text-sub normal-case tracking-normal ml-1">(drag to calendar)</span>
+                    <div className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#e55b5b" }}>
+                      🔥 Do
                     </div>
-                    <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-col gap-1">
                       {doScheduleTasks.map((t) => {
                         const onCal = scheduledIds.has(t.id);
+                        const done = completed.has(t.id);
+                        const ce = getCalEvent(t.id);
                         return (
-                          <div key={t.id} draggable={!onCal}
-                            onDragStart={() => !onCal && setDragging(t.id)}
+                          <div key={t.id}
+                            draggable={!onCal && !done}
+                            onDragStart={() => !onCal && !done && setDragging(t.id)}
                             onDragEnd={() => { setDragging(null); setGhostPreview(null); }}
-                            className="flex items-center justify-between px-3 py-2.5 rounded-lg select-none"
-                            style={{ background: onCal ? "rgba(74,186,106,0.08)" : dragging === t.id ? "rgba(229,91,91,0.08)" : "#252525", border: `1.5px solid ${onCal ? "#4aba6a" : dragging === t.id ? "#e55b5b" : "#333"}`, cursor: onCal ? "default" : "grab", opacity: dragging === t.id ? 0.5 : 1 }}>
-                            <span className="text-xs font-medium truncate min-w-0" style={{ color: onCal ? "#4aba6a" : "#a0a0a0" }}>{onCal ? "✓ " : "⠿ "}{t.text}</span>
-                            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full ml-2 flex-shrink-0" style={{ background: "rgba(229,91,91,0.08)", color: "#e55b5b" }}>{t.minutes}m</span>
+                            className="flex items-center gap-2 px-2.5 py-2 rounded-lg select-none"
+                            style={{ background: done ? "transparent" : onCal ? "rgba(255,255,255,0.02)" : "#252525", border: `1px solid ${done ? "transparent" : onCal ? "#2a2a2a" : "#333"}`, cursor: done ? "default" : onCal ? "default" : "grab", opacity: done ? 0.4 : onCal ? 0.55 : 1 }}>
+                            <input type="checkbox" checked={done} onChange={() => toggleComplete(t.id)}
+                              className="flex-shrink-0 cursor-pointer" style={{ accentColor: "#4aba6a", width: 14, height: 14 }} />
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-medium truncate" style={{ color: done ? "#505050" : "#ebebeb", textDecoration: done ? "line-through" : "none" }}>{t.text}</div>
+                              {onCal && ce && <div className="text-[9px]" style={{ color: "#717171" }}>{fmtMinutes(ce.topMinutes)} · {ce.date}</div>}
+                            </div>
+                            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: "rgba(229,91,91,0.08)", color: "#e55b5b" }}>{t.minutes}m</span>
                           </div>
                         );
                       })}
@@ -933,48 +932,64 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
 
                 {/* Schedule (blue) */}
                 <div style={card}>
-                  <div className="text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: "#528bff" }}>
-                    📅 Schedule <span className="text-[9px] font-normal text-sub normal-case tracking-normal ml-1">(drag to calendar)</span>
+                  <div className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#528bff" }}>
+                    📅 Schedule
                   </div>
-                  <div className="flex flex-col gap-1.5">
+                  <div className="flex flex-col gap-1">
                     {tasksInSection("schedule").length === 0 && (
-                      <div className="text-xs text-sub text-center py-3" style={{ border: "1.5px dashed #e2e8f0", borderRadius: 8 }}>No scheduled tasks</div>
+                      <div className="text-xs text-sub text-center py-3" style={{ border: "1px dashed #333", borderRadius: 8 }}>No scheduled tasks</div>
                     )}
                     {tasksInSection("schedule").map((t) => {
                       const onCal = scheduledIds.has(t.id);
+                      const done = completed.has(t.id);
+                      const ce = getCalEvent(t.id);
                       return (
-                        <div key={t.id} draggable={!onCal}
-                          onDragStart={() => !onCal && setDragging(t.id)}
+                        <div key={t.id}
+                          draggable={!onCal && !done}
+                          onDragStart={() => !onCal && !done && setDragging(t.id)}
                           onDragEnd={() => { setDragging(null); setGhostPreview(null); }}
-                          className="flex items-center justify-between px-3 py-2.5 rounded-lg select-none"
-                          style={{ background: onCal ? "rgba(74,186,106,0.08)" : dragging === t.id ? "rgba(82,139,255,0.08)" : "#252525", border: `1.5px solid ${onCal ? "#4aba6a" : dragging === t.id ? "#528bff" : "#333"}`, cursor: onCal ? "default" : "grab", opacity: dragging === t.id ? 0.5 : 1 }}>
-                          <span className="text-xs font-medium truncate min-w-0" style={{ color: onCal ? "#4aba6a" : "#a0a0a0" }}>{onCal ? "✓ " : "⠿ "}{t.text}</span>
-                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full ml-2 flex-shrink-0" style={{ background: "rgba(82,139,255,0.06)", color: "#528bff" }}>{t.minutes}m</span>
+                          className="flex items-center gap-2 px-2.5 py-2 rounded-lg select-none"
+                          style={{ background: done ? "transparent" : onCal ? "rgba(255,255,255,0.02)" : "#252525", border: `1px solid ${done ? "transparent" : onCal ? "#2a2a2a" : "#333"}`, cursor: done ? "default" : onCal ? "default" : "grab", opacity: done ? 0.4 : onCal ? 0.55 : 1 }}>
+                          <input type="checkbox" checked={done} onChange={() => toggleComplete(t.id)}
+                            className="flex-shrink-0 cursor-pointer" style={{ accentColor: "#4aba6a", width: 14, height: 14 }} />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-medium truncate" style={{ color: done ? "#505050" : "#ebebeb", textDecoration: done ? "line-through" : "none" }}>{t.text}</div>
+                            {onCal && ce && <div className="text-[9px]" style={{ color: "#717171" }}>{fmtMinutes(ce.topMinutes)} · {ce.date}</div>}
+                          </div>
+                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: "rgba(82,139,255,0.06)", color: "#528bff" }}>{t.minutes}m</span>
                         </div>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* Delegate (yellow) */}
+                {/* Delegate (amber) */}
                 <div style={card}>
-                  <div className="text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: "#f59e0b" }}>
-                    🤝 Delegate <span className="text-[9px] font-normal text-sub normal-case tracking-normal ml-1">(drag to calendar)</span>
+                  <div className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#e5a83b" }}>
+                    🤝 Delegate
                   </div>
-                  <div className="flex flex-col gap-1.5">
+                  <div className="flex flex-col gap-1">
                     {tasksInSection("delegate").length === 0 && (
-                      <div className="text-xs text-sub text-center py-3" style={{ border: "1.5px dashed #e2e8f0", borderRadius: 8 }}>No delegate tasks</div>
+                      <div className="text-xs text-sub text-center py-3" style={{ border: "1px dashed #333", borderRadius: 8 }}>No delegate tasks</div>
                     )}
                     {tasksInSection("delegate").map((t) => {
                       const onCal = scheduledIds.has(t.id);
+                      const done = completed.has(t.id);
+                      const ce = getCalEvent(t.id);
                       return (
-                        <div key={t.id} draggable={!onCal}
-                          onDragStart={() => !onCal && setDragging(t.id)}
+                        <div key={t.id}
+                          draggable={!onCal && !done}
+                          onDragStart={() => !onCal && !done && setDragging(t.id)}
                           onDragEnd={() => { setDragging(null); setGhostPreview(null); }}
-                          className="flex items-center justify-between px-3 py-2.5 rounded-lg select-none"
-                          style={{ background: onCal ? "rgba(229,168,59,0.08)" : dragging === t.id ? "rgba(229,168,59,0.12)" : "#252525", border: `1.5px solid ${onCal ? "#e5a83b" : dragging === t.id ? "#e5a83b" : "#333"}`, cursor: onCal ? "default" : "grab", opacity: dragging === t.id ? 0.5 : 1 }}>
-                          <span className="text-xs font-medium truncate min-w-0" style={{ color: "#a0a0a0" }}>{onCal ? "✓ " : "⠿ "}{t.text}</span>
-                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full ml-2 flex-shrink-0" style={{ background: "#fef3c7", color: "#f59e0b" }}>{t.minutes}m</span>
+                          className="flex items-center gap-2 px-2.5 py-2 rounded-lg select-none"
+                          style={{ background: done ? "transparent" : onCal ? "rgba(255,255,255,0.02)" : "#252525", border: `1px solid ${done ? "transparent" : onCal ? "#2a2a2a" : "#333"}`, cursor: done ? "default" : onCal ? "default" : "grab", opacity: done ? 0.4 : onCal ? 0.55 : 1 }}>
+                          <input type="checkbox" checked={done} onChange={() => toggleComplete(t.id)}
+                            className="flex-shrink-0 cursor-pointer" style={{ accentColor: "#4aba6a", width: 14, height: 14 }} />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-medium truncate" style={{ color: done ? "#505050" : "#ebebeb", textDecoration: done ? "line-through" : "none" }}>{t.text}</div>
+                            {onCal && ce && <div className="text-[9px]" style={{ color: "#717171" }}>{fmtMinutes(ce.topMinutes)} · {ce.date}</div>}
+                          </div>
+                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: "rgba(229,168,59,0.08)", color: "#e5a83b" }}>{t.minutes}m</span>
                         </div>
                       );
                     })}
