@@ -1,29 +1,30 @@
 export function getCategoryColor(cat: string): string {
     const map: Record<string, string> = {
-      essays: "#7c3aed",
-      applications: "#16a34a",
-      recommendations: "#d97706",
-      testing: "#d97706",
-      financial: "#7c3aed",
-      planning: "#3b82f6",
-      extracurricular: "#d97706",
-      "College Applications": "#3b82f6",
-      Academics: "#16a34a",
-      Testing: "#d97706",
-      Extracurriculars: "#7c3aed",
+      essays: "#a480f2",
+      applications: "#4aba6a",
+      recommendations: "#e5a83b",
+      testing: "#e5a83b",
+      financial: "#a480f2",
+      planning: "#528bff",
+      extracurricular: "#e5a83b",
+      "College Applications": "#528bff",
+      Academics: "#4aba6a",
+      Testing: "#e5a83b",
+      Extracurriculars: "#a480f2",
     };
-    return map[cat] || "#3b82f6";
+    return map[cat] || "#528bff";
   }
   
   export function getStatusColor(status: string): string {
     const map: Record<string, string> = {
-      overdue: "#ef4444",
-      "in-progress": "#d97706",
-      "In Progress": "#d97706",
-      pending: "#94a3b8",
-      Planned: "#94a3b8",
-      completed: "#16a34a",
-      Completed: "#16a34a",
+      overdue: "#e55b5b",
+      "in-progress": "#e5a83b",
+      "In Progress": "#e5a83b",
+      pending: "#717171",
+      Planned: "#717171",
+      completed: "#4aba6a",
+      Completed: "#4aba6a",
+      blocked: "#e55b5b",
     };
-    return map[status] || "#94a3b8";
+    return map[status] || "#717171";
   }

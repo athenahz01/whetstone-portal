@@ -12,11 +12,14 @@ export interface Deadline {
   title: string;
   due: string;
   cat: string;
-  status: "overdue" | "in-progress" | "pending" | "completed";
+  status: "overdue" | "in-progress" | "pending" | "completed" | "blocked";
   days: number;
   specialist?: string;
   googleDocLink?: string;
-  createdBy?: "strategist" | "student"; // who created this deadline
+  createdBy?: "strategist" | "student";
+  priority?: "high" | "medium" | "low";
+  description?: string;
+  blockedBy?: string; // title of blocking task
 }
 
 export interface Task {
