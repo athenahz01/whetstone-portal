@@ -6,7 +6,7 @@ import { Button } from "../ui/Button";
 import { Modal } from "../ui/Modal";
 import { FormField } from "../ui/FormField";
 import { PageHeader } from "../ui/PageHeader";
-import { addDeadline, addSession, fetchCounselorEventsForStudent } from "../../lib/queries";
+import { addDeadline, fetchCounselorEventsForStudent } from "../../lib/queries";
 import { useState, useEffect } from "react";
 
 interface SessionPrepProps {
@@ -47,21 +47,37 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
     e.preventDefault();
     setBookingSaving(true);
     const f = new FormData(e.target as HTMLFormElement);
-    const success = await addSession(student.id, {
-      date: f.get("date") as string,
-      notes: f.get("notes") as string || "",
-      action: "",
-      session_name: f.get("session_name") as string || "",
-      start_time: f.get("start_time") as string || "",
-      end_time: f.get("end_time") as string || "",
-      session_type: f.get("session_category") as string || "",
-      booking_type: f.get("booking_type") as string || "individual",
-      specialist: f.get("specialist") as string || "",
-    });
-    if (onRefresh) await onRefresh();
-    fetchCounselorEventsForStudent(student.id).then(setEvents);
+    try {
+      const res = await fetch("/api/book-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: student.id,
+          date: f.get("date") as string,
+          notes: f.get("notes") as string || "",
+          action: "",
+          session_name: f.get("session_name") as string || "",
+          start_time: f.get("start_time") as string || "",
+          end_time: f.get("end_time") as string || "",
+          session_type: f.get("session_category") as string || "",
+          booking_type: f.get("booking_type") as string || "individual",
+          specialist: f.get("specialist") as string || "",
+        }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        if (onRefresh) await onRefresh();
+        fetchCounselorEventsForStudent(student.id).then(setEvents);
+        setShowBooking(false);
+      } else {
+        console.error("Booking failed:", result.error);
+        alert("Failed to book session: " + (result.error || "Unknown error"));
+      }
+    } catch (err) {
+      console.error("Booking error:", err);
+      alert("Failed to book session. Please try again.");
+    }
     setBookingSaving(false);
-    if (success) setShowBooking(false);
   };
   const [activeRecall, setActiveRecall] = useState("");
   const [actions, setActions] = useState([
