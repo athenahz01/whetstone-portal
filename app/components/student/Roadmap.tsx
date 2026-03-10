@@ -5,7 +5,7 @@ import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { PageHeader } from "../ui/PageHeader";
 import { WeeklyCalendar } from "../ui/WeeklyCalendar";
-import { StudentDeadlines } from "./StudentDeadlines";
+import { DeadlinesView } from "./DeadlinesView";
 import { fetchCounselorEventsForStudent } from "../../lib/queries";
 import { useState, useEffect } from "react";
 
@@ -88,48 +88,68 @@ export function Roadmap({ tasks, setTasks, deadlines = [], studentId, onRefresh,
 
   return (
     <div>
-      <PageHeader
-        title="Roadmap"
-        sub="Track your deadlines and schedule."
-        right={
-          readOnly ? (
-            <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}>
-              View Only
-            </span>
-          ) : null
-        }
-      />
-
-      <div className="p-6 px-8">
-        <div className="inline-flex gap-0.5 bg-white border border-line rounded-lg p-1 mb-5">
-          {(["list", "calendar"] as const).map((id) => (
-            <button
-              key={id}
-              onClick={() => setViewMode(id)}
-              className="px-5 py-2 rounded-lg border-none cursor-pointer text-sm font-semibold"
-              style={{
-                background: viewMode === id ? "#528bff" : "transparent",
-                color: viewMode === id ? "#fff" : "#717171",
-              }}
-            >
-              {id.charAt(0).toUpperCase() + id.slice(1)}
-            </button>
-          ))}
-        </div>
-
-        {viewMode === "list" && (
-          <StudentDeadlines
+      {viewMode === "list" ? (
+        <>
+          {/* DeadlinesView provides its own PageHeader */}
+          <DeadlinesView
             deadlines={deadlines}
             studentId={studentId || 0}
             onRefresh={onRefresh}
             readOnly={readOnly}
+            headerRight={
+              <div className="inline-flex gap-0.5 bg-white border border-line rounded-lg p-1">
+                {(["list", "calendar"] as const).map((id) => (
+                  <button
+                    key={id}
+                    onClick={() => setViewMode(id)}
+                    className="px-4 py-1.5 rounded-md border-none cursor-pointer text-xs font-semibold"
+                    style={{
+                      background: viewMode === id ? "#528bff" : "transparent",
+                      color: viewMode === id ? "#fff" : "#717171",
+                    }}
+                  >
+                    {id.charAt(0).toUpperCase() + id.slice(1)}
+                  </button>
+                ))}
+              </div>
+            }
           />
-        )}
-
-        {viewMode === "calendar" && (
-          <WeeklyCalendar rows={calendarRows} />
-        )}
-      </div>
+        </>
+      ) : (
+        <>
+          <PageHeader
+            title="Roadmap"
+            sub="Track your deadlines and schedule."
+            right={
+              <div className="flex items-center gap-3">
+                {readOnly && (
+                  <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}>
+                    View Only
+                  </span>
+                )}
+                <div className="inline-flex gap-0.5 bg-white border border-line rounded-lg p-1">
+                  {(["list", "calendar"] as const).map((id) => (
+                    <button
+                      key={id}
+                      onClick={() => setViewMode(id)}
+                      className="px-4 py-1.5 rounded-md border-none cursor-pointer text-xs font-semibold"
+                      style={{
+                        background: viewMode === id ? "#528bff" : "transparent",
+                        color: viewMode === id ? "#fff" : "#717171",
+                      }}
+                    >
+                      {id.charAt(0).toUpperCase() + id.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            }
+          />
+          <div className="p-6 px-8">
+            <WeeklyCalendar rows={calendarRows} />
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -16,6 +16,7 @@ interface DeadlinesViewProps {
   studentId: number;
   onRefresh?: () => void;
   readOnly?: boolean;
+  headerRight?: React.ReactNode; // extra content in the PageHeader right slot
 }
 
 const inputStyle: React.CSSProperties = {
@@ -48,7 +49,7 @@ const STATUS_LABELS: Record<string, string> = {
 type SortField = "due" | "priority" | "title" | "specialist" | "status";
 type FilterStatus = "all" | "pending" | "in-progress" | "overdue" | "completed" | "blocked";
 
-export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = false }: DeadlinesViewProps) {
+export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = false, headerRight }: DeadlinesViewProps) {
   const [sortBy, setSortBy] = useState<SortField>("due");
   const [sortAsc, setSortAsc] = useState(true);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
@@ -167,22 +168,25 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
   return (
     <div>
       <PageHeader
-        title="Deadlines"
+        title="Roadmap"
         sub={`${todoCount} to do · ${overdueCount} overdue · ${doneCount} completed${blockedCount > 0 ? ` · ${blockedCount} blocked` : ""}`}
         right={
-          readOnly ? (
-            <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}>
-              View Only
-            </span>
-          ) : (
-            <button
-              onClick={() => setAddingDeadline(true)}
-              className="flex items-center gap-1 text-xs font-semibold px-4 py-2 rounded-lg transition-colors"
-              style={{ background: "#528bff", color: "#fff", border: "none", cursor: "pointer" }}
-            >
-              + Add Deadline
-            </button>
-          )
+          <div className="flex items-center gap-3">
+            {readOnly ? (
+              <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}>
+                View Only
+              </span>
+            ) : (
+              <button
+                onClick={() => setAddingDeadline(true)}
+                className="flex items-center gap-1 text-xs font-semibold px-4 py-2 rounded-lg transition-colors"
+                style={{ background: "#528bff", color: "#fff", border: "none", cursor: "pointer" }}
+              >
+                + Add Deadline
+              </button>
+            )}
+            {headerRight}
+          </div>
         }
       />
 

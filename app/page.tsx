@@ -22,7 +22,6 @@ import { pullFromGoogleCalendar, syncAllDeadlinesToGoogle, syncAllCounselorEvent
 import { Goal, Task, Course, Test, Activity, Student, Honor } from "./types";
 import { Honors } from "./components/student/Honors";
 import { Receptacle } from "./components/student/Receptacle";
-import { DeadlinesView } from "./components/student/DeadlinesView";
 
 
 
@@ -306,16 +305,6 @@ export default function Home() {
           googleEvents={studentGoogleEvents}
         />
       );
-    if (isStudentOrParent && view === "deadlines" && me) {
-      return (
-        <DeadlinesView
-          deadlines={me.dl}
-          studentId={me.id}
-          onRefresh={handleRefresh}
-          readOnly={isParent}
-        />
-      );
-    }
     if (isStudentOrParent && view === "academics" && me) {
       return <Academics student={me} courses={courses} setCourses={setCourses} readOnly={isParent} />;
     }
