@@ -54,11 +54,21 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
   const [sortAsc, setSortAsc] = useState(true);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [groupByCategory, setGroupByCategory] = useState(true);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [addingDeadline, setAddingDeadline] = useState(false);
   const [editingDeadline, setEditingDeadline] = useState<Deadline | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  const toggleGroup = (cat: string) => {
+    setCollapsedGroups((prev) => {
+      const n = new Set(prev);
+      n.has(cat) ? n.delete(cat) : n.add(cat);
+      return n;
+    });
+  };
 
   // Filter
   let filtered = [...deadlines];
@@ -165,6 +175,77 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
   const doneCount = deadlines.filter((d) => d.status === "completed").length;
   const blockedCount = deadlines.filter((d) => d.status === "blocked").length;
 
+  // Render a single task row (used in both grouped and flat views)
+  const renderTaskRow = (d: Deadline) => {
+    const isOwn = d.createdBy === "student";
+    const canEdit = !readOnly;
+    const isCompleted = d.status === "completed";
+    const blocked = blockedItems.filter((b) => b.blockedBy === d.title);
+    return (
+      <div key={d.id}>
+        <div
+          onClick={() => canEdit && setEditingDeadline(d)}
+          className="grid items-center px-3 py-2.5 border-b border-line transition-colors"
+          style={{
+            gridTemplateColumns: "2fr 1fr 1fr 1fr 80px",
+            cursor: canEdit ? "pointer" : "default",
+            opacity: isCompleted ? 0.45 : 1,
+            background: d.status === "overdue" ? "rgba(229,91,91,0.04)" : "transparent",
+          }}>
+          <div className="min-w-0 flex items-center gap-2">
+            {!readOnly && (
+              <input type="checkbox" checked={isCompleted}
+                onClick={(e) => e.stopPropagation()}
+                onChange={() => quickStatusUpdate(d, isCompleted ? "pending" : "completed")}
+                className="flex-shrink-0 cursor-pointer"
+                style={{ accentColor: "#4aba6a", width: 14, height: 14 }} />
+            )}
+            <div className="min-w-0">
+              <div className="text-sm font-medium truncate flex items-center gap-1.5"
+                style={{ color: isCompleted ? "#505050" : "#ebebeb", textDecoration: isCompleted ? "line-through" : "none" }}>
+                {d.title}
+                {!isOwn && <span className="text-[9px] text-faint">🔒</span>}
+                {d.googleDocLink && <span className="text-[9px] cursor-pointer" onClick={(e) => { e.stopPropagation(); window.open(d.googleDocLink, "_blank"); }}>📄</span>}
+              </div>
+              {d.description && <div className="text-[11px] text-sub truncate mt-0.5">{d.description}</div>}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs" style={{ color: d.days < 0 ? "#e55b5b" : d.days <= 3 ? "#e5a83b" : "#717171" }}>
+              {d.days < 0 ? `${Math.abs(d.days)}d late` : d.days === 0 ? "Today" : `${d.days}d`}
+            </div>
+            <div className="text-[10px] text-faint">{d.due}</div>
+          </div>
+          <div className="text-xs text-sub truncate">{d.specialist || "—"}</div>
+          <div><Tag color={getStatusColor(d.status)}>{STATUS_LABELS[d.status] || d.status}</Tag></div>
+          <div>
+            {d.priority ? (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                style={{ background: `${PRIORITY_COLORS[d.priority]}15`, color: PRIORITY_COLORS[d.priority] }}>{d.priority}</span>
+            ) : <span className="text-[10px] text-faint">—</span>}
+          </div>
+        </div>
+        {blocked.map((b) => (
+          <div key={b.id} onClick={() => canEdit && setEditingDeadline(b)}
+            className="grid items-center px-3 py-2 border-b border-line"
+            style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 80px", cursor: canEdit ? "pointer" : "default", background: "rgba(229,91,91,0.03)", paddingLeft: 40 }}>
+            <div className="min-w-0 flex items-center gap-2">
+              <span className="text-[10px] text-faint">↳</span>
+              <div className="min-w-0">
+                <div className="text-sm font-medium truncate text-heading">{b.title}</div>
+                <div className="text-[10px]" style={{ color: "#e55b5b" }}>Blocked by: {b.blockedBy}</div>
+              </div>
+            </div>
+            <div className="text-xs text-sub">{b.days < 0 ? `${Math.abs(b.days)}d late` : `${b.days}d`}</div>
+            <div className="text-xs text-sub truncate">{b.specialist || "—"}</div>
+            <div><Tag color="#e55b5b">Blocked</Tag></div>
+            <div>{b.priority ? <span className="text-[10px] font-semibold" style={{ color: PRIORITY_COLORS[b.priority] }}>{b.priority}</span> : <span className="text-[10px] text-faint">—</span>}</div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div>
       <PageHeader
@@ -215,10 +296,24 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search deadlines..."
+            placeholder="Search tasks..."
             className="flex-1 min-w-[200px]"
             style={{ ...inputStyle, padding: "8px 12px", fontSize: 13, maxWidth: 300 }}
           />
+
+          {/* Group by toggle */}
+          <button
+            onClick={() => setGroupByCategory(!groupByCategory)}
+            className="px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer"
+            style={{
+              background: groupByCategory ? "rgba(82,139,255,0.1)" : "#252525",
+              color: groupByCategory ? "#7aabff" : "#717171",
+              border: groupByCategory ? "1px solid #528bff" : "1px solid #333",
+              marginLeft: "auto",
+            }}
+          >
+            Group by Category
+          </button>
         </div>
 
         {/* Table header */}
@@ -247,106 +342,48 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
           {filtered.length === 0 && (
             <div className="text-sm text-sub text-center py-8">No tasks match your filters</div>
           )}
-          {nonBlocked.map((d) => {
-            const isOwn = d.createdBy === "student";
-            const canEdit = !readOnly;
-            const isCompleted = d.status === "completed";
-            const blocked = blockedItems.filter((b) => b.blockedBy === d.title);
 
-            return (
-              <div key={d.id}>
-                <div
-                  onClick={() => canEdit && setEditingDeadline(d)}
-                  className="grid items-center px-3 py-2.5 border-b border-line transition-colors"
-                  style={{
-                    gridTemplateColumns: "2fr 1fr 1fr 1fr 80px",
-                    cursor: canEdit ? "pointer" : "default",
-                    opacity: isCompleted ? 0.45 : 1,
-                    background: d.status === "overdue" ? "rgba(229,91,91,0.04)" : "transparent",
-                  }}
-                >
-                  {/* Title + description */}
-                  <div className="min-w-0 flex items-center gap-2">
-                    {!readOnly && (
-                      <input
-                        type="checkbox"
-                        checked={isCompleted}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={() => quickStatusUpdate(d, isCompleted ? "pending" : "completed")}
-                        className="flex-shrink-0 cursor-pointer"
-                        style={{ accentColor: "#4aba6a", width: 14, height: 14 }}
-                      />
-                    )}
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium truncate flex items-center gap-1.5"
-                        style={{ color: isCompleted ? "#505050" : "#ebebeb", textDecoration: isCompleted ? "line-through" : "none" }}>
-                        {d.title}
-                        {!isOwn && <span className="text-[9px] text-faint">🔒</span>}
-                        {d.googleDocLink && (
-                          <span className="text-[9px] cursor-pointer" onClick={(e) => { e.stopPropagation(); window.open(d.googleDocLink, "_blank"); }}>📄</span>
-                        )}
-                      </div>
-                      {d.description && <div className="text-[11px] text-sub truncate mt-0.5">{d.description}</div>}
-                    </div>
-                  </div>
-
-                  {/* Due */}
-                  <div>
-                    <div className="text-xs" style={{ color: d.days < 0 ? "#e55b5b" : d.days <= 3 ? "#e5a83b" : "#717171" }}>
-                      {d.days < 0 ? `${Math.abs(d.days)}d late` : d.days === 0 ? "Today" : `${d.days}d`}
-                    </div>
-                    <div className="text-[10px] text-faint">{d.due}</div>
-                  </div>
-
-                  {/* Specialist */}
-                  <div className="text-xs text-sub truncate">{d.specialist || "—"}</div>
-
-                  {/* Status */}
-                  <div>
-                    <Tag color={getStatusColor(d.status)}>{STATUS_LABELS[d.status] || d.status}</Tag>
-                  </div>
-
-                  {/* Priority */}
-                  <div>
-                    {d.priority ? (
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                        style={{ background: `${PRIORITY_COLORS[d.priority]}15`, color: PRIORITY_COLORS[d.priority] }}>
-                        {d.priority}
+          {groupByCategory ? (
+            // ── Grouped by Category ──
+            (() => {
+              const categories = [...new Set(filtered.map((d) => d.cat))].sort();
+              const CATEGORY_COLORS: Record<string, string> = {
+                essays: "#a480f2", applications: "#4aba6a", testing: "#e5a83b",
+                planning: "#528bff", extracurricular: "#ec70a0", Academics: "#4aba6a",
+                Testing: "#e5a83b", Extracurriculars: "#a480f2",
+              };
+              return categories.map((cat) => {
+                const catTasks = filtered.filter((d) => d.cat === cat);
+                const isCollapsed = collapsedGroups.has(cat);
+                const overdueCount = catTasks.filter((d) => d.status === "overdue").length;
+                return (
+                  <div key={cat}>
+                    {/* Category header */}
+                    <button onClick={() => toggleGroup(cat)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 border-b border-line bg-transparent border-none cursor-pointer text-left"
+                      style={{ background: "rgba(255,255,255,0.02)" }}>
+                      <span className="text-[10px]" style={{ color: "#717171" }}>{isCollapsed ? "▶" : "▼"}</span>
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-md"
+                        style={{ background: `${CATEGORY_COLORS[cat] || "#528bff"}15`, color: CATEGORY_COLORS[cat] || "#528bff" }}>
+                        {cat}
                       </span>
-                    ) : (
-                      <span className="text-[10px] text-faint">—</span>
-                    )}
+                      <span className="text-[10px] text-sub">({catTasks.length} task{catTasks.length !== 1 ? "s" : ""})</span>
+                      {overdueCount > 0 && (
+                        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(229,91,91,0.1)", color: "#e55b5b" }}>
+                          {overdueCount} overdue
+                        </span>
+                      )}
+                    </button>
+                    {/* Category rows */}
+                    {!isCollapsed && catTasks.map((d) => renderTaskRow(d))}
                   </div>
-                </div>
-
-                {/* Blocked sub-items */}
-                {blocked.map((b) => (
-                  <div key={b.id}
-                    onClick={() => canEdit && setEditingDeadline(b)}
-                    className="grid items-center px-3 py-2 border-b border-line"
-                    style={{
-                      gridTemplateColumns: "2fr 1fr 1fr 1fr 80px",
-                      cursor: canEdit ? "pointer" : "default",
-                      background: "rgba(229,91,91,0.03)",
-                      paddingLeft: 40,
-                    }}
-                  >
-                    <div className="min-w-0 flex items-center gap-2">
-                      <span className="text-[10px] text-faint">↳</span>
-                      <div className="min-w-0">
-                        <div className="text-sm font-medium truncate text-heading">{b.title}</div>
-                        <div className="text-[10px]" style={{ color: "#e55b5b" }}>Blocked by: {b.blockedBy}</div>
-                      </div>
-                    </div>
-                    <div className="text-xs text-sub">{b.days < 0 ? `${Math.abs(b.days)}d late` : `${b.days}d`}</div>
-                    <div className="text-xs text-sub truncate">{b.specialist || "—"}</div>
-                    <div><Tag color="#e55b5b">Blocked</Tag></div>
-                    <div>{b.priority ? <span className="text-[10px] font-semibold" style={{ color: PRIORITY_COLORS[b.priority] }}>{b.priority}</span> : <span className="text-[10px] text-faint">—</span>}</div>
-                  </div>
-                ))}
-              </div>
-            );
-          })}
+                );
+              });
+            })()
+          ) : (
+            // ── Flat list ──
+            nonBlocked.map((d) => renderTaskRow(d))
+          )}
         </div>
       </div>
 

@@ -4,8 +4,8 @@ import { Student } from "../../types";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { PageHeader } from "../ui/PageHeader";
-import { addDeadline } from "../../lib/queries";
-import { useState } from "react";
+import { addDeadline, fetchCounselorEventsForStudent } from "../../lib/queries";
+import { useState, useEffect } from "react";
 
 interface SessionPrepProps {
   student: Student;
@@ -13,6 +13,20 @@ interface SessionPrepProps {
 }
 
 export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
+  const [viewMode, setViewMode] = useState<"sessions" | "commit">("sessions");
+  const [sessionTab, setSessionTab] = useState<"upcoming" | "past">("upcoming");
+  const [events, setEvents] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (student.id) {
+      fetchCounselorEventsForStudent(student.id).then(setEvents);
+    }
+  }, [student.id]);
+
+  const todayStr = new Date().toISOString().split("T")[0];
+  const upcoming = events.filter((e) => e.date >= todayStr).sort((a: any, b: any) => a.date.localeCompare(b.date));
+  const past = events.filter((e) => e.date < todayStr).sort((a: any, b: any) => b.date.localeCompare(a.date));
+  const displayEvents = sessionTab === "upcoming" ? upcoming : past;
   const [activeRecall, setActiveRecall] = useState("");
   const [actions, setActions] = useState([
     { title: "", due: "", description: "" },
@@ -56,21 +70,105 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
   return (
     <div>
       <PageHeader
-        title="Closing Commit"
-        sub="Wrap up your session with action items."
+        title="Sessions"
+        sub={viewMode === "sessions" ? "Your upcoming and past sessions." : "Wrap up your session with action items."}
         right={
-          <div className="inline-flex gap-1 bg-white border border-line rounded-full p-1">
-            {(["online", "in-person"] as const).map((t) => (
-              <button key={t} onClick={() => setSessionType(t)}
-                className="px-4 py-1.5 rounded-full border-none cursor-pointer text-xs font-semibold"
-                style={{ background: sessionType === t ? "#528bff" : "transparent", color: sessionType === t ? "#fff" : "#717171" }}>
-                {t === "online" ? "💻 Online" : "🤝 In-Person"}
-              </button>
-            ))}
+          <div className="flex items-center gap-3">
+            <div className="inline-flex gap-0.5 bg-white border border-line rounded-full p-1">
+              {(["sessions", "commit"] as const).map((m) => (
+                <button key={m} onClick={() => setViewMode(m)}
+                  className="px-4 py-1.5 rounded-full border-none cursor-pointer text-xs font-semibold"
+                  style={{ background: viewMode === m ? "#528bff" : "transparent", color: viewMode === m ? "#fff" : "#717171" }}>
+                  {m === "sessions" ? "Sessions" : "Closing Commit"}
+                </button>
+              ))}
+            </div>
+            {viewMode === "commit" && (
+              <div className="inline-flex gap-0.5 bg-white border border-line rounded-full p-1">
+                {(["online", "in-person"] as const).map((t) => (
+                  <button key={t} onClick={() => setSessionType(t)}
+                    className="px-4 py-1.5 rounded-full border-none cursor-pointer text-xs font-semibold"
+                    style={{ background: sessionType === t ? "#528bff" : "transparent", color: sessionType === t ? "#fff" : "#717171" }}>
+                    {t === "online" ? "💻 Online" : "🤝 In-Person"}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         }
       />
 
+      {/* ── Sessions List View ── */}
+      {viewMode === "sessions" && (
+        <div className="p-6 px-8" style={{ maxWidth: 720 }}>
+          {/* Upcoming / Past toggle */}
+          <div className="flex gap-0.5 mb-5 p-0.5 rounded-full" style={{ background: "#1e1e1e", display: "inline-flex" }}>
+            {(["upcoming", "past"] as const).map((tab) => (
+              <button key={tab} onClick={() => setSessionTab(tab)}
+                className="px-5 py-2 rounded-full border-none cursor-pointer text-xs font-semibold"
+                style={{ background: sessionTab === tab ? "#528bff" : "transparent", color: sessionTab === tab ? "#fff" : "#717171" }}>
+                {tab === "upcoming" ? "Upcoming" : "Past"}
+              </button>
+            ))}
+          </div>
+
+          <p className="text-xs text-sub mb-4">Tap the session cards below to view the notes.</p>
+
+          {displayEvents.length === 0 && (
+            <Card>
+              <p className="text-sm text-sub text-center py-6">
+                {sessionTab === "upcoming" ? "No upcoming sessions scheduled." : "No past sessions found."}
+              </p>
+            </Card>
+          )}
+
+          {/* Group by date */}
+          {(() => {
+            const byDate: Record<string, any[]> = {};
+            for (const ev of displayEvents) {
+              const key = ev.date;
+              if (!byDate[key]) byDate[key] = [];
+              byDate[key].push(ev);
+            }
+            return Object.entries(byDate).map(([date, evs]) => (
+              <div key={date} className="mb-5">
+                <div className="text-sm font-bold text-heading mb-2">
+                  {new Date(date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
+                </div>
+                <div className="flex flex-col gap-2">
+                  {evs.map((ev: any) => (
+                    <div key={ev.id} className="p-4 rounded-xl flex items-center justify-between"
+                      style={{ background: "#252525", borderLeft: "3px solid #528bff" }}>
+                      <div>
+                        <div className="text-sm font-semibold text-heading">{ev.title}</div>
+                        <div className="flex items-center gap-3 mt-1.5">
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold"
+                            style={{ background: "rgba(82,139,255,0.1)", color: "#528bff" }}>
+                            {student.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2)}
+                          </div>
+                          <span className="text-xs text-sub">{student.name}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full"
+                          style={{
+                            background: ev.date < todayStr ? "rgba(74,186,106,0.08)" : "rgba(229,168,59,0.08)",
+                            color: ev.date < todayStr ? "#4aba6a" : "#e5a83b",
+                          }}>
+                          {ev.date < todayStr ? "Completed" : "Pending"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ));
+          })()}
+        </div>
+      )}
+
+      {/* ── Closing Commit View ── */}
+      {viewMode === "commit" && (
       <div className="p-6 px-8" style={{ maxWidth: 720 }}>
         {saved ? (
           <Card>
@@ -163,6 +261,7 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
           </>
         )}
       </div>
+      )}
     </div>
   );
 }
