@@ -32,20 +32,36 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
   const past = events.filter((e) => e.date < todayStr).sort((a: any, b: any) => b.date.localeCompare(a.date));
   const displayEvents = sessionTab === "upcoming" ? upcoming : past;
 
+  const SPECIALISTS = [
+    "Cole Whetstone",
+    "Stephanie Whetstone",
+    "Eric Newman",
+    "Christopher Colby",
+    "Brigitte Gemme",
+    "Howard Rogatnick",
+    "Ren Yu",
+    "Athena Huo",
+  ];
+
   const handleBookSession = async (e: React.FormEvent) => {
     e.preventDefault();
     setBookingSaving(true);
     const f = new FormData(e.target as HTMLFormElement);
-    await addSession(student.id, {
+    const success = await addSession(student.id, {
       date: f.get("date") as string,
       notes: f.get("notes") as string || "",
       action: "",
+      session_name: f.get("session_name") as string || "",
+      start_time: f.get("start_time") as string || "",
+      end_time: f.get("end_time") as string || "",
+      session_type: f.get("session_category") as string || "",
+      booking_type: f.get("booking_type") as string || "individual",
+      specialist: f.get("specialist") as string || "",
     });
     if (onRefresh) await onRefresh();
-    // Reload events
     fetchCounselorEventsForStudent(student.id).then(setEvents);
     setBookingSaving(false);
-    setShowBooking(false);
+    if (success) setShowBooking(false);
   };
   const [activeRecall, setActiveRecall] = useState("");
   const [actions, setActions] = useState([
@@ -295,7 +311,12 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
         <Modal title="New Booking Request" onClose={() => setShowBooking(false)}>
           <form onSubmit={handleBookSession}>
             <FormField label="Booking with">
-              <input value={student.counselor} readOnly style={{ ...inputStyle, opacity: 0.6 }} />
+              <select name="specialist" required style={inputStyle}>
+                <option value="" disabled>Select specialist...</option>
+                {SPECIALISTS.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
             </FormField>
 
             <FormField label="Session name">
@@ -309,33 +330,33 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
                 <input name="date" type="date" required style={inputStyle} />
               </FormField>
               <FormField label="Start Time">
-                <select name="start_time" style={inputStyle}>
-                  {Array.from({ length: 24 }, (_, h) => [h, 0, h, 30]).flat().reduce((acc: string[], _, i, arr) => {
-                    if (i % 2 === 0) {
-                      const h = Math.floor(i / 2 / 2 + 8);
-                      const m = (i / 2 % 2) * 30;
-                      if (h < 22) {
-                        const label = `${h > 12 ? h - 12 : h}:${String(m).padStart(2, "0")}${h >= 12 ? "pm" : "am"}`;
-                        acc.push(label);
+                <select name="start_time" style={inputStyle} defaultValue="4:00pm">
+                  {(() => {
+                    const times: string[] = [];
+                    for (let h = 8; h <= 21; h++) {
+                      for (const m of [0, 30]) {
+                        const hr = h > 12 ? h - 12 : h === 0 ? 12 : h;
+                        const ampm = h >= 12 ? "pm" : "am";
+                        times.push(`${hr}:${String(m).padStart(2, "0")}${ampm}`);
                       }
                     }
-                    return acc;
-                  }, []).map((t) => <option key={t} value={t}>{t}</option>)}
+                    return times.map((t) => <option key={t} value={t}>{t}</option>);
+                  })()}
                 </select>
               </FormField>
               <FormField label="End Time">
-                <select name="end_time" style={inputStyle}>
-                  {Array.from({ length: 24 }, (_, h) => [h, 0, h, 30]).flat().reduce((acc: string[], _, i) => {
-                    if (i % 2 === 0) {
-                      const h = Math.floor(i / 2 / 2 + 9);
-                      const m = (i / 2 % 2) * 30;
-                      if (h < 23) {
-                        const label = `${h > 12 ? h - 12 : h}:${String(m).padStart(2, "0")}${h >= 12 ? "pm" : "am"}`;
-                        acc.push(label);
+                <select name="end_time" style={inputStyle} defaultValue="5:00pm">
+                  {(() => {
+                    const times: string[] = [];
+                    for (let h = 8; h <= 22; h++) {
+                      for (const m of [0, 30]) {
+                        const hr = h > 12 ? h - 12 : h === 0 ? 12 : h;
+                        const ampm = h >= 12 ? "pm" : "am";
+                        times.push(`${hr}:${String(m).padStart(2, "0")}${ampm}`);
                       }
                     }
-                    return acc;
-                  }, []).map((t) => <option key={t} value={t}>{t}</option>)}
+                    return times.map((t) => <option key={t} value={t}>{t}</option>);
+                  })()}
                 </select>
               </FormField>
             </div>

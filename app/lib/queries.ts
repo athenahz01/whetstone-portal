@@ -282,10 +282,19 @@ export async function deleteDeadline(deadlineId: number): Promise<boolean> {
 
 export async function addSession(studentId: number, data: {
   date: string; notes: string; action: string;
+  session_name?: string; start_time?: string; end_time?: string;
+  session_type?: string; booking_type?: string; specialist?: string;
 }): Promise<boolean> {
-  const { error } = await supabase.from("sessions").insert({
+  const insertData: any = {
     student_id: studentId, date: data.date, notes: data.notes, action: data.action,
-  });
+  };
+  if (data.session_name) insertData.session_name = data.session_name;
+  if (data.start_time) insertData.start_time = data.start_time;
+  if (data.end_time) insertData.end_time = data.end_time;
+  if (data.session_type) insertData.session_type = data.session_type;
+  if (data.booking_type) insertData.booking_type = data.booking_type;
+  if (data.specialist) insertData.specialist = data.specialist;
+  const { error } = await supabase.from("sessions").insert(insertData);
   if (error) { console.error("Error adding session:", error); return false; }
   return true;
 }
