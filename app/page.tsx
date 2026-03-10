@@ -162,10 +162,19 @@ export default function Home() {
       setProfileId(userId);
 
       // Update last_login timestamp
+      const now = new Date().toISOString();
       await supabase
         .from("profiles")
-        .update({ last_login: new Date().toISOString() })
+        .update({ last_login: now })
         .eq("id", userId);
+
+      // Also update students table so strategist dashboard shows correct last login
+      if (data.student_id) {
+        await supabase
+          .from("students")
+          .update({ last_login: now })
+          .eq("id", data.student_id);
+      }
 
       loadData();
 

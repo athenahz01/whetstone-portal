@@ -127,7 +127,7 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
                       lineHeight: "16px",
                     }}
                   >
-                    {hasLink ? "🔗 " : ""}{evt.title}
+                    {hasLink ? "🔗 " : ""}{evt.title?.replace(/\s*\[Whetstone\]\s*/g, "")}
                   </div>
                 );
               })}
@@ -308,7 +308,7 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
 
             {/* Title */}
             <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#ebebeb", marginBottom: 4 }}>
-              {selectedEvent.title}
+              {selectedEvent.title?.replace(/\s*\[Whetstone\]\s*/g, "")}
             </h3>
 
             {/* Date */}

@@ -27,7 +27,21 @@ interface CalendarEvent {
   topMinutes: number; // minutes from midnight — allows free positioning
   synced?: boolean;
   dbId?: number; // ID from receptacle_events table
+  color?: string; // preset color key
 }
+
+// Color presets (Google Calendar style)
+const EVENT_COLORS: { key: string; bg: string; border: string; text: string }[] = [
+  { key: "blue",   bg: "rgba(82,139,255,0.08)",  border: "#528bff", text: "#7aabff" },
+  { key: "green",  bg: "rgba(74,186,106,0.08)",  border: "#4aba6a", text: "#6dd890" },
+  { key: "red",    bg: "rgba(229,91,91,0.08)",   border: "#e55b5b", text: "#f08080" },
+  { key: "purple", bg: "rgba(164,128,242,0.08)", border: "#a480f2", text: "#c4a8ff" },
+  { key: "amber",  bg: "rgba(229,168,59,0.08)",  border: "#e5a83b", text: "#f0c060" },
+  { key: "teal",   bg: "rgba(56,189,180,0.08)",  border: "#38bdb4", text: "#5cd6ce" },
+  { key: "pink",   bg: "rgba(236,112,160,0.08)", border: "#ec70a0", text: "#f5a0c0" },
+  { key: "slate",  bg: "rgba(130,140,160,0.08)", border: "#828ca0", text: "#a0a8b8" },
+];
+function getEC(key?: string) { return EVENT_COLORS.find((c) => c.key === key) || EVENT_COLORS[0]; }
 
 interface ReceptacleProps {
   studentId?: number;
@@ -137,6 +151,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
 
   // Drag ghost preview
   const [ghostPreview, setGhostPreview] = useState<{ date: string; topMinutes: number; minutes: number; text: string; colIndex: number } | null>(null);
+  const [colorPickerFor, setColorPickerFor] = useState<string | null>(null);
 
   const calRef = useRef<HTMLDivElement>(null);
   const days = get3Days(dayOffset);
@@ -173,6 +188,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
         topMinutes: e.top_minutes,
         synced: e.synced,
         dbId: e.id,
+        color: e.quadrant?.startsWith("color:") ? e.quadrant.replace("color:", "") : undefined,
       }));
       setCalEvents((prev) => {
         // Merge: keep in-memory events that aren't yet persisted, add DB events
@@ -282,7 +298,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
     const scrollTop = scrollContainer.scrollTop;
     const yInGrid = e.clientY - rect.top + scrollTop;
     const minutesFromTop = (yInGrid / HOUR_HEIGHT) * 60;
-    const totalMinutes = Math.round((420 + minutesFromTop) / 15) * 15; // snap to 15-min
+    const totalMinutes = Math.round((420 + minutesFromTop) / 5) * 5; // snap to 5-min
     return Math.max(420, Math.min(totalMinutes, 23 * 60));
   }, []);
 
@@ -406,6 +422,15 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
       deleteReceptacleEvent(ev.dbId);
     }
     setCalEvents((p) => p.filter((e) => e.taskId !== taskId));
+  };
+
+  const changeEventColor = (taskId: string, colorKey: string) => {
+    setCalEvents((p) => p.map((ev) => ev.taskId === taskId ? { ...ev, color: colorKey } : ev));
+    setColorPickerFor(null);
+    const ev = calEvents.find((e) => e.taskId === taskId);
+    if (ev?.dbId) {
+      updateReceptacleEvent(ev.dbId, { quadrant: `color:${colorKey}` } as any);
+    }
   };
 
   const toggleComplete = (id: string) => {
@@ -713,7 +738,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
 
         {/* ── STEP 3 ── */}
         {step === 3 && (
-          <div>
+          <div onClick={() => setColorPickerFor(null)}>
             {/* Header */}
             <div style={{ ...card, padding: "14px 20px", marginBottom: 14 }}>
               <div className="flex items-center gap-4">
@@ -841,27 +866,52 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                                 const offsetMin = ev.topMinutes - cellStartMin;
                                 const topPx = (offsetMin / 60) * HOUR_HEIGHT;
                                 const isDone = completed.has(ev.taskId);
+                                const ec = isDone ? { bg: "rgba(74,186,106,0.06)", border: "rgba(74,186,106,0.4)", text: "#4aba6a" } : getEC(ev.color);
                                 return (
                                   <div key={ev.taskId} draggable={!isDone}
                                     onDragStart={() => !isDone && setDraggingEvent(ev.taskId)}
                                     onDragEnd={() => { setDraggingEvent(null); setGhostPreview(null); }}
-                                    className="absolute left-0.5 right-0.5 rounded-md px-1.5 pt-1 group z-10 overflow-hidden"
+                                    className="absolute left-0.5 right-0.5 rounded-md px-1.5 pt-1 group z-10 overflow-visible"
                                     style={{
                                       top: topPx,
                                       height: minutesToHeight(ev.minutes),
-                                      background: isDone ? "rgba(74,186,106,0.06)" : "rgba(82,139,255,0.08)",
-                                      borderLeft: isDone ? "3px solid rgba(74,186,106,0.4)" : "3px solid #528bff",
+                                      background: ec.bg,
+                                      borderLeft: `3px solid ${ec.border}`,
                                       opacity: isDone ? 0.4 : 1,
                                       cursor: isDone ? "default" : "grab",
                                     }}>
-                                    <div className="text-[10px] font-semibold leading-tight truncate pr-4"
-                                      style={{ color: isDone ? "#4aba6a" : "#7aabff", textDecoration: isDone ? "line-through" : "none" }}>{ev.text}</div>
-                                    <div className="text-[9px] mt-0.5" style={{ color: isDone ? "rgba(74,186,106,0.5)" : "#528bff", opacity: 0.7 }}>
+                                    <div className="text-[10px] font-semibold leading-tight truncate pr-8"
+                                      style={{ color: ec.text, textDecoration: isDone ? "line-through" : "none" }}>{ev.text}</div>
+                                    <div className="text-[9px] mt-0.5" style={{ color: ec.border, opacity: 0.7 }}>
                                       {fmtMinutes(ev.topMinutes)} · {ev.minutes}m{ev.synced ? " · synced" : ""}
                                     </div>
-                                    <button onClick={() => removeEvent(ev.taskId)}
-                                      className="absolute top-0.5 right-0.5 w-4 h-4 rounded text-[9px] hidden group-hover:flex items-center justify-center border-none cursor-pointer"
-                                      style={{ background: "rgba(229,91,91,0.2)", color: "#e55b5b" }}>✕</button>
+                                    {/* Hover actions */}
+                                    <div className="absolute top-0.5 right-0.5 hidden group-hover:flex items-center gap-0.5">
+                                      {!isDone && (
+                                        <button onClick={(e) => { e.stopPropagation(); setColorPickerFor(colorPickerFor === ev.taskId ? null : ev.taskId); }}
+                                          className="w-4 h-4 rounded-full text-[8px] flex items-center justify-center border-none cursor-pointer"
+                                          style={{ background: ec.border }}>
+                                          <span style={{ color: "#fff" }}>●</span>
+                                        </button>
+                                      )}
+                                      <button onClick={() => removeEvent(ev.taskId)}
+                                        className="w-4 h-4 rounded text-[9px] flex items-center justify-center border-none cursor-pointer"
+                                        style={{ background: "rgba(229,91,91,0.2)", color: "#e55b5b" }}>✕</button>
+                                    </div>
+                                    {/* Color picker */}
+                                    {colorPickerFor === ev.taskId && (
+                                      <div className="absolute top-full right-0 mt-1 z-50 rounded-lg p-1.5 flex gap-1 flex-wrap"
+                                        style={{ background: "#1e1e1e", border: "1px solid #333", width: 92, boxShadow: "0 8px 24px rgba(0,0,0,0.5)" }}
+                                        onClick={(e) => e.stopPropagation()}>
+                                        {EVENT_COLORS.map((c) => (
+                                          <button key={c.key}
+                                            onClick={() => changeEventColor(ev.taskId, c.key)}
+                                            className="w-5 h-5 rounded-full border-none cursor-pointer"
+                                            style={{ background: c.border, outline: ev.color === c.key ? "2px solid #fff" : "none", outlineOffset: 1 }}
+                                          />
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
                                 );
                               })}
