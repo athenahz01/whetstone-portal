@@ -69,8 +69,11 @@ export function StudentDashboard({
 
   const quickComplete = async (d: Deadline) => {
     try {
-      const { supabase } = await import("../../lib/supabase");
-      await supabase.from("deadlines").update({ status: "completed" }).eq("id", d.id);
+      await fetch("/api/update-student", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "complete_task", taskId: d.id }),
+      });
       if (onRefresh) onRefresh();
     } catch {}
   };

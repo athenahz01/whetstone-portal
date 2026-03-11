@@ -8,6 +8,14 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
+
+  // Handle task completion action
+  if (body.action === "complete_task" && body.taskId) {
+    const { error } = await supabase.from("deadlines").update({ status: "completed" }).eq("id", body.taskId);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ success: true });
+  }
+
   const { studentId, ...fields } = body;
 
   if (!studentId) {
