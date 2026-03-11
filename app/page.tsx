@@ -175,20 +175,15 @@ export default function Home() {
       setProfile(data as Profile);
       setProfileId(userId);
 
-      // Update last_login timestamp
-      const now = new Date().toISOString();
-      await supabase
-        .from("profiles")
-        .update({ last_login: now })
-        .eq("id", userId);
-
-      // Also update students table so strategist dashboard shows correct last login
-      if (data.student_id) {
-        await supabase
-          .from("students")
-          .update({ last_login: now })
-          .eq("id", data.student_id);
-      }
+      // Update last_login timestamp via API (bypasses RLS)
+      fetch("/api/update-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          profileId: userId,
+          studentId: data.student_id || null,
+        }),
+      }).catch(() => {});  // fire-and-forget
 
       loadData();
 
