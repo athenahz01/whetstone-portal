@@ -123,9 +123,9 @@ export function Sidebar({
         }}
       >
         {collapsed ? (
-          <img src="/whetstone-logo.png" alt="W" style={{ width: 36, height: 36, objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+          <img src="/whetstone-logo.svg" alt="W" style={{ width: 36, height: 36, objectFit: "contain" }} />
         ) : (
-          <img src="/whetstone-logo.png" alt="Whetstone" style={{ height: 32, objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+          <img src="/whetstone-logo.svg" alt="Whetstone" style={{ height: 32, objectFit: "contain" }} />
         )}
       </div>
 

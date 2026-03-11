@@ -36,7 +36,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
       <div className="border border-line rounded-2xl p-10" style={{ width: 420, background: "#1e1e1e", boxShadow: "0 4px 24px rgba(0,0,0,0.3)" }}>
         {/* Logo */}
         <div className="text-center mb-8">
-          <img src="/whetstone-logo.png" alt="Whetstone" className="mx-auto mb-2" style={{ height: 48, objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+          <img src="/whetstone-logo.svg" alt="Whetstone" className="mx-auto mb-2" style={{ height: 48, objectFit: "contain" }} />
         </div>
 
         {/* Form */}
