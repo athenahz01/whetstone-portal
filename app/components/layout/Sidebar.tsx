@@ -57,6 +57,7 @@ export function Sidebar({
           ["dashboard", "Dashboard"],
           ["master", "Master Timeline"],
           ["caseload", "Caseload"],
+          ["booking-requests", "Booking Requests"],
           ["analytics", "Analytics"],
           ...(isAdmin ? [["admin", "Admin"]] : []),
         ]

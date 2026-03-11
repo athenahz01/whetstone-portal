@@ -17,6 +17,7 @@ import { StaffDashboard } from "./components/staff/StaffDashboard";
 import { Caseload } from "./components/staff/Caseload";
 import { StudentDetail } from "./components/staff/StudentDetail";
 import { Analytics } from "./components/staff/Analytics";
+import { BookingRequests as BookingRequestsView } from "./components/staff/BookingRequests";
 import { MasterTimeline } from "./components/staff/MasterTimeline";
 import { AdminPanel } from "./components/staff/AdminPanel";
 import { pullFromGoogleCalendar, syncAllDeadlinesToGoogle, syncAllCounselorEventsToGoogle } from "./lib/calendar";
@@ -396,6 +397,9 @@ export default function Home() {
           profileId={profileId}
         />
       );
+    }
+    if (role === "strategist" && view === "booking-requests") {
+      return <BookingRequestsView strategistEmail={userEmail || ""} />;
     }
     if (role === "strategist" && view === "analytics") {
       return (

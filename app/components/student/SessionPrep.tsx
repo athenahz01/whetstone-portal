@@ -22,6 +22,15 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
   const [bookingSaving, setBookingSaving] = useState(false);
   const [selectedSession, setSelectedSession] = useState<any>(null);
   const [commits, setCommits] = useState<any[]>([]);
+  const [bookingRequests, setBookingRequests] = useState<any[]>([]);
+
+  const loadBookingRequests = async () => {
+    try {
+      const res = await fetch(`/api/booking-requests?studentId=${student.id}`);
+      const data = await res.json();
+      setBookingRequests(data.requests || []);
+    } catch { setBookingRequests([]); }
+  };
   const [showCommitForm, setShowCommitForm] = useState(false);
   const [editingCommit, setEditingCommit] = useState<any>(null);
   const [commitSpecialist, setCommitSpecialist] = useState("");
@@ -43,6 +52,7 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
         setEvents([...counselorEvs, ...bookedSessions]);
       });
       loadCommits();
+      loadBookingRequests();
     }
   }, [student.id]);
 
@@ -183,6 +193,49 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
         {/* ── Sessions List (Upcoming or Past) ── */}
         {viewMode === "sessions" && (
           <div>
+
+          {/* Pending booking requests */}
+          {bookingRequests.filter(r => r.status === "pending" || r.status === "countered").length > 0 && (
+            <div className="mb-5">
+              <div className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "#e5a83b" }}>⏳ Pending Booking Requests</div>
+              <div className="flex flex-col gap-2">
+                {bookingRequests.filter(r => r.status === "pending" || r.status === "countered").map((r: any) => (
+                  <div key={r.id} className="p-4 rounded-xl" style={{ background: "#252525", borderLeft: "3px solid #e5a83b" }}>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="text-sm font-semibold text-heading">{r.session_name || `Session with ${r.specialist}`}</div>
+                        <div className="text-xs text-sub mt-0.5">{r.date} · {r.start_time} · with {r.specialist}</div>
+                        {r.status === "countered" && (
+                          <div className="mt-2 p-3 rounded-lg" style={{ background: "#1e1e1e", border: "1px solid rgba(229,168,59,0.2)" }}>
+                            <div className="text-xs font-semibold mb-1" style={{ color: "#e5a83b" }}>Counter-offer from {r.specialist}:</div>
+                            <div className="text-sm text-heading">{r.counter_date} at {r.counter_start_time}</div>
+                            {r.counter_note && <div className="text-xs text-sub mt-1">{r.counter_note}</div>}
+                            <button onClick={async () => {
+                              await fetch("/api/booking-requests", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ action: "accept_counter", requestId: r.id }),
+                              });
+                              reloadEvents();
+                              loadBookingRequests();
+                            }}
+                              className="mt-2 px-4 py-1.5 rounded-full border-none cursor-pointer text-xs font-semibold"
+                              style={{ background: "#4aba6a", color: "#fff" }}>
+                              Accept New Time
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full flex-shrink-0"
+                        style={{ background: r.status === "countered" ? "rgba(229,168,59,0.08)" : "rgba(82,139,255,0.08)", color: r.status === "countered" ? "#e5a83b" : "#528bff" }}>
+                        {r.status === "countered" ? "Counter-offer" : "Awaiting approval"}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {displayEvents.length === 0 && (
             <Card>
@@ -506,26 +559,32 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
             onBook={async (data) => {
               setBookingSaving(true);
               try {
-                console.log("[BookSession] studentId:", student.id, "data:", data);
-                const res = await fetch("/api/book-session", {
+                const res = await fetch("/api/booking-requests", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ studentId: student.id, ...data }),
+                  body: JSON.stringify({
+                    action: "request",
+                    studentId: student.id,
+                    studentName: student.name,
+                    specialist: data.specialist,
+                    date: data.date,
+                    startTime: data.start_time,
+                    sessionName: data.session_name,
+                    sessionType: data.session_type,
+                    notes: data.notes,
+                  }),
                 });
                 const result = await res.json();
                 if (result.success) {
                   if (onRefresh) await onRefresh();
-                  Promise.all([
-                    fetchCounselorEventsForStudent(student.id),
-                    fetchStudentSessions(student.id),
-                  ]).then(([counselorEvs, bookedSessions]) => {
-                    setEvents([...counselorEvs, ...bookedSessions]);
-                  });
+                  reloadEvents();
+                  loadBookingRequests();
                   setShowBooking(false);
+                  alert("Booking request sent! Your mentor will review and approve.");
                 } else {
-                  alert("Failed to book: " + (result.error || "Unknown error"));
+                  alert("Failed: " + (result.error || "Unknown error"));
                 }
-              } catch { alert("Booking failed."); }
+              } catch { alert("Booking request failed."); }
               setBookingSaving(false);
             }}
             saving={bookingSaving}
