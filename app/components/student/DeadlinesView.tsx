@@ -191,14 +191,14 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
     const canEdit = !readOnly;
     const isCompleted = d.status === "completed";
     const blocked = blockedItems.filter((b) => b.blockedBy === d.title);
-    const initials = d.specialist ? d.specialist.split(" ").map(n => n[0]).join("").substring(0, 2) : null;
+    const mentors = d.specialist ? d.specialist.split(",").map(s => s.trim()).filter(Boolean) : [];
     return (
       <div key={d.id}>
         <div
           onClick={() => canEdit && setEditingDeadline(d)}
           className="grid items-center px-3 py-2.5 border-b border-line transition-colors hover:bg-mist"
           style={{
-            gridTemplateColumns: "2.5fr 80px 60px 90px 70px 30px",
+            gridTemplateColumns: "2.5fr 90px 80px 100px 70px 30px",
             cursor: canEdit ? "pointer" : "default",
             opacity: isCompleted ? 0.45 : 1,
             background: d.status === "overdue" ? "rgba(229,91,91,0.04)" : "transparent",
@@ -222,38 +222,55 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
               {d.description && <div className="text-[11px] text-sub truncate mt-0.5">{d.description}</div>}
             </div>
           </div>
-          {/* Team avatar + quick assign */}
-          <div className="flex items-center gap-1 relative">
-            {initials ? (
-              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-bold"
-                style={{ background: "rgba(82,139,255,0.1)", color: "#528bff" }}
-                title={d.specialist || ""}>
-                {initials}
+          {/* Team avatars + quick assign */}
+          <div className="flex items-center gap-0.5 relative" onClick={(e) => e.stopPropagation()}>
+            {/* Existing mentor circles (stacked) */}
+            {mentors.map((m, mi) => (
+              <div key={mi} className="w-5 h-5 rounded-full flex items-center justify-center text-[7px] font-bold flex-shrink-0"
+                style={{ background: "rgba(82,139,255,0.12)", color: "#528bff", marginLeft: mi > 0 ? -4 : 0, zIndex: mentors.length - mi }}
+                title={m}>
+                {m.split(" ").map(n => n[0]).join("").substring(0, 2)}
               </div>
-            ) : (
-              !readOnly ? (
-                <button onClick={(e) => { e.stopPropagation(); setQuickAssign(d.id === quickAssign ? null : d.id); }}
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-none cursor-pointer"
-                  style={{ background: "#333", color: "#717171" }}>+</button>
-              ) : (
-                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[8px]"
-                  style={{ background: "#333", color: "#505050" }}>—</div>
-              )
+            ))}
+            {/* + button to add more */}
+            {!readOnly && (
+              <button onClick={(e) => { e.stopPropagation(); setQuickAssign(d.id === quickAssign ? null : d.id); }}
+                className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold border-none cursor-pointer flex-shrink-0"
+                style={{ background: "#333", color: "#717171", marginLeft: mentors.length > 0 ? -2 : 0 }}>+</button>
             )}
+            {/* Multi-select dropdown */}
             {quickAssign === d.id && (
-              <div className="absolute top-7 left-0 z-50 rounded-lg shadow-lg py-1" style={{ background: "#252525", border: "1px solid #333", width: 160 }}>
-                {SPECIALISTS.map((s) => (
-                  <button key={s} onClick={async (e) => {
-                    e.stopPropagation();
-                    await updateDeadline(d.id, { specialist: s });
-                    setQuickAssign(null);
-                    if (onRefresh) onRefresh();
-                  }}
-                    className="w-full px-3 py-1.5 text-left text-xs bg-transparent border-none cursor-pointer hover:opacity-80"
-                    style={{ color: "#ebebeb" }}>
-                    {s}
-                  </button>
-                ))}
+              <div className="absolute top-7 left-0 z-50 rounded-lg shadow-lg py-1.5" style={{ background: "#252525", border: "1px solid #333", width: 180 }}>
+                <div className="px-3 py-1 text-[10px] font-bold text-sub uppercase tracking-wider">Select mentors</div>
+                {SPECIALISTS.map((s) => {
+                  const isSelected = mentors.includes(s);
+                  return (
+                    <button key={s} onClick={async (e) => {
+                      e.stopPropagation();
+                      let updated: string[];
+                      if (isSelected) {
+                        updated = mentors.filter(m => m !== s);
+                      } else {
+                        updated = [...mentors, s];
+                      }
+                      await updateDeadline(d.id, { specialist: updated.join(", ") });
+                      if (onRefresh) onRefresh();
+                    }}
+                      className="w-full px-3 py-1.5 text-left text-xs bg-transparent border-none cursor-pointer flex items-center gap-2"
+                      style={{ color: isSelected ? "#7aabff" : "#a0a0a0" }}>
+                      <span className="w-4 h-4 rounded flex items-center justify-center text-[9px] flex-shrink-0"
+                        style={{ background: isSelected ? "rgba(82,139,255,0.15)" : "#333", color: isSelected ? "#528bff" : "#505050" }}>
+                        {isSelected ? "✓" : ""}
+                      </span>
+                      {s}
+                    </button>
+                  );
+                })}
+                <div className="mt-1 pt-1 border-t border-line px-3">
+                  <button onClick={(e) => { e.stopPropagation(); setQuickAssign(null); }}
+                    className="w-full py-1 text-[10px] font-semibold bg-transparent border-none cursor-pointer"
+                    style={{ color: "#528bff" }}>Done</button>
+                </div>
               </div>
             )}
           </div>
@@ -282,7 +299,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
         {blocked.map((b) => (
           <div key={b.id} onClick={() => canEdit && setEditingDeadline(b)}
             className="grid items-center px-3 py-2 border-b border-line"
-            style={{ gridTemplateColumns: "2.5fr 80px 60px 90px 70px 30px", cursor: canEdit ? "pointer" : "default", background: "rgba(229,91,91,0.03)", paddingLeft: 40 }}>
+            style={{ gridTemplateColumns: "2.5fr 90px 80px 100px 70px 30px", cursor: canEdit ? "pointer" : "default", background: "rgba(229,91,91,0.03)", paddingLeft: 40 }}>
             <div className="min-w-0 flex items-center gap-2">
               <span className="text-[10px] text-faint">↳</span>
               <div className="min-w-0">
@@ -409,7 +426,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
         {/* Table header */}
         <div
           className="grid items-center px-3 py-2 rounded-t-lg text-[10px] font-bold uppercase tracking-wider text-sub"
-          style={{ gridTemplateColumns: "2.5fr 80px 60px 90px 70px 30px", background: "#252525", borderBottom: "1px solid #333" }}
+          style={{ gridTemplateColumns: "2.5fr 90px 80px 100px 70px 30px", background: "#252525", borderBottom: "1px solid #333" }}
         >
           <button onClick={() => handleSort("title")}
             className="bg-transparent border-none cursor-pointer text-left text-[10px] font-bold uppercase tracking-wider flex items-center gap-1"
