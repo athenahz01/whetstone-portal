@@ -33,7 +33,7 @@ interface Profile {
   timezone: string;
 }
 
-const ADMIN_EMAIL = "athena@whetstoneadmissions.com";
+const ADMIN_EMAILS = ["athena@whetstoneadmissions.com", "ren@whetstoneadmissions.com"];
 
 export default function Home() {
   const [session, setSession] = useState<boolean | null>(null);
@@ -269,7 +269,7 @@ export default function Home() {
   }
 
   const role = profile.role;
-  const isAdmin = role === "strategist" && userEmail === ADMIN_EMAIL;
+  const isAdmin = role === "strategist" && !!userEmail && ADMIN_EMAILS.includes(userEmail);
   const isParent = role === "parent";
   const isStudentOrParent = role === "student" || role === "parent";
 
