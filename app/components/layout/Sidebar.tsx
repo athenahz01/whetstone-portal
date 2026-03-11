@@ -122,30 +122,10 @@ export function Sidebar({
           borderBottom: "1px solid rgba(148,163,184,0.12)",
         }}
       >
-        <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center text-base font-bold flex-shrink-0"
-          style={{
-            background: "#f8fafc",
-            color: "#0f172a",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.22)",
-          }}
-        >
-          W
-        </div>
-
-        {!collapsed && (
-          <div className="flex flex-col leading-none">
-            <span
-              style={{
-                color: "#f8fafc",
-                fontWeight: 700,
-                fontSize: 17,
-                letterSpacing: "-0.02em",
-              }}
-            >
-              Whetstone
-            </span>
-          </div>
+        {collapsed ? (
+          <img src="/whetstone-logo.png" alt="W" style={{ width: 36, height: 36, objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+        ) : (
+          <img src="/whetstone-logo.png" alt="Whetstone" style={{ height: 32, objectFit: "contain", filter: "brightness(0) invert(1)" }} />
         )}
       </div>
 

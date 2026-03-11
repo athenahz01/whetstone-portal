@@ -36,9 +36,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
       <div className="border border-line rounded-2xl p-10" style={{ width: 420, background: "#1e1e1e", boxShadow: "0 4px 24px rgba(0,0,0,0.3)" }}>
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 text-2xl font-bold" style={{ background: "#ebebeb", color: "#111" }}>W</div>
-          <h1 className="text-2xl font-bold text-heading m-0">Whetstone</h1>
-          <p className="text-sub text-sm m-0 mt-1">Refined Method. Proven Results.</p>
+          <img src="/whetstone-logo.png" alt="Whetstone" className="mx-auto mb-2" style={{ height: 48, objectFit: "contain", filter: "brightness(0) invert(1)" }} />
         </div>
 
         {/* Form */}
