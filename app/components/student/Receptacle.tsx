@@ -212,28 +212,33 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
         setStep(0);
       }
 
-      // Sync back from GCal: detect if user moved Whetstone events in GCal
+      // Sync back from GCal: detect if user moved/changed Whetstone events in GCal
       if (profileId && gcalConnected && events.length > 0) {
         pullWhetstoneEventsFromGcal(profileId).then((gcalEvents) => {
           if (!gcalEvents.length) return;
-          // Match GCal events to DB events by task name
+          let anyUpdated = false;
           for (const gce of gcalEvents) {
             if (gce.startMinutes == null || !gce.date) continue;
-            // Find matching DB event by title
-            const match = events.find((e) => e.task_text === gce.title && e.synced);
-            if (match && (match.date !== gce.date || match.top_minutes !== gce.startMinutes)) {
-              // GCal event was moved — update DB and local state
-              updateReceptacleEvent(match.id, {
-                date: gce.date,
-                top_minutes: gce.startMinutes,
-              });
+            // Match by title (strip whitespace for fuzzy match)
+            const cleanTitle = gce.title.trim().toLowerCase();
+            const match = events.find((e) =>
+              e.task_text.trim().toLowerCase() === cleanTitle
+            );
+            if (match && (match.date !== gce.date || match.top_minutes !== gce.startMinutes || match.minutes !== gce.durationMinutes)) {
+              const updates: any = {};
+              if (match.date !== gce.date) updates.date = gce.date;
+              if (match.top_minutes !== gce.startMinutes) updates.top_minutes = gce.startMinutes;
+              if (gce.durationMinutes && match.minutes !== gce.durationMinutes) updates.minutes = gce.durationMinutes;
+              updateReceptacleEvent(match.id, updates);
               setCalEvents((prev) => prev.map((ev) =>
                 ev.dbId === match.id
-                  ? { ...ev, date: gce.date, topMinutes: gce.startMinutes! }
+                  ? { ...ev, date: gce.date, topMinutes: gce.startMinutes!, ...(gce.durationMinutes ? { minutes: gce.durationMinutes } : {}) }
                   : ev
               ));
+              anyUpdated = true;
             }
           }
+          if (anyUpdated) console.log("[GCal sync-back] Updated events from GCal changes");
         });
       }
     });
@@ -692,7 +697,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                       </div>
                       <div className="flex items-center gap-3 flex-shrink-0 ml-3">
                         <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(82,139,255,0.06)", color: "#528bff" }}>{t.minutes}m</span>
-                        <button onClick={() => setTasks((p) => p.filter((x) => x.id !== t.id))} className="text-xs opacity-0 group-hover:opacity-100 border-none bg-transparent cursor-pointer" style={{ color: "#e55b5b" }}>✕</button>
+                        <button onClick={() => { if (t.dbId) deleteReceptacleEvent(t.dbId); setTasks((p) => p.filter((x) => x.id !== t.id)); }} className="text-xs opacity-0 group-hover:opacity-100 border-none bg-transparent cursor-pointer" style={{ color: "#e55b5b" }}>✕</button>
                       </div>
                     </div>
                   ))}
