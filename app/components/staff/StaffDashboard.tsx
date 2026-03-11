@@ -106,7 +106,7 @@ export function StaffDashboard({
       <div className="p-6 px-8">
         {/* Metric Cards */}
         <div className="grid grid-cols-5 gap-3.5 mb-5">
-          <MetricCard label="Students" value={students.length} color="#528bff" />
+          <MetricCard label="Students" value={students.length} color="#5A83F3" />
           <MetricCard label="Overdue" value={ov.length} color="#e55b5b" />
           <MetricCard label="This Week" value={wk.length} color="#e5a83b" />
           <MetricCard label="Avg Engagement" value={`${avgEngagement}%`} color="#4aba6a" />
@@ -253,7 +253,7 @@ export function StaffDashboard({
           onClick={(e) => { if (e.target === e.currentTarget) setShowInactiveModal(false); }}
         >
           <div className="rounded-2xl border border-line w-full max-w-md mx-4 overflow-hidden"
-            style={{ background: "#191919" }}>
+            style={{ background: "#181820" }}>
             <div className="flex justify-between items-center px-6 py-4 border-b border-line">
               <div>
                 <h2 className="text-base font-bold text-heading m-0">Login Warning</h2>

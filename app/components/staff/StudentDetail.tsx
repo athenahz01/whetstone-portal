@@ -341,7 +341,7 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
               : s.gpa || "—"
             }
             detail={s.gpaUnweighted && s.gpaWeighted ? `W: ${s.gpaWeighted}` : undefined}
-            color="#528bff"
+            color="#5A83F3"
           />
           <MetricCard
             label="SAT"
@@ -472,7 +472,7 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
               key={ss.id}
               onClick={() => setEditingSession(ss)}
               className="p-3 px-4 rounded-lg mb-1.5 cursor-pointer hover:opacity-80 transition-opacity"
-              style={{ background: "#252525", borderLeft: "3px solid #528bff" }}
+              style={{ background: "#252525", borderLeft: "3px solid #5A83F3" }}
             >
               <div className="flex justify-between mb-1.5">
                 <div className="text-sm font-bold" style={{ color: "#7aabff" }}>{ss.date}</div>

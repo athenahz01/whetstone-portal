@@ -35,7 +35,7 @@ function calcDaysFromToday(due: string): number {
 const PRIORITY_COLORS: Record<string, string> = {
   high: "#e55b5b",
   medium: "#e5a83b",
-  low: "#528bff",
+  low: "#5A83F3",
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -227,7 +227,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
             {/* Existing mentor circles (stacked) */}
             {mentors.map((m, mi) => (
               <div key={mi} className="w-5 h-5 rounded-full flex items-center justify-center text-[7px] font-bold flex-shrink-0"
-                style={{ background: "rgba(82,139,255,0.12)", color: "#528bff", marginLeft: mi > 0 ? -4 : 0, zIndex: mentors.length - mi }}
+                style={{ background: "rgba(82,139,255,0.12)", color: "#5A83F3", marginLeft: mi > 0 ? -4 : 0, zIndex: mentors.length - mi }}
                 title={m}>
                 {m.split(" ").map(n => n[0]).join("").substring(0, 2)}
               </div>
@@ -259,7 +259,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
                       className="w-full px-3 py-1.5 text-left text-xs bg-transparent border-none cursor-pointer flex items-center gap-2"
                       style={{ color: isSelected ? "#7aabff" : "#a0a0a0" }}>
                       <span className="w-4 h-4 rounded flex items-center justify-center text-[9px] flex-shrink-0"
-                        style={{ background: isSelected ? "rgba(82,139,255,0.15)" : "#333", color: isSelected ? "#528bff" : "#505050" }}>
+                        style={{ background: isSelected ? "rgba(82,139,255,0.15)" : "#333", color: isSelected ? "#5A83F3" : "#505050" }}>
                         {isSelected ? "✓" : ""}
                       </span>
                       {s}
@@ -269,7 +269,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
                 <div className="mt-1 pt-1 border-t border-line px-3">
                   <button onClick={(e) => { e.stopPropagation(); setQuickAssign(null); }}
                     className="w-full py-1 text-[10px] font-semibold bg-transparent border-none cursor-pointer"
-                    style={{ color: "#528bff" }}>Done</button>
+                    style={{ color: "#5A83F3" }}>Done</button>
                 </div>
               </div>
             )}
@@ -333,7 +333,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
               <button
                 onClick={() => setAddingDeadline(true)}
                 className="flex items-center gap-1 text-xs font-semibold px-4 py-2 rounded-full transition-colors"
-                style={{ background: "#528bff", color: "#fff", border: "none", cursor: "pointer" }}
+                style={{ background: "#5A83F3", color: "#fff", border: "none", cursor: "pointer" }}
               >
                 + Add Task
               </button>
@@ -366,7 +366,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
                   style={{
                     background: isOn ? "rgba(82,139,255,0.12)" : "#252525",
                     color: isOn ? "#7aabff" : "#717171",
-                    border: isOn ? "1.5px solid #528bff" : "1.5px solid #333",
+                    border: isOn ? "1.5px solid #5A83F3" : "1.5px solid #333",
                   }}>
                   {isOn ? "✓ " : ""}{STATUS_LABELS[s] || s}
                 </button>
@@ -403,7 +403,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
                     setCollapsedGroups(new Set());
                   }
                 }}
-                style={{ accentColor: "#528bff" }} />
+                style={{ accentColor: "#5A83F3" }} />
               Expand All
             </label>
           )}
@@ -415,7 +415,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
             style={{
               background: groupByCategory ? "rgba(82,139,255,0.1)" : "#252525",
               color: groupByCategory ? "#7aabff" : "#717171",
-              border: groupByCategory ? "1px solid #528bff" : "1px solid #333",
+              border: groupByCategory ? "1px solid #5A83F3" : "1px solid #333",
               marginLeft: "auto",
             }}
           >
@@ -464,7 +464,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
               const categories = [...new Set(filtered.map((d) => d.cat))].sort();
               const CATEGORY_COLORS: Record<string, string> = {
                 essays: "#a480f2", applications: "#4aba6a", testing: "#e5a83b",
-                planning: "#528bff", extracurricular: "#ec70a0", Academics: "#4aba6a",
+                planning: "#5A83F3", extracurricular: "#ec70a0", Academics: "#4aba6a",
                 Testing: "#e5a83b", Extracurriculars: "#a480f2",
               };
               return categories.map((cat) => {
@@ -479,7 +479,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
                       style={{ background: "rgba(255,255,255,0.02)" }}>
                       <span className="text-xs" style={{ color: "#717171" }}>{isCollapsed ? "▶" : "▼"}</span>
                       <span className="text-xs font-bold px-2.5 py-1 rounded-md"
-                        style={{ background: `${CATEGORY_COLORS[cat] || "#528bff"}15`, color: CATEGORY_COLORS[cat] || "#528bff" }}>
+                        style={{ background: `${CATEGORY_COLORS[cat] || "#5A83F3"}15`, color: CATEGORY_COLORS[cat] || "#5A83F3" }}>
                         {cat}
                       </span>
                       <span className="text-xs text-sub">({catTasks.length} {catTasks.length === 1 ? "mission" : "missions"})</span>

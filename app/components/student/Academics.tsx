@@ -176,7 +176,7 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
             label="GPA (Weighted)"
             defaultVal={student.gpaWeighted || student.gpa || null}
             max={5.0}
-            color="#528bff"
+            color="#5A83F3"
             studentId={student.id}
             readOnly={readOnly}
           />
@@ -260,7 +260,7 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
                     style={{ background: "#252525", color: "#717171", border: "1px solid #333" }}>Cancel</button>
                   <button onClick={handleUploadConfirm}
                     className="px-4 py-1.5 rounded-full text-xs font-semibold cursor-pointer"
-                    style={{ background: "#528bff", color: "#fff", border: "none" }}>
+                    style={{ background: "#5A83F3", color: "#fff", border: "none" }}>
                     {uploading ? "Uploading..." : "Upload"}
                   </button>
                 </div>
@@ -295,7 +295,7 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
                         </div>
                       )}
                     </div>
-                    <span className="text-xs font-semibold" style={{ color: "#528bff" }}>View ↗</span>
+                    <span className="text-xs font-semibold" style={{ color: "#5A83F3" }}>View ↗</span>
                   </a>
                 ))}
               </div>
@@ -321,7 +321,7 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-heading truncate">{t.name.replace(/^\d+-/, "")}</div>
                   </div>
-                  <span className="text-xs font-semibold" style={{ color: "#528bff" }}>View ↗</span>
+                  <span className="text-xs font-semibold" style={{ color: "#5A83F3" }}>View ↗</span>
                 </a>
               ))}
             </div>

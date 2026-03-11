@@ -93,7 +93,7 @@ export function StudentDashboard({
             <Card>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="m-0 text-base font-bold text-heading">Tasks</h3>
-                <button onClick={() => onNavigate("tasks")} className="text-xs font-semibold bg-transparent border-none cursor-pointer" style={{ color: "#528bff" }}>View all →</button>
+                <button onClick={() => onNavigate("tasks")} className="text-xs font-semibold bg-transparent border-none cursor-pointer" style={{ color: "#5A83F3" }}>View all →</button>
               </div>
               {activeTasks.length === 0 ? (
                 <p className="text-sm text-sub py-4 text-center">All tasks completed! 🎉</p>
@@ -114,7 +114,7 @@ export function StudentDashboard({
               {latestCommit && (() => {
                 let actions: any[] = []; try { actions = JSON.parse(latestCommit.actions || "[]"); } catch {} actions = actions.filter((a: any) => a.title);
                 if (actions.length === 0) return null;
-                return (<div className="mt-4 pt-4 border-t border-line"><div className="text-[10px] font-bold uppercase tracking-wider text-sub mb-2">📋 Latest Commit Actions</div><div className="flex flex-col gap-1">{actions.slice(0, 3).map((a: any, i: number) => (<div key={i} className="flex items-center gap-2 px-2.5 py-2 rounded-lg" style={{ background: "#1e1e1e" }}><div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0" style={{ background: "rgba(82,139,255,0.1)", color: "#528bff" }}>{i + 1}</div><div className="flex-1 min-w-0"><div className="text-sm text-heading truncate">{a.title}</div>{a.due && <div className="text-[10px] text-faint mt-0.5">Due: {a.due}</div>}</div></div>))}</div></div>);
+                return (<div className="mt-4 pt-4 border-t border-line"><div className="text-[10px] font-bold uppercase tracking-wider text-sub mb-2">📋 Latest Commit Actions</div><div className="flex flex-col gap-1">{actions.slice(0, 3).map((a: any, i: number) => (<div key={i} className="flex items-center gap-2 px-2.5 py-2 rounded-lg" style={{ background: "#1e1e1e" }}><div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0" style={{ background: "rgba(82,139,255,0.1)", color: "#5A83F3" }}>{i + 1}</div><div className="flex-1 min-w-0"><div className="text-sm text-heading truncate">{a.title}</div>{a.due && <div className="text-[10px] text-faint mt-0.5">Due: {a.due}</div>}</div></div>))}</div></div>);
               })()}
             </Card>
 
@@ -136,7 +136,7 @@ export function StudentDashboard({
                 ))}
                 {latestCommit && (
                   <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg" style={{ background: "#1e1e1e" }}>
-                    <span className="text-sm" style={{ color: "#528bff" }}>📋</span>
+                    <span className="text-sm" style={{ color: "#5A83F3" }}>📋</span>
                     <div className="flex-1"><div className="text-sm text-body">Close &amp; Commit saved{latestCommit.specialist ? ` with ${latestCommit.specialist}` : ""}</div><div className="text-[10px] text-faint mt-0.5">{new Date(latestCommit.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</div></div>
                   </div>
                 )}
@@ -150,18 +150,18 @@ export function StudentDashboard({
           {/* ── Right column ── */}
           <div className="flex flex-col gap-4">
             <Card>
-              <div className="flex items-center justify-between mb-3"><h3 className="m-0 text-sm font-bold text-heading">Sessions</h3><button onClick={() => onNavigate("prep")} className="text-xs font-semibold bg-transparent border-none cursor-pointer" style={{ color: "#528bff" }}>View all →</button></div>
+              <div className="flex items-center justify-between mb-3"><h3 className="m-0 text-sm font-bold text-heading">Sessions</h3><button onClick={() => onNavigate("prep")} className="text-xs font-semibold bg-transparent border-none cursor-pointer" style={{ color: "#5A83F3" }}>View all →</button></div>
               <div className="flex gap-0.5 mb-3 p-0.5 rounded-full" style={{ background: "#1e1e1e", display: "inline-flex" }}>
-                {(["upcoming", "past"] as const).map((tab) => (<button key={tab} onClick={() => setSessionTab(tab)} className="px-3.5 py-1.5 rounded-full border-none cursor-pointer text-[11px] font-semibold" style={{ background: sessionTab === tab ? "#528bff" : "transparent", color: sessionTab === tab ? "#fff" : "#717171" }}>{tab === "upcoming" ? "Upcoming" : "Past"}</button>))}
+                {(["upcoming", "past"] as const).map((tab) => (<button key={tab} onClick={() => setSessionTab(tab)} className="px-3.5 py-1.5 rounded-full border-none cursor-pointer text-[11px] font-semibold" style={{ background: sessionTab === tab ? "#5A83F3" : "transparent", color: sessionTab === tab ? "#fff" : "#717171" }}>{tab === "upcoming" ? "Upcoming" : "Past"}</button>))}
               </div>
               {displaySessions.length === 0 ? <p className="text-xs text-sub py-3 text-center m-0">No {sessionTab} sessions</p> : (
-                <div className="flex flex-col gap-1.5">{displaySessions.slice(0, 3).map((ce: any) => (<div key={ce.id} className="p-2.5 rounded-lg cursor-pointer hover:opacity-80" onClick={() => onNavigate("prep")} style={{ background: "#252525", borderLeft: `3px solid ${(ce.status === "completed" || ce.date < todayStr) ? "#4aba6a" : "#528bff"}` }}><div className="text-sm font-medium text-heading truncate">{ce.title}</div><div className="text-[10px] text-sub mt-0.5">{new Date(ce.date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}{ce.specialist && ` · ${ce.specialist}`}</div></div>))}</div>
+                <div className="flex flex-col gap-1.5">{displaySessions.slice(0, 3).map((ce: any) => (<div key={ce.id} className="p-2.5 rounded-lg cursor-pointer hover:opacity-80" onClick={() => onNavigate("prep")} style={{ background: "#252525", borderLeft: `3px solid ${(ce.status === "completed" || ce.date < todayStr) ? "#4aba6a" : "#5A83F3"}` }}><div className="text-sm font-medium text-heading truncate">{ce.title}</div><div className="text-[10px] text-sub mt-0.5">{new Date(ce.date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}{ce.specialist && ` · ${ce.specialist}`}</div></div>))}</div>
               )}
             </Card>
             {!readOnly && (
               <div className="grid grid-cols-2 gap-3">
-                <Card style={{ padding: 16 }}><div className="text-center"><div className="text-2xl mb-2">🧠</div><div className="text-sm font-bold text-heading mb-1">Plan Your Day</div><button onClick={() => onNavigate("receptacle")} className="w-full mt-2 py-2 rounded-full border-none cursor-pointer text-xs font-semibold" style={{ background: "#528bff", color: "#fff" }}>Open Receptacle</button></div></Card>
-                <Card style={{ padding: 16 }}><div className="text-center"><div className="text-2xl mb-2">📋</div><div className="text-sm font-bold text-heading mb-1">Close &amp; Commit</div><button onClick={() => onNavigate("prep")} className="w-full mt-2 py-2 rounded-full cursor-pointer text-xs font-semibold" style={{ background: "transparent", color: "#528bff", border: "1.5px solid #528bff" }}>Open Notes</button></div></Card>
+                <Card style={{ padding: 16 }}><div className="text-center"><div className="text-2xl mb-2">🧠</div><div className="text-sm font-bold text-heading mb-1">Plan Your Day</div><button onClick={() => onNavigate("receptacle")} className="w-full mt-2 py-2 rounded-full border-none cursor-pointer text-xs font-semibold" style={{ background: "#5A83F3", color: "#fff" }}>Open Receptacle</button></div></Card>
+                <Card style={{ padding: 16 }}><div className="text-center"><div className="text-2xl mb-2">📋</div><div className="text-sm font-bold text-heading mb-1">Close &amp; Commit</div><button onClick={() => onNavigate("prep")} className="w-full mt-2 py-2 rounded-full cursor-pointer text-xs font-semibold" style={{ background: "transparent", color: "#5A83F3", border: "1.5px solid #5A83F3" }}>Open Notes</button></div></Card>
               </div>
             )}
           </div>

@@ -161,14 +161,14 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
         right={
           <button onClick={() => setShowBooking(true)}
             className="px-4 py-2 rounded-full border-none cursor-pointer text-xs font-semibold"
-            style={{ background: "#528bff", color: "#fff" }}>
+            style={{ background: "#5A83F3", color: "#fff" }}>
             + Book a Session
           </button>
         }
       />
 
       <div className="p-6 px-8" style={{ maxWidth: 860 }}>
-        {/* Unified tab row: Upcoming | Past | Closing Commit */}
+        {/* Unified tab row: Upcoming | Past | Close & Commit */}
         <div className="flex gap-0.5 mb-5 p-0.5 rounded-full" style={{ background: "#1e1e1e", display: "inline-flex" }}>
           {([
             ["upcoming", "Upcoming"],
@@ -183,7 +183,7 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
                   else { setViewMode("sessions"); setSessionTab(key as "upcoming" | "past"); }
                 }}
                 className="px-5 py-2 rounded-full border-none cursor-pointer text-xs font-semibold"
-                style={{ background: isActive ? "#528bff" : "transparent", color: isActive ? "#fff" : "#717171" }}>
+                style={{ background: isActive ? "#5A83F3" : "transparent", color: isActive ? "#fff" : "#717171" }}>
                 {label}
               </button>
             );
@@ -227,7 +227,7 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
                         )}
                       </div>
                       <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full flex-shrink-0"
-                        style={{ background: r.status === "countered" ? "rgba(229,168,59,0.08)" : "rgba(82,139,255,0.08)", color: r.status === "countered" ? "#e5a83b" : "#528bff" }}>
+                        style={{ background: r.status === "countered" ? "rgba(229,168,59,0.08)" : "rgba(82,139,255,0.08)", color: r.status === "countered" ? "#e5a83b" : "#5A83F3" }}>
                         {r.status === "countered" ? "Counter-offer" : "Awaiting approval"}
                       </span>
                     </div>
@@ -287,7 +287,7 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
                       <div key={ev.id}>
                         <div className="p-5 rounded-xl group cursor-pointer"
                           onClick={() => setSelectedSession(selectedSession?.id === ev.id ? null : ev)}
-                          style={{ background: "#252525", borderLeft: `3px solid ${isCompleted ? "#4aba6a" : "#528bff"}`, opacity: isCompleted ? 0.7 : 1 }}>
+                          style={{ background: "#252525", borderLeft: `3px solid ${isCompleted ? "#4aba6a" : "#5A83F3"}`, opacity: isCompleted ? 0.7 : 1 }}>
                           <div className="flex items-start justify-between">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
@@ -308,7 +308,7 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
                                 {!ev.specialist && (
                                   <>
                                     <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold"
-                                      style={{ background: "rgba(82,139,255,0.1)", color: "#528bff" }}>
+                                      style={{ background: "rgba(82,139,255,0.1)", color: "#5A83F3" }}>
                                       {student.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2)}
                                     </div>
                                     <span className="text-xs text-sub">{student.name}</span>
@@ -350,7 +350,7 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
                               {ev.category && <span>Category: {ev.category}</span>}
                               {ev.specialist && <span>Mentor: {ev.specialist}</span>}
                               <span>Date: {ev.date}</span>
-                              {isBooked && <button onClick={() => { setViewMode("commit" as any); }} className="bg-transparent border-none cursor-pointer text-xs font-semibold" style={{ color: "#528bff" }}>Write Closing Commit →</button>}
+                              {isBooked && <button onClick={() => { setViewMode("commit" as any); }} className="bg-transparent border-none cursor-pointer text-xs font-semibold" style={{ color: "#5A83F3" }}>Write Close & Commit →</button>}
                             </div>
                           </div>
                         )}
@@ -364,18 +364,18 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
         </div>
       )}
 
-      {/* ── Closing Commit Journal ── */}
+      {/* ── Close & Commit Journal ── */}
       {viewMode === "commit" && (
       <div>
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h3 className="m-0 text-lg font-bold text-heading">Your Closing Commits</h3>
+            <h3 className="m-0 text-lg font-bold text-heading">Your Close & Commit Notes</h3>
             <p className="m-0 text-sm text-sub mt-1">A record of your session reflections and action items.</p>
           </div>
           <button onClick={() => { setEditingCommit(null); setShowCommitForm(true); setSaved(false); setActiveRecall(""); setCommitSpecialist(""); setSessionType("online"); setActions([{ title: "", due: "", description: "" }, { title: "", due: "", description: "" }, { title: "", due: "", description: "" }]); }}
             className="px-5 py-2.5 rounded-full border-none cursor-pointer text-sm font-semibold"
-            style={{ background: "#528bff", color: "#fff" }}>
-            + Add a Closing Commit
+            style={{ background: "#5A83F3", color: "#fff" }}>
+            + Add Close & Commit
           </button>
         </div>
 
@@ -473,9 +473,9 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
       </div>
       )}
 
-      {/* ── Add Closing Commit Modal ── */}
+      {/* ── Add Close & Commit Modal ── */}
       {showCommitForm && (
-        <Modal title={editingCommit ? "Edit Closing Commit" : "New Closing Commit"} onClose={() => { setShowCommitForm(false); setEditingCommit(null); }}>
+        <Modal title={editingCommit ? "Edit Close & Commit" : "New Close & Commit"} onClose={() => { setShowCommitForm(false); setEditingCommit(null); }}>
           {saved ? (
             <div className="text-center py-6">
               <div className="text-4xl mb-3">✅</div>
@@ -521,7 +521,7 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
                   {actions.map((a, i) => (
                     <div key={i} className="flex items-start gap-2">
                       <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-2"
-                        style={{ background: a.title.trim() ? "rgba(82,139,255,0.1)" : "#333", color: a.title.trim() ? "#528bff" : "#717171" }}>
+                        style={{ background: a.title.trim() ? "rgba(82,139,255,0.1)" : "#333", color: a.title.trim() ? "#5A83F3" : "#717171" }}>
                         {i + 1}
                       </div>
                       <div className="flex-1 flex flex-col gap-1.5">
@@ -647,10 +647,10 @@ function CalBookingForm({ student, specialists, inputStyle, onBook, saving }: {
   if (step === 2) {
     return (
       <div>
-        <div className="mb-4 p-3 rounded-lg" style={{ background: "#252525", borderLeft: "3px solid #528bff" }}>
+        <div className="mb-4 p-3 rounded-lg" style={{ background: "#252525", borderLeft: "3px solid #5A83F3" }}>
           <div className="text-xs text-sub">Selected</div>
           <div className="text-sm font-semibold text-heading">{selectedDate} at {selectedTime}</div>
-          <div className="text-xs text-sub mt-0.5">Duration: {duration}m · <button className="bg-transparent border-none cursor-pointer text-xs" style={{ color: "#528bff" }} onClick={() => setStep(1)}>Change</button></div>
+          <div className="text-xs text-sub mt-0.5">Duration: {duration}m · <button className="bg-transparent border-none cursor-pointer text-xs" style={{ color: "#5A83F3" }} onClick={() => setStep(1)}>Change</button></div>
         </div>
 
         <FormField label="Mentor">
@@ -668,7 +668,7 @@ function CalBookingForm({ student, specialists, inputStyle, onBook, saving }: {
             <div className="flex gap-3 mt-1">
               {(["individual", "recurring"] as const).map((t) => (
                 <label key={t} className="flex items-center gap-2 cursor-pointer">
-                  <input type="radio" checked={bookingType === t} onChange={() => setBookingType(t)} style={{ accentColor: "#528bff" }} />
+                  <input type="radio" checked={bookingType === t} onChange={() => setBookingType(t)} style={{ accentColor: "#5A83F3" }} />
                   <span className="text-xs text-body">{t === "individual" ? "Individual" : "Recurring"}</span>
                 </label>
               ))}
@@ -717,7 +717,7 @@ function CalBookingForm({ student, specialists, inputStyle, onBook, saving }: {
             specialist, notes, cohort: cohort || undefined,
           })} disabled={saving}
             className="px-5 py-2 rounded-full text-sm font-semibold cursor-pointer border-none"
-            style={{ background: "#528bff", color: "#fff" }}>
+            style={{ background: "#5A83F3", color: "#fff" }}>
             {saving ? "Booking..." : "Confirm Booking"}
           </button>
         </div>
@@ -745,7 +745,7 @@ function CalBookingForm({ student, specialists, inputStyle, onBook, saving }: {
           {[30, 60, 90].map((d) => (
             <button key={d} onClick={() => setDuration(d)}
               className="px-3 py-1 rounded-full text-xs font-semibold cursor-pointer border-none"
-              style={{ background: duration === d ? "#528bff" : "#252525", color: duration === d ? "#fff" : "#717171" }}>
+              style={{ background: duration === d ? "#5A83F3" : "#252525", color: duration === d ? "#fff" : "#717171" }}>
               {d}m
             </button>
           ))}
@@ -775,8 +775,8 @@ function CalBookingForm({ student, specialists, inputStyle, onBook, saving }: {
                   disabled={isPast}
                   className="w-8 h-8 rounded-lg text-xs font-semibold flex items-center justify-center border-none cursor-pointer"
                   style={{
-                    background: isSelected ? "#528bff" : isPast ? "transparent" : "#333",
-                    color: isSelected ? "#fff" : isPast ? "#505050" : isToday ? "#528bff" : "#ebebeb",
+                    background: isSelected ? "#5A83F3" : isPast ? "transparent" : "#333",
+                    color: isSelected ? "#fff" : isPast ? "#505050" : isToday ? "#5A83F3" : "#ebebeb",
                     cursor: isPast ? "default" : "pointer",
                   }}>
                   {day}
@@ -799,9 +799,9 @@ function CalBookingForm({ student, specialists, inputStyle, onBook, saving }: {
                 <button key={time} onClick={() => { setSelectedTime(time); setStep(2); }}
                   className="w-full py-2.5 rounded-lg text-sm font-medium cursor-pointer text-center"
                   style={{
-                    background: selectedTime === time ? "#528bff" : "transparent",
+                    background: selectedTime === time ? "#5A83F3" : "transparent",
                     color: selectedTime === time ? "#fff" : "#ebebeb",
-                    border: selectedTime === time ? "1px solid #528bff" : "1px solid #333",
+                    border: selectedTime === time ? "1px solid #5A83F3" : "1px solid #333",
                   }}>
                   {time}
                 </button>

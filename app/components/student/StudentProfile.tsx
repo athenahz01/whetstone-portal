@@ -70,7 +70,7 @@ export function StudentProfile({ student, readOnly = false }: StudentProfileProp
         <Card style={{ padding: 24, marginBottom: 20 }}>
           <div className="flex items-center gap-5">
             <div className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold"
-              style={{ background: "rgba(82,139,255,0.1)", color: "#528bff" }}>
+              style={{ background: "rgba(82,139,255,0.1)", color: "#5A83F3" }}>
               {student.av || student.name.split(" ").map(n => n[0]).join("").substring(0, 2)}
             </div>
             <div className="flex-1">
@@ -163,7 +163,7 @@ export function StudentProfile({ student, readOnly = false }: StudentProfileProp
               </Card>
               <Card style={{ padding: 14, textAlign: "center" }}>
                 <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "#717171" }}>Schools</div>
-                <div className="text-lg font-bold" style={{ color: "#528bff" }}>{student.schools?.length || 0}</div>
+                <div className="text-lg font-bold" style={{ color: "#5A83F3" }}>{student.schools?.length || 0}</div>
               </Card>
             </div>
           </div>

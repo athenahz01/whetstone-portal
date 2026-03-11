@@ -118,7 +118,7 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
                     className="rounded-md px-1.5 py-0.5 cursor-pointer overflow-hidden hover:opacity-80 transition-opacity mb-0.5"
                     style={{
                       background: evt.bgColor || "rgba(82,139,255,0.08)",
-                      borderLeft: "3px solid " + (evt.borderColor || evt.color || "#528bff"),
+                      borderLeft: "3px solid " + (evt.borderColor || evt.color || "#5A83F3"),
                       fontSize: 10,
                       fontWeight: 500,
                       color: evt.textColor || evt.color || "#7aabff",
@@ -163,9 +163,9 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
               onClick={() => setWeekOffset(0)}
               className="px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer"
               style={{
-                background: weekOffset === 0 ? "#528bff" : "#252525",
+                background: weekOffset === 0 ? "#5A83F3" : "#252525",
                 color: weekOffset === 0 ? "#fff" : "#717171",
-                border: "1px solid " + (weekOffset === 0 ? "#528bff" : "#333"),
+                border: "1px solid " + (weekOffset === 0 ? "#5A83F3" : "#333"),
               }}
             >
               Today
@@ -202,7 +202,7 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
               <div key={i} className="flex-1 text-center py-1.5 border-r border-line">
                 <div
                   className="text-[9px] font-semibold uppercase tracking-wide"
-                  style={{ color: isToday ? "#528bff" : "#505050" }}
+                  style={{ color: isToday ? "#5A83F3" : "#505050" }}
                 >
                   {dayNames[d.getDay()]}
                 </div>
@@ -210,7 +210,7 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
                   className="text-sm font-bold mt-0.5 mx-auto flex items-center justify-center"
                   style={{
                     color: isToday ? "#fff" : "#ebebeb",
-                    background: isToday ? "#528bff" : "transparent",
+                    background: isToday ? "#5A83F3" : "transparent",
                     borderRadius: "50%",
                     width: 26,
                     height: 26,
@@ -269,7 +269,7 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
                     height: 12,
                     borderRadius: 3,
                     flexShrink: 0,
-                    background: selectedEvent.borderColor || selectedEvent.color || "#528bff",
+                    background: selectedEvent.borderColor || selectedEvent.color || "#5A83F3",
                   }}
                 />
                 {selectedEvent.label && (
@@ -279,8 +279,8 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
                       padding: "2px 8px",
                       borderRadius: 4,
                       fontWeight: 600,
-                      background: (selectedEvent.borderColor || "#528bff") + "15",
-                      color: selectedEvent.borderColor || "#528bff",
+                      background: (selectedEvent.borderColor || "#5A83F3") + "15",
+                      color: selectedEvent.borderColor || "#5A83F3",
                     }}
                   >
                     {selectedEvent.label}

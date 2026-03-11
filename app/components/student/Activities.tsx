@@ -392,7 +392,7 @@ function ActivityForm({ act, index, onSave, onDelete, saving }: ActivityFormProp
                 name={`grade_${g}`}
                 defaultChecked={selectedGrades.includes(g as any)}
                 className="w-4 h-4 rounded"
-                style={{ accentColor: "#528bff" }}
+                style={{ accentColor: "#5A83F3" }}
               />
               {g}
             </label>
@@ -413,7 +413,7 @@ function ActivityForm({ act, index, onSave, onDelete, saving }: ActivityFormProp
                 name={`timing_${t}`}
                 defaultChecked={selectedTiming.includes(t)}
                 className="w-4 h-4 rounded"
-                style={{ accentColor: "#528bff" }}
+                style={{ accentColor: "#5A83F3" }}
               />
               {t}
             </label>
@@ -467,7 +467,7 @@ function ActivityForm({ act, index, onSave, onDelete, saving }: ActivityFormProp
         <button
           type="submit"
           disabled={saving}
-          style={{ padding: "8px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: "#528bff", color: "#fff", border: "none", cursor: "pointer", opacity: saving ? 0.7 : 1 }}
+          style={{ padding: "8px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: "#5A83F3", color: "#fff", border: "none", cursor: "pointer", opacity: saving ? 0.7 : 1 }}
         >
           {saving ? "Saving..." : act ? "Save Changes" : "Add Activity"}
         </button>

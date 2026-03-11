@@ -31,7 +31,7 @@ interface CalendarEvent {
 
 // Color presets (Google Calendar style)
 const EVENT_COLORS: { key: string; bg: string; border: string; text: string }[] = [
-  { key: "blue",   bg: "rgba(82,139,255,0.08)",  border: "#528bff", text: "#7aabff" },
+  { key: "blue",   bg: "rgba(82,139,255,0.08)",  border: "#5A83F3", text: "#7aabff" },
   { key: "green",  bg: "rgba(74,186,106,0.08)",  border: "#4aba6a", text: "#6dd890" },
   { key: "red",    bg: "rgba(229,91,91,0.08)",   border: "#e55b5b", text: "#f08080" },
   { key: "purple", bg: "rgba(164,128,242,0.08)", border: "#a480f2", text: "#c4a8ff" },
@@ -65,7 +65,7 @@ const QUADRANT_CONFIG = {
     tag: "IMPORTANT · NOT URGENT",
     bg: "rgba(59,130,246,0.07)",
     border: "rgba(59,130,246,0.22)",
-    accent: "#528bff",
+    accent: "#5A83F3",
     emoji: "📅",
   },
   delegate: {
@@ -542,7 +542,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
               <button key={n} onClick={() => setStep(n)}
                 className="flex-1 py-3.5 text-sm font-semibold border-none cursor-pointer"
                 style={{
-                  background: active ? "#528bff" : done ? "rgba(74,186,106,0.08)" : "#252525",
+                  background: active ? "#5A83F3" : done ? "rgba(74,186,106,0.08)" : "#252525",
                   color: active ? "#fff" : done ? "#4aba6a" : "#717171",
                   borderRight: n < 3 ? "1px solid #e2e8f0" : "none",
                 }}>
@@ -627,7 +627,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                     setReviewChecked(new Set());
                   }}
                   className="px-5 py-2.5 rounded-full border-none cursor-pointer text-sm font-semibold"
-                  style={{ background: "#528bff", color: "#fff" }}
+                  style={{ background: "#5A83F3", color: "#fff" }}
                 >
                   Continue to Brain Dump →
                 </button>
@@ -647,7 +647,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                     <h2 className="text-xl font-bold text-heading m-0">Planning</h2>
                     <button onClick={() => setShowHelp(!showHelp)}
                       className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold cursor-pointer border-none"
-                      style={{ background: "rgba(82,139,255,0.1)", color: "#528bff" }}>?</button>
+                      style={{ background: "rgba(82,139,255,0.1)", color: "#5A83F3" }}>?</button>
                   </div>
                   <p className="text-sm text-sub mt-1 m-0">Write down everything on your mind. Be specific!</p>
                 </div>
@@ -696,7 +696,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                         <span className="text-sm text-body truncate">{t.text}</span>
                       </div>
                       <div className="flex items-center gap-3 flex-shrink-0 ml-3">
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(82,139,255,0.06)", color: "#528bff" }}>{t.minutes}m</span>
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(82,139,255,0.06)", color: "#5A83F3" }}>{t.minutes}m</span>
                         <button onClick={() => { if (t.dbId) deleteReceptacleEvent(t.dbId); setTasks((p) => p.filter((x) => x.id !== t.id)); }} className="text-xs opacity-0 group-hover:opacity-100 border-none bg-transparent cursor-pointer" style={{ color: "#e55b5b" }}>✕</button>
                       </div>
                     </div>
@@ -739,7 +739,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                       <div className="text-xs text-center text-sub py-4 rounded-lg" style={{ border: "1.5px dashed #e2e8f0" }}>All assigned!</div>
                     ) : unassigned.map((t) => (
                       <button key={t.id} onClick={() => setSelectedTask(t.id)} className="text-left px-3 py-2.5 rounded-lg text-sm border-none cursor-pointer"
-                        style={{ background: selectedTask === t.id ? "#528bff" : "#252525", color: selectedTask === t.id ? "#fff" : "#a0a0a0", border: `1.5px solid ${selectedTask === t.id ? "#528bff" : "#333"}` }}>
+                        style={{ background: selectedTask === t.id ? "#5A83F3" : "#252525", color: selectedTask === t.id ? "#fff" : "#a0a0a0", border: `1.5px solid ${selectedTask === t.id ? "#5A83F3" : "#333"}` }}>
                         <div className="font-medium truncate">{t.text}</div>
                         <div className="text-[10px] mt-0.5" style={{ color: selectedTask === t.id ? "rgba(255,255,255,0.55)" : "#505050" }}>{t.minutes} min</div>
                       </button>
@@ -781,7 +781,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
             </div>
             <div className="flex justify-between mt-4">
               <button onClick={() => setStep(1)} style={{ padding: "10px 20px", borderRadius: 12, border: "1px solid #333", cursor: "pointer", background: "#252525", color: "#717171", fontWeight: 600, fontSize: 13 }}>← Back</button>
-              <button onClick={() => setStep(3)} style={{ padding: "12px 24px", borderRadius: 15, border: "none", cursor: "pointer", background: "#528bff", color: "#fff", fontWeight: 600, fontSize: 13 }}>Next: Calendar Sync →</button>
+              <button onClick={() => setStep(3)} style={{ padding: "12px 24px", borderRadius: 15, border: "none", cursor: "pointer", background: "#5A83F3", color: "#fff", fontWeight: 600, fontSize: 13 }}>Next: Calendar Sync →</button>
             </div>
           </div>
         )}
@@ -799,7 +799,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                 </div>
                 {gcalConnected && (
                   <button onClick={syncToGcal} disabled={syncing || syncDone || calEvents.length === 0}
-                    style={{ padding: "8px 16px", borderRadius: 8, border: "none", fontWeight: 600, fontSize: 13, flexShrink: 0, cursor: (calEvents.length === 0 || syncDone) ? "not-allowed" : "pointer", background: syncDone ? "rgba(74,186,106,0.1)" : calEvents.length === 0 ? "#333" : "#528bff", color: syncDone ? "#4aba6a" : calEvents.length === 0 ? "#505050" : "#fff" }}>
+                    style={{ padding: "8px 16px", borderRadius: 8, border: "none", fontWeight: 600, fontSize: 13, flexShrink: 0, cursor: (calEvents.length === 0 || syncDone) ? "not-allowed" : "pointer", background: syncDone ? "rgba(74,186,106,0.1)" : calEvents.length === 0 ? "#333" : "#5A83F3", color: syncDone ? "#4aba6a" : calEvents.length === 0 ? "#505050" : "#fff" }}>
                     {syncDone ? "✓ Synced!" : syncing ? "Syncing..." : "📅 Sync to Google Cal"}
                   </button>
                 )}
@@ -830,7 +830,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                       <div key={i} className="text-center py-2 border-l border-line" style={{ background: "#252525" }}>
                         <div className="text-[10px] font-semibold text-sub uppercase">{DAY_LABELS[d.getDay()]}</div>
                         <div className="text-sm font-bold mt-0.5 w-7 h-7 rounded-full flex items-center justify-center mx-auto"
-                          style={{ background: isToday ? "#528bff" : "transparent", color: isToday ? "#fff" : "#ebebeb" }}>
+                          style={{ background: isToday ? "#5A83F3" : "transparent", color: isToday ? "#fff" : "#ebebeb" }}>
                           {d.getDate()}
                         </div>
                       </div>
@@ -871,7 +871,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                                       top: ((ghostPreview.topMinutes - cellStartMin) / 60) * HOUR_HEIGHT,
                                       height: Math.max(minutesToHeight(ghostPreview.minutes), 36),
                                       background: "rgba(82,139,255,0.10)",
-                                      border: "2px dashed #528bff",
+                                      border: "2px dashed #5A83F3",
                                       transition: "top 0.06s ease-out",
                                     }}>
                                     <div className="px-1.5 pt-1">
@@ -886,10 +886,10 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                                       width: 52,
                                     }}>
                                     <div className="rounded-md px-1 py-0.5 text-right"
-                                      style={{ background: "#528bff", fontSize: 9, fontWeight: 700, color: "#fff", whiteSpace: "nowrap" }}>
+                                      style={{ background: "#5A83F3", fontSize: 9, fontWeight: 700, color: "#fff", whiteSpace: "nowrap" }}>
                                       {fmtMinutes(ghostPreview.topMinutes)}
                                     </div>
-                                    <div className="text-right mt-0.5" style={{ fontSize: 8, color: "#528bff", fontWeight: 600 }}>
+                                    <div className="text-right mt-0.5" style={{ fontSize: 8, color: "#5A83F3", fontWeight: 600 }}>
                                       {ghostPreview.minutes}m
                                     </div>
                                   </div>
@@ -1032,7 +1032,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
 
                 {/* Schedule (blue) */}
                 <div style={card}>
-                  <div className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#528bff" }}>
+                  <div className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#5A83F3" }}>
                     📅 Schedule
                   </div>
                   <div className="flex flex-col gap-1">
@@ -1056,7 +1056,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                             <div className="text-xs font-medium truncate" style={{ color: done ? "#505050" : "#ebebeb", textDecoration: done ? "line-through" : "none" }}>{t.text}</div>
                             {onCal && ce && <div className="text-[9px]" style={{ color: "#717171" }}>{fmtMinutes(ce.topMinutes)} · {ce.date}</div>}
                           </div>
-                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: "rgba(82,139,255,0.06)", color: "#528bff" }}>{t.minutes}m</span>
+                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: "rgba(82,139,255,0.06)", color: "#5A83F3" }}>{t.minutes}m</span>
                         </div>
                       );
                     })}

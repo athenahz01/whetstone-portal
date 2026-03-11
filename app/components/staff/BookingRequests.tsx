@@ -84,7 +84,7 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
 
   const statusColor = (s: string) => {
     switch (s) {
-      case "pending": return { bg: "rgba(82,139,255,0.08)", color: "#528bff" };
+      case "pending": return { bg: "rgba(82,139,255,0.08)", color: "#5A83F3" };
       case "countered": return { bg: "rgba(229,168,59,0.08)", color: "#e5a83b" };
       case "approved": case "confirmed": return { bg: "rgba(74,186,106,0.08)", color: "#4aba6a" };
       case "declined": return { bg: "rgba(229,91,91,0.08)", color: "#e55b5b" };
@@ -104,7 +104,7 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
           {([["pending", `Pending (${pending.length + countered.length})`], ["all", "All Requests"]] as const).map(([key, label]) => (
             <button key={key} onClick={() => setTab(key as any)}
               className="px-5 py-2 rounded-full border-none cursor-pointer text-xs font-semibold"
-              style={{ background: tab === key ? "#528bff" : "transparent", color: tab === key ? "#fff" : "#717171" }}>
+              style={{ background: tab === key ? "#5A83F3" : "transparent", color: tab === key ? "#fff" : "#717171" }}>
               {label}
             </button>
           ))}
@@ -124,7 +124,7 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold"
-                          style={{ background: "rgba(82,139,255,0.1)", color: "#528bff" }}>
+                          style={{ background: "rgba(82,139,255,0.1)", color: "#5A83F3" }}>
                           {(r.student_name || "?").split(" ").map((w: string) => w[0]).join("").substring(0, 2)}
                         </div>
                         <div>

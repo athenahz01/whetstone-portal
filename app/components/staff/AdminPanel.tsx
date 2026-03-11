@@ -10,7 +10,7 @@ import { addStudent } from "../../lib/queries";
 
 interface AdminPanelProps { students: Student[]; onRefresh: () => void; }
 interface AdminUser { id: string; email: string; name: string; role: string; studentId: number|null; status: string; lastSignIn: string|null; createdAt: string; password: string|null; }
-const RC: Record<string,string> = { strategist:"#a480f2", student:"#528bff", parent:"#e5a83b", unknown:"#505050" };
+const RC: Record<string,string> = { strategist:"#a480f2", student:"#5A83F3", parent:"#e5a83b", unknown:"#505050" };
 
 export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -106,7 +106,7 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
         right={<Button primary onClick={() => { setShowCreate(true); setCreateResult(null); setError(null); setSelectedRole("student"); }}>+ Add New User</Button>} />
       <div className="p-6 px-8">
         <div className="grid grid-cols-4 gap-3 mb-5">
-          {[{l:"Total",c:stats.total,cl:"#ebebeb"},{l:"Strategists",c:stats.strategists,cl:"#a480f2"},{l:"Students",c:stats.students,cl:"#528bff"},{l:"Parents",c:stats.parents,cl:"#e5a83b"}].map(s=>(
+          {[{l:"Total",c:stats.total,cl:"#ebebeb"},{l:"Strategists",c:stats.strategists,cl:"#a480f2"},{l:"Students",c:stats.students,cl:"#5A83F3"},{l:"Parents",c:stats.parents,cl:"#e5a83b"}].map(s=>(
             <Card key={s.l} style={{padding:14}}><div className="text-center"><div className="text-2xl font-bold" style={{color:s.cl}}>{s.c}</div><div className="text-xs text-sub mt-0.5">{s.l}</div></div></Card>
           ))}
         </div>
@@ -115,7 +115,7 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
           <div className="flex gap-1">
             {["all","strategist","student","parent"].map(r=>(
               <button key={r} onClick={()=>setFilterRole(r)} className="px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer"
-                style={{background:filterRole===r?"rgba(82,139,255,0.12)":"#252525",color:filterRole===r?"#7aabff":"#717171",border:filterRole===r?"1.5px solid #528bff":"1.5px solid #333"}}>
+                style={{background:filterRole===r?"rgba(82,139,255,0.12)":"#252525",color:filterRole===r?"#7aabff":"#717171",border:filterRole===r?"1.5px solid #5A83F3":"1.5px solid #333"}}>
                 {r==="all"?"All Users":r.charAt(0).toUpperCase()+r.slice(1)+"s"}
               </button>
             ))}
@@ -154,7 +154,7 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
               <div className="flex items-center gap-1.5">
                 {u.password ? <>
                   <span className="text-[11px] font-mono" style={{color:"#a0a0a0"}}>{showPw.has(u.id)?u.password:"••••••••"}</span>
-                  <button onClick={()=>togglePw(u.id)} className="text-[9px] bg-transparent border-none cursor-pointer" style={{color:"#528bff"}}>{showPw.has(u.id)?"hide":"show"}</button>
+                  <button onClick={()=>togglePw(u.id)} className="text-[9px] bg-transparent border-none cursor-pointer" style={{color:"#5A83F3"}}>{showPw.has(u.id)?"hide":"show"}</button>
                   <button onClick={()=>copy(u.password!)} className="text-[9px] bg-transparent border-none cursor-pointer" style={{color:"#a480f2"}}>copy</button>
                 </> : <button onClick={()=>{setShowResetPw(u);setResetResult(null);setPwMode("auto");setManualPw("")}} className="text-[9px] bg-transparent border-none cursor-pointer" style={{color:"#e5a83b"}}>set password</button>}
               </div>
@@ -167,8 +167,8 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
       {showCreate && <Modal title="Add New User" onClose={()=>setShowCreate(false)}>
         {createResult ? <div>
           <div className="text-center py-3"><div className="text-3xl mb-2">✅</div><h3 className="text-lg font-bold text-heading mb-1">Account Created!</h3><p className="text-sm text-sub mb-3">Share these credentials with {createResult.name}:</p></div>
-          <div className="p-4 rounded-lg mb-2" style={{background:"#1e1e1e",border:"1px solid #333"}}><div className="flex justify-between items-center mb-1"><span className="text-xs text-sub">Email</span><button onClick={()=>copy(createResult.email)} className="text-[10px] bg-transparent border-none cursor-pointer" style={{color:"#528bff"}}>Copy</button></div><div className="text-sm font-mono text-heading">{createResult.email}</div></div>
-          <div className="p-4 rounded-lg mb-3" style={{background:"#1e1e1e",border:"1px solid #333"}}><div className="flex justify-between items-center mb-1"><span className="text-xs text-sub">Password</span><button onClick={()=>copy(createResult.password)} className="text-[10px] bg-transparent border-none cursor-pointer" style={{color:"#528bff"}}>Copy</button></div><div className="text-sm font-mono text-heading">{createResult.password}</div></div>
+          <div className="p-4 rounded-lg mb-2" style={{background:"#1e1e1e",border:"1px solid #333"}}><div className="flex justify-between items-center mb-1"><span className="text-xs text-sub">Email</span><button onClick={()=>copy(createResult.email)} className="text-[10px] bg-transparent border-none cursor-pointer" style={{color:"#5A83F3"}}>Copy</button></div><div className="text-sm font-mono text-heading">{createResult.email}</div></div>
+          <div className="p-4 rounded-lg mb-3" style={{background:"#1e1e1e",border:"1px solid #333"}}><div className="flex justify-between items-center mb-1"><span className="text-xs text-sub">Password</span><button onClick={()=>copy(createResult.password)} className="text-[10px] bg-transparent border-none cursor-pointer" style={{color:"#5A83F3"}}>Copy</button></div><div className="text-sm font-mono text-heading">{createResult.password}</div></div>
           <p className="text-xs text-faint text-center mb-3">Password saved in admin panel for reference.</p>
           <div className="flex justify-end"><Button primary onClick={()=>{setShowCreate(false);setCreateResult(null)}}>Done</Button></div>
         </div> : <form onSubmit={handleCreate}>
@@ -188,17 +188,17 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
 
       {showResetPw && <Modal title={`Reset Password — ${showResetPw.name}`} onClose={()=>setShowResetPw(null)}>
         {resetResult ? <div>
-          <div className="p-4 rounded-lg mb-3" style={{background:"#1e1e1e",border:"1px solid #333"}}><div className="flex justify-between items-center mb-1"><span className="text-xs text-sub">New Password</span><button onClick={()=>copy(resetResult)} className="text-[10px] bg-transparent border-none cursor-pointer" style={{color:"#528bff"}}>Copy</button></div><div className="text-sm font-mono text-heading">{resetResult}</div></div>
+          <div className="p-4 rounded-lg mb-3" style={{background:"#1e1e1e",border:"1px solid #333"}}><div className="flex justify-between items-center mb-1"><span className="text-xs text-sub">New Password</span><button onClick={()=>copy(resetResult)} className="text-[10px] bg-transparent border-none cursor-pointer" style={{color:"#5A83F3"}}>Copy</button></div><div className="text-sm font-mono text-heading">{resetResult}</div></div>
           <p className="text-xs text-faint mb-3">Password saved and visible in the user table.</p>
           <div className="flex justify-end"><Button primary onClick={()=>setShowResetPw(null)}>Done</Button></div>
         </div> : <>
           <div className="flex flex-col gap-2 mb-4">
-            <label className="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style={{background:pwMode==="auto"?"rgba(82,139,255,0.06)":"#1e1e1e",border:pwMode==="auto"?"1.5px solid #528bff":"1.5px solid #333"}}>
-              <input type="radio" checked={pwMode==="auto"} onChange={()=>setPwMode("auto")} style={{accentColor:"#528bff"}}/>
+            <label className="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style={{background:pwMode==="auto"?"rgba(82,139,255,0.06)":"#1e1e1e",border:pwMode==="auto"?"1.5px solid #5A83F3":"1.5px solid #333"}}>
+              <input type="radio" checked={pwMode==="auto"} onChange={()=>setPwMode("auto")} style={{accentColor:"#5A83F3"}}/>
               <div><div className="text-sm font-semibold text-heading">Automatically generate a password</div><div className="text-xs text-sub">You&apos;ll be able to view and copy the password in the next step</div></div>
             </label>
-            <label className="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style={{background:pwMode==="manual"?"rgba(82,139,255,0.06)":"#1e1e1e",border:pwMode==="manual"?"1.5px solid #528bff":"1.5px solid #333"}}>
-              <input type="radio" checked={pwMode==="manual"} onChange={()=>setPwMode("manual")} style={{accentColor:"#528bff"}}/>
+            <label className="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style={{background:pwMode==="manual"?"rgba(82,139,255,0.06)":"#1e1e1e",border:pwMode==="manual"?"1.5px solid #5A83F3":"1.5px solid #333"}}>
+              <input type="radio" checked={pwMode==="manual"} onChange={()=>setPwMode("manual")} style={{accentColor:"#5A83F3"}}/>
               <div className="flex-1"><div className="text-sm font-semibold text-heading">Create password</div>
                 {pwMode==="manual" && <input value={manualPw} onChange={e=>setManualPw(e.target.value)} placeholder="Min 8 characters" className="mt-2" style={IS}/>}
               </div>

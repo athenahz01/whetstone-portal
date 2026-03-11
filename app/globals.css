@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-bg: #191919;
+  --color-bg: #181820;
   --color-white: #1e1e1e;
   --color-raised: #252525;
   --color-mist: #2a2a2a;
@@ -20,7 +20,7 @@
   --color-line: #2a2a2a;
   --color-line-dk: #333333;
 
-  --color-accent: #528bff;
+  --color-accent: #5A83F3;
   --color-accent-ghost: rgba(82, 139, 255, 0.08);
   --color-accent-ring: rgba(82, 139, 255, 0.2);
   --color-accent-ink: #7aabff;

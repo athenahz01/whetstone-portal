@@ -123,7 +123,7 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh, isA
                   className="px-3.5 py-1.5 rounded-lg cursor-pointer text-xs font-semibold capitalize"
                   style={{
                     background: sort === s ? "rgba(82,139,255,0.08)" : "#252525",
-                    border: `1px solid ${sort === s ? "#528bff" : "#333"}`,
+                    border: `1px solid ${sort === s ? "#5A83F3" : "#333"}`,
                     color: sort === s ? "#7aabff" : "#717171",
                   }}>
                   {s}

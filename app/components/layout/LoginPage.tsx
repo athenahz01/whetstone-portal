@@ -75,7 +75,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
             onClick={handleLogin}
             disabled={loading}
             className="w-full py-3 rounded-lg text-base font-semibold cursor-pointer border-none text-white mt-2"
-            style={{ background: loading ? "#505050" : "#528bff" }}
+            style={{ background: loading ? "#505050" : "#5A83F3" }}
           >
             {loading ? "Please wait..." : "Log In"}
           </button>

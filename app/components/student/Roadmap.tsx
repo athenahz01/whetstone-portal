@@ -61,7 +61,7 @@ export function Roadmap({ tasks, setTasks, deadlines = [], studentId, onRefresh,
             title: ce.title,
             date: ce.date,
             bgColor: "rgba(82,139,255,0.08)",
-            borderColor: "#528bff",
+            borderColor: "#5A83F3",
             textColor: "#7aabff",
           })),
         }]
@@ -98,7 +98,7 @@ export function Roadmap({ tasks, setTasks, deadlines = [], studentId, onRefresh,
           onClick={() => setViewMode(id)}
           className="px-4 py-1.5 rounded-full border-none cursor-pointer text-xs font-semibold"
           style={{
-            background: viewMode === id ? "#528bff" : "transparent",
+            background: viewMode === id ? "#5A83F3" : "transparent",
             color: viewMode === id ? "#fff" : "#717171",
           }}
         >
@@ -147,18 +147,18 @@ export function Roadmap({ tasks, setTasks, deadlines = [], studentId, onRefresh,
                   const d = new Date(monthKey + "-15");
                   const monthLabel = d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
                   const CATEGORY_COLORS: Record<string, string> = {
-                    essays: "#a480f2", applications: "#4aba6a", testing: "#e5a83b", planning: "#528bff",
+                    essays: "#a480f2", applications: "#4aba6a", testing: "#e5a83b", planning: "#5A83F3",
                     extracurricular: "#ec70a0", Academics: "#4aba6a", Testing: "#e5a83b",
                   };
                   return (
                     <div key={monthKey} className="mb-6">
                       <div className="flex items-center gap-4 mb-3">
                         <div className="w-[100px] text-right text-sm font-bold text-heading">{monthLabel}</div>
-                        <div className="w-3 h-3 rounded-full" style={{ background: "#528bff", marginLeft: -6 }} />
+                        <div className="w-3 h-3 rounded-full" style={{ background: "#5A83F3", marginLeft: -6 }} />
                       </div>
                       <div className="ml-[120px] flex flex-col gap-1.5">
                         {tasks.sort((a, b) => a.due.localeCompare(b.due)).map((t) => {
-                          const color = CATEGORY_COLORS[t.cat] || "#528bff";
+                          const color = CATEGORY_COLORS[t.cat] || "#5A83F3";
                           return (
                             <div key={t.id} className="flex items-center gap-3 px-3 py-2 rounded-lg"
                               style={{ background: "#252525", borderLeft: `3px solid ${color}`, opacity: t.status === "completed" ? 0.4 : 1 }}>
@@ -173,7 +173,7 @@ export function Roadmap({ tasks, setTasks, deadlines = [], studentId, onRefresh,
                                 </div>
                               )}
                               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
-                                style={{ background: t.status === "completed" ? "rgba(74,186,106,0.08)" : t.status === "overdue" ? "rgba(229,91,91,0.08)" : "rgba(82,139,255,0.08)", color: t.status === "completed" ? "#4aba6a" : t.status === "overdue" ? "#e55b5b" : "#528bff" }}>
+                                style={{ background: t.status === "completed" ? "rgba(74,186,106,0.08)" : t.status === "overdue" ? "rgba(229,91,91,0.08)" : "rgba(82,139,255,0.08)", color: t.status === "completed" ? "#4aba6a" : t.status === "overdue" ? "#e55b5b" : "#5A83F3" }}>
                                 {t.status === "pending" ? "To Do" : t.status === "in-progress" ? "In Progress" : t.status === "completed" ? "Complete" : t.status}
                               </span>
                             </div>

@@ -301,7 +301,7 @@ function HonorForm({ honor, index, onSave, onDelete, saving }: HonorFormProps) {
                 name={`grade_${g}`}
                 defaultChecked={(honor?.grades ?? []).includes(g as any)}
                 className="w-4 h-4 rounded"
-                style={{ accentColor: "#528bff" }}
+                style={{ accentColor: "#5A83F3" }}
               />
               {g}
             </label>
@@ -320,7 +320,7 @@ function HonorForm({ honor, index, onSave, onDelete, saving }: HonorFormProps) {
                 name={`rec_${r}`}
                 defaultChecked={(honor?.recognition ?? []).includes(r)}
                 className="w-4 h-4 rounded"
-                style={{ accentColor: "#528bff" }}
+                style={{ accentColor: "#5A83F3" }}
               />
               {r}
             </label>
@@ -342,7 +342,7 @@ function HonorForm({ honor, index, onSave, onDelete, saving }: HonorFormProps) {
         <button
           type="submit"
           disabled={saving}
-          style={{ padding: "8px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: "#528bff", color: "#fff", border: "none", cursor: "pointer", opacity: saving ? 0.7 : 1 }}
+          style={{ padding: "8px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: "#5A83F3", color: "#fff", border: "none", cursor: "pointer", opacity: saving ? 0.7 : 1 }}
         >
           {saving ? "Saving..." : honor ? "Save Changes" : "Add Honor"}
         </button>

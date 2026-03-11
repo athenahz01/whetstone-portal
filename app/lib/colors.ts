@@ -5,14 +5,14 @@ export function getCategoryColor(cat: string): string {
       recommendations: "#e5a83b",
       testing: "#e5a83b",
       financial: "#a480f2",
-      planning: "#528bff",
+      planning: "#5A83F3",
       extracurricular: "#e5a83b",
-      "College Applications": "#528bff",
+      "College Applications": "#5A83F3",
       Academics: "#4aba6a",
       Testing: "#e5a83b",
       Extracurriculars: "#a480f2",
     };
-    return map[cat] || "#528bff";
+    return map[cat] || "#5A83F3";
   }
   
   export function getStatusColor(status: string): string {
