@@ -20,6 +20,7 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
   const [events, setEvents] = useState<any[]>([]);
   const [showBooking, setShowBooking] = useState(false);
   const [bookingSaving, setBookingSaving] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<any>(null);
   const [commits, setCommits] = useState<any[]>([]);
   const [showCommitForm, setShowCommitForm] = useState(false);
   const [editingCommit, setEditingCommit] = useState<any>(null);
@@ -230,52 +231,76 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
                     };
 
                     return (
-                      <div key={ev.id} className="p-5 rounded-xl group"
-                        style={{ background: "#252525", borderLeft: `3px solid ${isCompleted ? "#4aba6a" : "#528bff"}`, opacity: isCompleted ? 0.7 : 1 }}>
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 min-w-0">
-                            <div className="text-sm font-semibold text-heading">{ev.title}</div>
-                            {ev.start_time && <div className="text-xs text-sub mt-0.5">{ev.start_time}{ev.end_time ? ` — ${ev.end_time}` : ""}</div>}
-                            <div className="flex items-center gap-3 mt-2">
-                              {ev.specialist && (
-                                <>
-                                  <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold"
-                                    style={{ background: "rgba(164,128,242,0.1)", color: "#a480f2" }}>
-                                    {ev.specialist.split(" ").map((n: string) => n[0]).join("").substring(0, 2)}
-                                  </div>
-                                  <span className="text-xs text-sub">{ev.specialist}</span>
-                                </>
-                              )}
-                              {!ev.specialist && (
-                                <>
-                                  <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold"
-                                    style={{ background: "rgba(82,139,255,0.1)", color: "#528bff" }}>
-                                    {student.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2)}
-                                  </div>
-                                  <span className="text-xs text-sub">{student.name}</span>
-                                </>
+                      <div key={ev.id}>
+                        <div className="p-5 rounded-xl group cursor-pointer"
+                          onClick={() => setSelectedSession(selectedSession?.id === ev.id ? null : ev)}
+                          style={{ background: "#252525", borderLeft: `3px solid ${isCompleted ? "#4aba6a" : "#528bff"}`, opacity: isCompleted ? 0.7 : 1 }}>
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px]" style={{ color: "#717171" }}>{selectedSession?.id === ev.id ? "▼" : "▶"}</span>
+                                <div className="text-sm font-semibold text-heading">{ev.title}</div>
+                              </div>
+                              {ev.start_time && <div className="text-xs text-sub mt-0.5 ml-5">{ev.start_time}{ev.end_time ? ` — ${ev.end_time}` : ""}</div>}
+                              <div className="flex items-center gap-3 mt-2 ml-5">
+                                {ev.specialist && (
+                                  <>
+                                    <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold"
+                                      style={{ background: "rgba(164,128,242,0.1)", color: "#a480f2" }}>
+                                      {ev.specialist.split(" ").map((n: string) => n[0]).join("").substring(0, 2)}
+                                    </div>
+                                    <span className="text-xs text-sub">{ev.specialist}</span>
+                                  </>
+                                )}
+                                {!ev.specialist && (
+                                  <>
+                                    <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold"
+                                      style={{ background: "rgba(82,139,255,0.1)", color: "#528bff" }}>
+                                      {student.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2)}
+                                    </div>
+                                    <span className="text-xs text-sub">{student.name}</span>
+                                  </>
+                                )}
+                                {ev.notes && <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}>📝 Has notes</span>}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                              <button onClick={isBooked ? toggleStatus : undefined}
+                                className="text-[10px] font-semibold px-2.5 py-1 rounded-full border-none"
+                                style={{
+                                  background: isCompleted ? "rgba(74,186,106,0.08)" : "rgba(229,168,59,0.08)",
+                                  color: isCompleted ? "#4aba6a" : "#e5a83b",
+                                  cursor: isBooked ? "pointer" : "default",
+                                }}>
+                                {isCompleted ? "✓ Completed" : "Pending"}
+                              </button>
+                              {isBooked && (
+                                <button onClick={deleteSession}
+                                  className="w-6 h-6 rounded-full hidden group-hover:flex items-center justify-center border-none cursor-pointer"
+                                  style={{ background: "rgba(229,91,91,0.1)", color: "#e55b5b", fontSize: 11 }}>✕</button>
                               )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            {/* Status badge — clickable for booked sessions */}
-                            <button onClick={isBooked ? toggleStatus : undefined}
-                              className="text-[10px] font-semibold px-2.5 py-1 rounded-full border-none"
-                              style={{
-                                background: isCompleted ? "rgba(74,186,106,0.08)" : "rgba(229,168,59,0.08)",
-                                color: isCompleted ? "#4aba6a" : "#e5a83b",
-                                cursor: isBooked ? "pointer" : "default",
-                              }}>
-                              {isCompleted ? "✓ Completed" : "Pending"}
-                            </button>
-                            {/* Delete button — only for booked sessions */}
-                            {isBooked && (
-                              <button onClick={deleteSession}
-                                className="w-6 h-6 rounded-full hidden group-hover:flex items-center justify-center border-none cursor-pointer"
-                                style={{ background: "rgba(229,91,91,0.1)", color: "#e55b5b", fontSize: 11 }}>✕</button>
-                            )}
-                          </div>
                         </div>
+                        {/* Expanded detail panel */}
+                        {selectedSession?.id === ev.id && (
+                          <div className="ml-3 p-4 rounded-b-xl" style={{ background: "#1e1e1e", borderLeft: "3px solid #333", marginTop: -4 }}>
+                            {ev.notes ? (
+                              <div className="mb-3">
+                                <div className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: "#717171" }}>📝 Session Notes</div>
+                                <div className="text-sm leading-relaxed p-3 rounded-lg" style={{ background: "#252525", color: "#d0d0d0" }}>{ev.notes}</div>
+                              </div>
+                            ) : (
+                              <div className="text-xs text-faint py-2">No notes for this session.</div>
+                            )}
+                            <div className="flex items-center gap-4 mt-2 text-xs text-sub">
+                              {ev.category && <span>Category: {ev.category}</span>}
+                              {ev.specialist && <span>Mentor: {ev.specialist}</span>}
+                              <span>Date: {ev.date}</span>
+                              {isBooked && <button onClick={() => { setViewMode("commit" as any); }} className="bg-transparent border-none cursor-pointer text-xs font-semibold" style={{ color: "#528bff" }}>Write Closing Commit →</button>}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}

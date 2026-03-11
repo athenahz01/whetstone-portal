@@ -475,16 +475,16 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
                   <div key={cat}>
                     {/* Category header */}
                     <button onClick={() => toggleGroup(cat)}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 border-b border-line bg-transparent border-none cursor-pointer text-left"
+                      className="w-full flex items-center gap-3 px-4 py-3 border-b border-line bg-transparent border-none cursor-pointer text-left"
                       style={{ background: "rgba(255,255,255,0.02)" }}>
-                      <span className="text-[10px]" style={{ color: "#717171" }}>{isCollapsed ? "▶" : "▼"}</span>
-                      <span className="text-xs font-bold px-2 py-0.5 rounded-md"
+                      <span className="text-xs" style={{ color: "#717171" }}>{isCollapsed ? "▶" : "▼"}</span>
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-md"
                         style={{ background: `${CATEGORY_COLORS[cat] || "#528bff"}15`, color: CATEGORY_COLORS[cat] || "#528bff" }}>
                         {cat}
                       </span>
-                      <span className="text-[10px] text-sub">({catTasks.length} task{catTasks.length !== 1 ? "s" : ""})</span>
+                      <span className="text-xs text-sub">({catTasks.length} {catTasks.length === 1 ? "mission" : "missions"})</span>
                       {overdueCount > 0 && (
-                        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(229,91,91,0.1)", color: "#e55b5b" }}>
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(229,91,91,0.1)", color: "#e55b5b" }}>
                           {overdueCount} overdue
                         </span>
                       )}
