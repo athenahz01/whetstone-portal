@@ -141,12 +141,15 @@ export async function GET(request: NextRequest) {
   }
 
   const now = new Date();
+  // Start from beginning of today (not current moment) to catch all today's events
+  const startOfDay = new Date(now);
+  startOfDay.setHours(0, 0, 0, 0);
   const future = new Date();
   future.setDate(future.getDate() + 60);
 
   const res = await fetch(
     `https://www.googleapis.com/calendar/v3/calendars/primary/events?` +
-    `timeMin=${now.toISOString()}&timeMax=${future.toISOString()}&singleEvents=true&orderBy=startTime&maxResults=50`,
+    `timeMin=${startOfDay.toISOString()}&timeMax=${future.toISOString()}&singleEvents=true&orderBy=startTime&maxResults=100&timeZone=America/New_York`,
     {
       headers: { Authorization: `Bearer ${token}` },
     }
@@ -164,8 +167,14 @@ export async function GET(request: NextRequest) {
       date = e.start.date;
       allDay = true;
     } else if (e.start?.dateTime) {
-      date = e.start.dateTime.substring(0, 10);
-      const startMatch = e.start.dateTime.match(/T(\d{2}):(\d{2})/);
+      // Parse the dateTime properly to handle timezone offsets
+      // GCal returns like "2026-03-11T16:55:00-04:00" — we need the LOCAL date, not UTC
+      // With timeZone=America/New_York in the request, dateTime should already be in ET
+      // But to be safe, parse and extract the date portion before the T
+      const dtStr = e.start.dateTime;
+      // If it contains a timezone offset (+ or - after time), the date before T is the local date
+      date = dtStr.substring(0, 10);
+      const startMatch = dtStr.match(/T(\d{2}):(\d{2})/);
       if (startMatch) {
         startMinutes = parseInt(startMatch[1]) * 60 + parseInt(startMatch[2]);
       }
