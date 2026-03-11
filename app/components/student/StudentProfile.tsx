@@ -74,9 +74,28 @@ export function StudentProfile({ student, readOnly = false }: StudentProfileProp
               {student.av || student.name.split(" ").map(n => n[0]).join("").substring(0, 2)}
             </div>
             <div className="flex-1">
-              <h2 className="m-0 text-xl font-bold text-heading">{student.name}</h2>
+              {readOnly ? (
+                <h2 className="m-0 text-xl font-bold text-heading">{student.name}</h2>
+              ) : (
+                <input
+                  defaultValue={student.name}
+                  onBlur={(e) => { if (e.target.value !== student.name) save("name", e.target.value); }}
+                  className="m-0 text-xl font-bold bg-transparent border-none outline-none w-full"
+                  style={{ color: "#ebebeb", padding: 0 }}
+                />
+              )}
               <div className="flex items-center gap-4 mt-1.5">
-                <span className="text-sm" style={{ color: "#a0a0a0" }}>{student.school}</span>
+                {readOnly ? (
+                  <span className="text-sm" style={{ color: "#a0a0a0" }}>{student.school}</span>
+                ) : (
+                  <input
+                    defaultValue={student.school}
+                    onBlur={(e) => { if (e.target.value !== student.school) save("school", e.target.value); }}
+                    placeholder="School name"
+                    className="text-sm bg-transparent border-none outline-none"
+                    style={{ color: "#a0a0a0", padding: 0, width: 180 }}
+                  />
+                )}
                 <span className="text-sm" style={{ color: "#717171" }}>·</span>
                 <span className="text-sm" style={{ color: "#a0a0a0" }}>Class of {classOf || "—"}</span>
                 {yearsUntil !== null && yearsUntil > 0 && (
@@ -90,7 +109,7 @@ export function StudentProfile({ student, readOnly = false }: StudentProfileProp
                 )}
               </div>
               <div className="flex items-center gap-4 mt-1">
-                <span className="text-xs" style={{ color: "#717171" }}>Counselor: {student.counselor}</span>
+                <span className="text-xs" style={{ color: "#717171" }}>Mentor: {student.counselor}</span>
                 {student.email && <span className="text-xs" style={{ color: "#717171" }}>{student.email}</span>}
               </div>
             </div>

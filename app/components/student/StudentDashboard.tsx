@@ -32,6 +32,7 @@ export function StudentDashboard({
 }: StudentDashboardProps) {
   const [counselorEvents, setCounselorEvents] = useState<any[]>([]);
   const [sessionTab, setSessionTab] = useState<"upcoming" | "past">("upcoming");
+  const [latestCommit, setLatestCommit] = useState<any>(null);
 
   useEffect(() => {
     if (student.id) {
@@ -40,6 +41,11 @@ export function StudentDashboard({
           setCounselorEvents([...evs, ...sess]);
         });
       });
+      // Fetch latest closing commit
+      fetch(`/api/closing-commits?studentId=${student.id}`)
+        .then(r => r.json())
+        .then(d => { if (d.commits?.length > 0) setLatestCommit(d.commits[0]); })
+        .catch(() => {});
     }
   }, [student.id]);
 
@@ -154,24 +160,37 @@ export function StudentDashboard({
               ))}
             </div>
 
-            {/* Action Items from Last Session */}
-            {student.sess.length > 0 && student.sess[0].action && (
-              <div className="mt-4 pt-4 border-t border-line">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-sub mb-2">📋 Action Items</div>
-                <div className="flex flex-col gap-1">
-                  {student.sess[0].action.split("\n").filter(Boolean).slice(0, 3).map((item: string, i: number) => (
-                    <div key={i} className="flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs text-body"
-                      style={{ background: "#252525" }}>
-                      <span className="text-[9px] font-bold" style={{ color: "#528bff" }}>{i + 1}</span>
-                      <span className="truncate">{item}</span>
-                    </div>
-                  ))}
+            {/* Latest Closing Commit Actions */}
+            {latestCommit && (() => {
+              let actions: any[] = [];
+              try { actions = JSON.parse(latestCommit.actions || "[]"); } catch {}
+              actions = actions.filter((a: any) => a.title);
+              if (actions.length === 0) return null;
+              return (
+                <div className="mt-4 pt-4 border-t border-line">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-sub">📋 Latest Commit Actions</div>
+                    <div className="text-[9px] text-faint">{new Date(latestCommit.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    {actions.slice(0, 3).map((a: any, i: number) => (
+                      <div key={i} className="flex items-center gap-2 px-2.5 py-2 rounded-lg"
+                        style={{ background: "#252525" }}>
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0"
+                          style={{ background: "rgba(82,139,255,0.1)", color: "#528bff" }}>{i + 1}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm text-heading truncate">{a.title}</div>
+                          {a.due && <div className="text-[10px] text-faint mt-0.5">Due: {a.due}</div>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </Card>
 
-          {/* ── Column 3: Quick Actions ── */}
+          {/* ── Column 3: Quick Actions + Activity ── */}
           <div className="flex flex-col gap-4">
             {/* Plan Your Day */}
             {!readOnly && (
@@ -204,6 +223,46 @@ export function StudentDashboard({
                 </div>
               </Card>
             )}
+
+            {/* Activity Feed */}
+            <Card>
+              <h3 className="m-0 text-xs font-bold uppercase tracking-wider text-sub mb-3">Recent Activity</h3>
+              <div className="flex flex-col gap-1.5">
+                {/* Recent completed tasks */}
+                {student.dl.filter(d => d.status === "completed").slice(0, 3).map((d) => (
+                  <div key={d.id} className="flex items-start gap-2 px-2 py-1.5 rounded-md" style={{ background: "#1e1e1e" }}>
+                    <span className="text-[10px] mt-0.5" style={{ color: "#4aba6a" }}>✓</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-body truncate">{d.title}</div>
+                      <div className="text-[9px] text-faint">Completed</div>
+                    </div>
+                  </div>
+                ))}
+                {/* Recent overdue */}
+                {student.dl.filter(d => d.status === "overdue").slice(0, 2).map((d) => (
+                  <div key={d.id} className="flex items-start gap-2 px-2 py-1.5 rounded-md" style={{ background: "#1e1e1e" }}>
+                    <span className="text-[10px] mt-0.5" style={{ color: "#e55b5b" }}>!</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-body truncate">{d.title}</div>
+                      <div className="text-[9px] text-faint">Overdue · {d.due}</div>
+                    </div>
+                  </div>
+                ))}
+                {/* Latest commit */}
+                {latestCommit && (
+                  <div className="flex items-start gap-2 px-2 py-1.5 rounded-md" style={{ background: "#1e1e1e" }}>
+                    <span className="text-[10px] mt-0.5" style={{ color: "#528bff" }}>📋</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-body truncate">Closing commit saved</div>
+                      <div className="text-[9px] text-faint">{new Date(latestCommit.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}{latestCommit.specialist ? ` · ${latestCommit.specialist}` : ""}</div>
+                    </div>
+                  </div>
+                )}
+                {student.dl.filter(d => d.status === "completed").length === 0 && !latestCommit && (
+                  <p className="text-xs text-faint text-center py-2 m-0">No recent activity</p>
+                )}
+              </div>
+            </Card>
 
             {/* Book Session shortcut */}
             {!readOnly && (
