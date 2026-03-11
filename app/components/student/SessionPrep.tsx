@@ -156,7 +156,7 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
         }
       />
 
-      <div className="p-6 px-8" style={{ maxWidth: 780 }}>
+      <div className="p-6 px-8" style={{ maxWidth: 860 }}>
         {/* Unified tab row: Upcoming | Past | Closing Commit */}
         <div className="flex gap-0.5 mb-5 p-0.5 rounded-full" style={{ background: "#1e1e1e", display: "inline-flex" }}>
           {([
@@ -204,7 +204,7 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
                 <div className="text-sm font-bold text-heading mb-2">
                   {new Date(date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
                 </div>
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-3">
                   {evs.map((ev: any) => {
                     const isBooked = ev.source === "booking";
                     const rawId = isBooked ? ev.id.replace("sess-", "") : null;
@@ -230,7 +230,7 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
                     };
 
                     return (
-                      <div key={ev.id} className="p-4 rounded-xl group"
+                      <div key={ev.id} className="p-5 rounded-xl group"
                         style={{ background: "#252525", borderLeft: `3px solid ${isCompleted ? "#4aba6a" : "#528bff"}`, opacity: isCompleted ? 0.7 : 1 }}>
                         <div className="flex items-start justify-between">
                           <div className="flex-1 min-w-0">
@@ -417,7 +417,7 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
                 </FormField>
                 <FormField label="Specialist">
                   <select value={commitSpecialist} onChange={(e) => setCommitSpecialist(e.target.value)} style={inputStyle}>
-                    <option value="">Select specialist...</option>
+                    <option value="">Select mentor...</option>
                     {SPECIALISTS.map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </FormField>
@@ -569,7 +569,7 @@ function CalBookingForm({ student, specialists, inputStyle, onBook, saving }: {
           <div className="text-xs text-sub mt-0.5">Duration: {duration}m · <button className="bg-transparent border-none cursor-pointer text-xs" style={{ color: "#528bff" }} onClick={() => setStep(1)}>Change</button></div>
         </div>
 
-        <FormField label="Booking with">
+        <FormField label="Mentor">
           <select value={specialist} onChange={(e) => setSpecialist(e.target.value)} style={inputStyle}>
             {specialists.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
@@ -647,7 +647,7 @@ function CalBookingForm({ student, specialists, inputStyle, onBook, saving }: {
       {/* Left: Info + Calendar */}
       <div style={{ width: 280 }}>
         <div className="mb-4">
-          <div className="text-xs text-sub mb-1">{specialist || "Select specialist"}</div>
+          <div className="text-xs text-sub mb-1">{specialist || "Select mentor"}</div>
           <div className="text-lg font-bold text-heading">{duration} Min Meeting</div>
           <div className="flex items-center gap-2 mt-2 text-xs text-sub">
             <span>🕐 {duration}m</span>

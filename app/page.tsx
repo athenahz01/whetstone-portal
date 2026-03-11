@@ -41,7 +41,20 @@ export default function Home() {
   const [profileId, setProfileId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [gcalConnected, setGcalConnected] = useState(false);
-  const [view, setView] = useState("dashboard");
+  // Persist view in URL hash so refresh stays on the same page
+  const [view, setView] = useState(() => {
+    if (typeof window !== "undefined") {
+      const hash = window.location.hash.replace("#", "");
+      return hash || "dashboard";
+    }
+    return "dashboard";
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.location.hash = view;
+    }
+  }, [view]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 

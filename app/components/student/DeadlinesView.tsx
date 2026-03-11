@@ -57,7 +57,7 @@ const SPECIALISTS = [
 export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = false, headerRight }: DeadlinesViewProps) {
   const [sortBy, setSortBy] = useState<SortField>("due");
   const [sortAsc, setSortAsc] = useState(true);
-  const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
+  const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [groupByCategory, setGroupByCategory] = useState(true);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
@@ -66,6 +66,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [quickAssign, setQuickAssign] = useState<number | null>(null);
 
   const toggleGroup = (cat: string) => {
     setCollapsedGroups((prev) => {
@@ -77,8 +78,8 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
 
   // Filter
   let filtered = [...deadlines];
-  if (filterStatus !== "all") {
-    filtered = filtered.filter((d) => d.status === filterStatus);
+  if (activeFilters.size > 0) {
+    filtered = filtered.filter((d) => activeFilters.has(d.status));
   }
   if (searchQuery.trim()) {
     const q = searchQuery.toLowerCase();
@@ -221,16 +222,39 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
               {d.description && <div className="text-[11px] text-sub truncate mt-0.5">{d.description}</div>}
             </div>
           </div>
-          {/* Team avatar */}
-          <div className="flex items-center">
+          {/* Team avatar + quick assign */}
+          <div className="flex items-center gap-1 relative">
             {initials ? (
               <div className="w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-bold"
-                style={{ background: "rgba(82,139,255,0.1)", color: "#528bff" }}>
+                style={{ background: "rgba(82,139,255,0.1)", color: "#528bff" }}
+                title={d.specialist || ""}>
                 {initials}
               </div>
             ) : (
-              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[8px]"
-                style={{ background: "#333", color: "#505050" }}>—</div>
+              !readOnly ? (
+                <button onClick={(e) => { e.stopPropagation(); setQuickAssign(d.id === quickAssign ? null : d.id); }}
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-none cursor-pointer"
+                  style={{ background: "#333", color: "#717171" }}>+</button>
+              ) : (
+                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[8px]"
+                  style={{ background: "#333", color: "#505050" }}>—</div>
+              )
+            )}
+            {quickAssign === d.id && (
+              <div className="absolute top-7 left-0 z-50 rounded-lg shadow-lg py-1" style={{ background: "#252525", border: "1px solid #333", width: 160 }}>
+                {SPECIALISTS.map((s) => (
+                  <button key={s} onClick={async (e) => {
+                    e.stopPropagation();
+                    await updateDeadline(d.id, { specialist: s });
+                    setQuickAssign(null);
+                    if (onRefresh) onRefresh();
+                  }}
+                    className="w-full px-3 py-1.5 text-left text-xs bg-transparent border-none cursor-pointer hover:opacity-80"
+                    style={{ color: "#ebebeb" }}>
+                    {s}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
           {/* Status */}
@@ -308,22 +332,36 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
 
         {/* Filters bar */}
         <div className="flex items-center gap-3 mb-4 flex-wrap">
-          {/* Status filter pills */}
-          <div className="flex gap-1">
-            {(["all", "pending", "in-progress", "overdue", "blocked", "completed"] as const).map((s) => (
-              <button
-                key={s}
-                onClick={() => setFilterStatus(s)}
-                className="px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer border-none"
-                style={{
-                  background: filterStatus === s ? "rgba(82,139,255,0.1)" : "#252525",
-                  color: filterStatus === s ? "#7aabff" : "#717171",
-                  border: filterStatus === s ? "1px solid #528bff" : "1px solid #333",
-                }}
-              >
-                {s === "all" ? "All" : STATUS_LABELS[s] || s}
+          {/* Status filter toggles — multi-select */}
+          <div className="flex gap-1.5">
+            {(["pending", "in-progress", "overdue", "blocked", "completed"] as const).map((s) => {
+              const isOn = activeFilters.has(s);
+              return (
+                <button key={s}
+                  onClick={() => {
+                    setActiveFilters((prev) => {
+                      const n = new Set(prev);
+                      n.has(s) ? n.delete(s) : n.add(s);
+                      return n;
+                    });
+                  }}
+                  className="px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer"
+                  style={{
+                    background: isOn ? "rgba(82,139,255,0.12)" : "#252525",
+                    color: isOn ? "#7aabff" : "#717171",
+                    border: isOn ? "1.5px solid #528bff" : "1.5px solid #333",
+                  }}>
+                  {isOn ? "✓ " : ""}{STATUS_LABELS[s] || s}
+                </button>
+              );
+            })}
+            {activeFilters.size > 0 && (
+              <button onClick={() => setActiveFilters(new Set())}
+                className="px-2.5 py-1.5 rounded-full text-xs font-medium cursor-pointer"
+                style={{ background: "transparent", color: "#505050", border: "1px solid #333" }}>
+                Clear
               </button>
-            ))}
+            )}
           </div>
 
           {/* Search */}
@@ -473,7 +511,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
               </FormField>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <FormField label="Specialist">
+              <FormField label="Mentor">
                 <select name="specialist" defaultValue="" style={inputStyle}>
                   <option value="">None</option>
                   {SPECIALISTS.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -538,7 +576,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
                   <option value="low">Low</option>
                 </select>
               </FormField>
-              <FormField label="Specialist">
+              <FormField label="Mentor">
                 <select name="specialist" defaultValue={editingDeadline.specialist || ""} style={inputStyle}>
                   <option value="">None</option>
                   {SPECIALISTS.map((s) => <option key={s} value={s}>{s}</option>)}
