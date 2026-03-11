@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Student } from "../../types";
 import { Card } from "../ui/Card";
 import { Tag } from "../ui/Tag";
@@ -47,6 +47,28 @@ export function StaffDashboard({
   counselorName = "Strategist",
 }: StaffDashboardProps) {
   const [showInactiveModal, setShowInactiveModal] = useState(false);
+  const [authLogins, setAuthLogins] = useState<Record<string, string | null>>({});
+
+  // Fetch real last_sign_in from Supabase Auth via admin API
+  useEffect(() => {
+    fetch("/api/admin/users")
+      .then(r => r.json())
+      .then(data => {
+        const map: Record<string, string | null> = {};
+        for (const u of (data.users || [])) {
+          if (u.studentId) map[u.studentId] = u.lastSignIn;
+          // Also try matching by email
+          if (u.email) map[`email:${u.email}`] = u.lastSignIn;
+        }
+        setAuthLogins(map);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Get the real last login for a student (prefer auth data over students table)
+  const getRealLastLogin = (s: Student): string | null => {
+    return authLogins[s.id] || authLogins[`email:${s.email}`] || s.lastLogin || null;
+  };
 
   const all = students.flatMap((s) => s.dl.map((d) => ({ ...d, sn: s.name })));
   const ov = all.filter((d) => d.status === "overdue");
@@ -54,8 +76,8 @@ export function StaffDashboard({
   const att = students.filter((s) => s.status === "needs-attention");
 
   const inactiveStudents = useMemo(
-    () => students.filter((s) => daysSinceLogin(s.lastLogin) >= 3),
-    [students]
+    () => students.filter((s) => daysSinceLogin(getRealLastLogin(s)) >= 3),
+    [students, authLogins]
   );
 
   const avgEngagement =
@@ -144,7 +166,7 @@ export function StaffDashboard({
               </button>
             </div>
             {students.map((s) => {
-              const days = daysSinceLogin(s.lastLogin);
+              const days = daysSinceLogin(getRealLastLogin(s));
               const loginWarning = days >= 3;
               return (
                 <div
@@ -180,7 +202,7 @@ export function StaffDashboard({
                       {s.engagement}%
                     </div>
                     <div className="text-xs" style={{ color: loginWarning ? "#e55b5b" : "#505050" }}>
-                      {formatLastLogin(s.lastLogin)}
+                      {formatLastLogin(getRealLastLogin(s))}
                     </div>
                   </div>
                 </div>
@@ -230,7 +252,8 @@ export function StaffDashboard({
           style={{ background: "rgba(0,0,0,0.4)" }}
           onClick={(e) => { if (e.target === e.currentTarget) setShowInactiveModal(false); }}
         >
-          <div className="rounded-2xl border border-line w-full max-w-md mx-4 overflow-hidden">
+          <div className="rounded-2xl border border-line w-full max-w-md mx-4 overflow-hidden"
+            style={{ background: "#191919" }}>
             <div className="flex justify-between items-center px-6 py-4 border-b border-line">
               <div>
                 <h2 className="text-base font-bold text-heading m-0">Login Warning</h2>
@@ -245,7 +268,7 @@ export function StaffDashboard({
             </div>
             <div className="px-6 py-4 space-y-2 max-h-80 overflow-y-auto">
               {inactiveStudents.map((s) => {
-                const days = daysSinceLogin(s.lastLogin);
+                const days = daysSinceLogin(getRealLastLogin(s));
                 return (
                   <div
                     key={s.id}
@@ -273,13 +296,13 @@ export function StaffDashboard({
                       <div className="text-xs font-semibold text-red-500">
                         {days === Infinity ? "Never" : `${days}d ago`}
                       </div>
-                      <div className="text-xs text-faint">{formatLastLogin(s.lastLogin)}</div>
+                      <div className="text-xs text-faint">{formatLastLogin(getRealLastLogin(s))}</div>
                     </div>
                   </div>
                 );
               })}
             </div>
-            <div className="px-6 py-3 bg-mist border-t border-line">
+            <div className="px-6 py-3 border-t border-line" style={{ background: "#252525" }}>
               <p className="text-xs text-faint text-center">Click a student to view their profile</p>
             </div>
           </div>
