@@ -173,7 +173,7 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
           {([
             ["upcoming", "Upcoming"],
             ["past", "Past"],
-            ["commit", "Closing Commit"],
+            ["commit", "Close & Commit"],
           ] as const).map(([key, label]) => {
             const isActive = (viewMode === "commit" && key === "commit") || (viewMode === "sessions" && key === sessionTab);
             return (
