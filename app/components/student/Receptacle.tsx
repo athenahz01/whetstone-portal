@@ -679,7 +679,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                   className="w-16 px-3 py-3 rounded-lg text-sm text-center"
                   style={{ border: "1.5px solid #e2e8f0", outline: "none", color: "#ebebeb" }} />
                 <button onClick={addTask}
-                  style={{ padding: "0 18px", borderRadius: 10, border: "none", background: "#ebebeb", color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
+                  style={{ padding: "0 18px", borderRadius: 10, border: "none", background: "#5A83F3", color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
                 >+ Add</button>
               </div>
 
