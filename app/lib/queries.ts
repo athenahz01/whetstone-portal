@@ -26,11 +26,19 @@ export async function fetchAllStudents(): Promise<Student[]> {
           supabase.from("sessions").select("*").eq("student_id", s.id),
         ]);
 
+      // Calculate grade dynamically from graduation year
+      // If gradYear is 2027 and it's March 2026, student is in 11th grade
+      // Logic: 12 - (gradYear - currentSchoolYear)
+      // School year: if current month >= August, school year = current calendar year + 1
+      const now = new Date();
+      const currentSchoolYear = now.getMonth() >= 7 ? now.getFullYear() + 1 : now.getFullYear();
+      const calculatedGrade = s.grad_year ? Math.min(12, Math.max(9, 12 - (s.grad_year - currentSchoolYear))) : s.grade;
+
       return {
         id: s.id,
         name: s.name,
         email: s.email,
-        grade: s.grade,
+        grade: calculatedGrade,
         gpa: Number(s.gpa),
         sat: s.sat,
         counselor: s.counselor,
