@@ -60,20 +60,27 @@ export async function fetchAllStudents(): Promise<Student[]> {
           deadline: sc.deadline,
           essay: sc.essay,
         })),
-        dl: (dlRes.data || []).map((d) => ({
-          id: d.id,
-          title: d.title,
-          due: d.due,
-          cat: d.category,
-          status: d.status as "overdue" | "in-progress" | "pending" | "completed" | "blocked",
-          days: d.days,
-          specialist: d.specialist || "",
-          googleDocLink: d.google_doc_link || "",
-          createdBy: (d.created_by || "strategist") as "strategist" | "student",
-          priority: d.priority || undefined,
-          description: d.description || undefined,
-          blockedBy: d.blocked_by || undefined,
-        })),
+        dl: (dlRes.data || []).map((d) => {
+          // Calculate days until due dynamically
+          const dueDate = d.due ? new Date(d.due + "T00:00:00") : null;
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const diffDays = dueDate ? Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+          return {
+            id: d.id,
+            title: d.title,
+            due: d.due,
+            cat: d.category,
+            status: d.status as "overdue" | "in-progress" | "pending" | "completed" | "blocked",
+            days: diffDays,
+            specialist: d.specialist || "",
+            googleDocLink: d.google_doc_link || "",
+            createdBy: (d.created_by || "strategist") as "strategist" | "student",
+            priority: d.priority || undefined,
+            description: d.description || undefined,
+            blockedBy: d.blocked_by || undefined,
+          };
+        }),
         tasks: (tasksRes.data || []).map((t) => ({
           id: t.id,
           cat: t.category,

@@ -340,7 +340,7 @@ export default function Home() {
     if (isStudentOrParent && view === "schools" && me) {
       return <Schools student={me} readOnly={isParent} />;
     }
-    if (role === "student" && view === "receptacle" && me) {
+    if (isStudentOrParent && view === "receptacle" && me) {
       return (
         <Receptacle
           studentId={me.id}

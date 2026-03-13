@@ -67,6 +67,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [quickAssign, setQuickAssign] = useState<number | null>(null);
+  const [quickStatus, setQuickStatus] = useState<number | null>(null);
 
   const toggleGroup = (cat: string) => {
     setCollapsedGroups((prev) => {
@@ -198,7 +199,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
           onClick={() => canEdit && setEditingDeadline(d)}
           className="grid items-center px-3 py-2.5 border-b border-line transition-colors hover:bg-mist"
           style={{
-            gridTemplateColumns: "2.5fr 90px 80px 100px 70px 30px",
+            gridTemplateColumns: "2.5fr 100px 100px 110px 75px 32px",
             cursor: canEdit ? "pointer" : "default",
             opacity: isCompleted ? 0.45 : 1,
             background: d.status === "overdue" ? "rgba(229,91,91,0.04)" : "transparent",
@@ -274,13 +275,48 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
               </div>
             )}
           </div>
-          {/* Status */}
-          <div><Tag color={getStatusColor(d.status)}>{STATUS_LABELS[d.status] || d.status}</Tag></div>
+          {/* Status — clickable dropdown */}
+          <div className="relative" onClick={(e) => e.stopPropagation()}>
+            {!readOnly ? (
+              <button onClick={() => setQuickStatus(d.id === quickStatus ? null : d.id)}
+                className="border-none bg-transparent cursor-pointer p-0">
+                <Tag color={getStatusColor(d.status)}>{STATUS_LABELS[d.status] || d.status}</Tag>
+              </button>
+            ) : (
+              <Tag color={getStatusColor(d.status)}>{STATUS_LABELS[d.status] || d.status}</Tag>
+            )}
+            {quickStatus === d.id && (
+              <div className="absolute top-7 left-0 z-50 rounded-lg shadow-lg py-1.5" style={{ background: "#252525", border: "1px solid #333", width: 140 }}>
+                {(["pending", "in-progress", "completed", "blocked"] as const).map((s) => (
+                  <button key={s} onClick={async (e) => {
+                    e.stopPropagation();
+                    await updateDeadline(d.id, { status: s });
+                    setQuickStatus(null);
+                    if (onRefresh) onRefresh();
+                  }}
+                    className="w-full px-3 py-1.5 text-left text-xs bg-transparent border-none cursor-pointer"
+                    style={{ color: d.status === s ? "#5A83F3" : "#a0a0a0" }}>
+                    {d.status === s ? "✓ " : ""}{STATUS_LABELS[s]}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           {/* Due */}
-          <div>
-            <div className="text-xs" style={{ color: d.days < 0 ? "#e55b5b" : d.days <= 3 ? "#e5a83b" : "#717171" }}>
-              {d.due}
-            </div>
+          <div className="relative" onClick={(e) => e.stopPropagation()}>
+            {!readOnly ? (
+              <input type="date" value={d.due || ""}
+                onChange={async (e) => {
+                  await updateDeadline(d.id, { due: e.target.value });
+                  if (onRefresh) onRefresh();
+                }}
+                className="text-xs bg-transparent border-none outline-none cursor-pointer"
+                style={{ color: d.days < 0 ? "#e55b5b" : d.days <= 3 ? "#e5a83b" : "#717171", width: 100 }} />
+            ) : (
+              <div className="text-xs" style={{ color: d.days < 0 ? "#e55b5b" : d.days <= 3 ? "#e5a83b" : "#717171" }}>
+                {d.due}
+              </div>
+            )}
           </div>
           {/* Priority */}
           <div>
@@ -299,7 +335,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
         {blocked.map((b) => (
           <div key={b.id} onClick={() => canEdit && setEditingDeadline(b)}
             className="grid items-center px-3 py-2 border-b border-line"
-            style={{ gridTemplateColumns: "2.5fr 90px 80px 100px 70px 30px", cursor: canEdit ? "pointer" : "default", background: "rgba(229,91,91,0.03)", paddingLeft: 40 }}>
+            style={{ gridTemplateColumns: "2.5fr 100px 100px 110px 75px 32px", cursor: canEdit ? "pointer" : "default", background: "rgba(229,91,91,0.03)", paddingLeft: 40 }}>
             <div className="min-w-0 flex items-center gap-2">
               <span className="text-[10px] text-faint">↳</span>
               <div className="min-w-0">
@@ -426,7 +462,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
         {/* Table header */}
         <div
           className="grid items-center px-3 py-2 rounded-t-lg text-[10px] font-bold uppercase tracking-wider text-sub"
-          style={{ gridTemplateColumns: "2.5fr 90px 80px 100px 70px 30px", background: "#252525", borderBottom: "1px solid #333" }}
+          style={{ gridTemplateColumns: "2.5fr 100px 100px 110px 75px 32px", background: "#252525", borderBottom: "1px solid #333" }}
         >
           <button onClick={() => handleSort("title")}
             className="bg-transparent border-none cursor-pointer text-left text-[10px] font-bold uppercase tracking-wider flex items-center gap-1"

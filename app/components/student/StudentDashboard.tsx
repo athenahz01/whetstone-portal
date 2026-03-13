@@ -87,7 +87,7 @@ export function StudentDashboard({
       />
       <div className="p-6 px-8">
         {/* 2x2 grid: Tasks | Sessions / Recent Activity | Plan + Close */}
-        <div className="grid gap-5" style={{ gridTemplateColumns: "3fr 2fr", gridTemplateRows: "1fr auto" }}>
+        <div className="grid gap-5" style={{ gridTemplateColumns: "3fr 2fr", gridTemplateRows: "3fr 2fr" }}>
 
           {/* ── Top-left: Tasks ── */}
           <Card style={{ display: "flex", flexDirection: "column" }}>
