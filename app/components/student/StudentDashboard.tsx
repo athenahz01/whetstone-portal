@@ -87,10 +87,10 @@ export function StudentDashboard({
       />
       <div className="p-6 px-8">
         {/* 2x2 grid: Tasks | Sessions / Recent Activity | Plan + Close */}
-        <div className="grid gap-5" style={{ gridTemplateColumns: "3fr 2fr", gridTemplateRows: "3fr 2fr" }}>
+        <div className="grid gap-5" style={{ gridTemplateColumns: "3fr 2fr", gridTemplateRows: "420px 260px" }}>
 
           {/* ── Top-left: Tasks ── */}
-          <Card style={{ display: "flex", flexDirection: "column" }}>
+          <Card style={{ display: "flex", flexDirection: "column", overflow: "auto" }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="m-0 text-base font-bold text-heading">Tasks</h3>
               <button onClick={() => onNavigate("tasks")} className="text-xs font-semibold bg-transparent border-none cursor-pointer" style={{ color: "#5A83F3" }}>View all →</button>
@@ -121,7 +121,7 @@ export function StudentDashboard({
           </Card>
 
           {/* ── Top-right: Sessions ── */}
-          <Card style={{ display: "flex", flexDirection: "column" }}>
+          <Card style={{ display: "flex", flexDirection: "column", overflow: "auto" }}>
             <div className="flex items-center justify-between mb-3"><h3 className="m-0 text-sm font-bold text-heading">Sessions</h3><button onClick={() => onNavigate("prep")} className="text-xs font-semibold bg-transparent border-none cursor-pointer" style={{ color: "#5A83F3" }}>View all →</button></div>
             <div className="flex gap-0.5 mb-3 p-0.5 rounded-full" style={{ background: "#1e1e1e", display: "inline-flex" }}>
               {(["upcoming", "past"] as const).map((tab) => (<button key={tab} onClick={() => setSessionTab(tab)} className="px-3.5 py-1.5 rounded-full border-none cursor-pointer text-[11px] font-semibold" style={{ background: sessionTab === tab ? "#5A83F3" : "transparent", color: sessionTab === tab ? "#fff" : "#717171" }}>{tab === "upcoming" ? "Upcoming" : "Past"}</button>))}
@@ -134,7 +134,7 @@ export function StudentDashboard({
           </Card>
 
           {/* ── Bottom-left: Recent Activity ── */}
-          <Card style={{ display: "flex", flexDirection: "column" }}>
+          <Card style={{ display: "flex", flexDirection: "column", overflow: "auto" }}>
             <h3 className="m-0 text-sm font-bold text-heading mb-3">Recent Activity</h3>
             <div className="flex-1 flex flex-col gap-1.5">
               {student.dl.filter(d => d.status === "completed").slice(0, 5).map((d) => (
