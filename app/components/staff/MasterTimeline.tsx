@@ -389,11 +389,11 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
     );
 
     const events = [
-      ...dl.filter((d) => d.status !== "completed").map((d) => ({
+      ...dl.map((d) => ({
         id: d.id, title: d.title, date: d.due,
-        bgColor: d.status === "overdue" ? "rgba(229,91,91,0.08)" : getCategoryColor(d.cat) + "15",
-        borderColor: d.status === "overdue" ? "#e55b5b" : getCategoryColor(d.cat),
-        textColor: d.status === "overdue" ? "#e55b5b" : getCategoryColor(d.cat),
+        bgColor: d.status === "completed" ? "rgba(74,186,106,0.1)" : "rgba(229,91,91,0.1)",
+        borderColor: d.status === "completed" ? "#4aba6a" : "#e55b5b",
+        textColor: d.status === "completed" ? "#4aba6a" : "#e55b5b",
         label: d.cat,
       })),
       ...studentCE.map((ce: any) => ({
