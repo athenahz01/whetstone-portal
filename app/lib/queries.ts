@@ -275,17 +275,22 @@ export async function updateDeadline(
     status?: string;
     specialist?: string;
     google_doc_link?: string;
+    blocked_by?: string;
+    priority?: string;
+    description?: string;
   }
 ): Promise<boolean> {
-  const { error } = await supabase
-    .from("deadlines")
-    .update(data)
-    .eq("id", deadlineId);
-  if (error) {
-    console.error("Error updating deadline:", error);
+  try {
+    const res = await fetch("/api/update-deadline", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ deadlineId, ...data }),
+    });
+    return res.ok;
+  } catch {
+    console.error("Error updating deadline");
     return false;
   }
-  return true;
 }
 
 export async function deleteDeadline(deadlineId: number): Promise<boolean> {
