@@ -351,7 +351,7 @@ export default function Home() {
       return <StudentProfile student={me} readOnly={isParent} />;
     }
     if (isStudentOrParent && view === "schools" && me) {
-      return <Schools student={me} readOnly={isParent} />;
+      return <Schools student={me} readOnly={isParent} onRefresh={handleRefresh} />;
     }
     if (isStudentOrParent && view === "receptacle" && me) {
       return (

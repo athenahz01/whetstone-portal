@@ -6,7 +6,7 @@ import { Tag } from "../ui/Tag";
 import { PageHeader } from "../ui/PageHeader";
 import { Modal } from "../ui/Modal";
 
-interface SchoolsProps { student: Student; readOnly?: boolean; }
+interface SchoolsProps { student: Student; readOnly?: boolean; onRefresh?: () => void; }
 interface SchoolData { id: number; name: string; city: string; state: string; url: string; ownership: number; admissionRate: number|null; satAvg: number|null; satReading: number|null; satMath: number|null; actAvg: number|null; studentSize: number|null; tuitionInState: number|null; tuitionOutState: number|null; avgNetPrice: number|null; medianDebt: number|null; pellGrantRate: number|null; completionRate: number|null; medianEarnings: number|null; demographics: { white: number|null; black: number|null; hispanic: number|null; asian: number|null }; programs: { title: string; count: number }[]; }
 
 const tc: Record<string, string> = { reach: "#e55b5b", match: "#e5a83b", safety: "#4aba6a" };
@@ -25,11 +25,35 @@ function Stat({ label, value, sub, color }: { label: string; value: string; sub?
   );
 }
 
-export function Schools({ student, readOnly = false }: SchoolsProps) {
+export function Schools({ student, readOnly = false, onRefresh }: SchoolsProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SchoolData[]>([]);
   const [searching, setSearching] = useState(false);
   const [detail, setDetail] = useState<SchoolData|null>(null);
+  const [adding, setAdding] = useState(false);
+  const [addType, setAddType] = useState<"reach"|"match"|"safety">("match");
+
+  const isOnList = (name: string) => student.schools.some(s => s.name.toLowerCase() === name.toLowerCase());
+
+  const addToList = async (name: string, type: string) => {
+    setAdding(true);
+    await fetch("/api/student-schools", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "add", studentId: student.id, name, type }),
+    });
+    setAdding(false);
+    if (onRefresh) onRefresh();
+  };
+
+  const removeFromList = async (schoolId: number) => {
+    await fetch("/api/student-schools", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "delete", schoolId }),
+    });
+    if (onRefresh) onRefresh();
+  };
 
   const doSearch = useCallback(async (q: string) => {
     if (q.length < 2) { setResults([]); return; }
@@ -81,6 +105,17 @@ export function Schools({ student, readOnly = false }: SchoolsProps) {
                   <div className="flex items-center gap-4 flex-shrink-0">
                     {s.admissionRate != null && <div className="text-right"><div className="text-sm font-bold" style={{ color: rateColor(s.admissionRate) }}>{pct(s.admissionRate)}</div><div className="text-[9px] text-faint">Accept</div></div>}
                     {s.satAvg != null && <div className="text-right"><div className="text-sm font-bold text-heading">{s.satAvg}</div><div className="text-[9px] text-faint">SAT</div></div>}
+                    {!readOnly && (
+                      isOnList(s.name) ? (
+                        <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full" style={{ background: "rgba(74,186,106,0.08)", color: "#4aba6a" }}>On List</span>
+                      ) : (
+                        <button onClick={(e) => { e.stopPropagation(); addToList(s.name, "match"); }}
+                          className="text-[10px] font-semibold px-2.5 py-1 rounded-full border-none cursor-pointer"
+                          style={{ background: "#5A83F3", color: "#fff" }}>
+                          + Add
+                        </button>
+                      )
+                    )}
                   </div>
                 </div>
               ))}
@@ -93,15 +128,24 @@ export function Schools({ student, readOnly = false }: SchoolsProps) {
           <h3 className="text-sm font-bold text-heading mb-3">My School List</h3>
           <div className="grid grid-cols-2 gap-3 mb-6">
             {student.schools.map((s, i) => (
-              <Card key={i} style={{ borderTop: "3px solid " + tc[s.type], cursor: "pointer" }}
-                onClick={() => { setQuery(s.name); doSearch(s.name); }}>
-                <div className="flex justify-between mb-2">
-                  <h3 className="m-0 text-base font-bold text-heading">{s.name}</h3>
-                  <Tag color={tc[s.type]}>{s.type}</Tag>
+              <Card key={i} style={{ borderTop: "3px solid " + tc[s.type], cursor: "pointer" }}>
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="m-0 text-base font-bold text-heading cursor-pointer" onClick={() => { setQuery(s.name); doSearch(s.name); }}>{s.name}</h3>
+                  <div className="flex items-center gap-2">
+                    <Tag color={tc[s.type]}>{s.type}</Tag>
+                    {!readOnly && (
+                      <button onClick={() => s.id && removeFromList(s.id)}
+                        className="text-[10px] bg-transparent border-none cursor-pointer" style={{ color: "#e55b5b" }}>✕</button>
+                    )}
+                  </div>
                 </div>
                 <div className="flex gap-4 text-xs text-sub">
                   <span>Status: {s.status || "\u2014"}</span>
                   <span>Deadline: {s.deadline || "\u2014"}</span>
+                </div>
+                <div className="mt-2">
+                  <button onClick={() => { setQuery(s.name); doSearch(s.name); }}
+                    className="text-[10px] font-semibold bg-transparent border-none cursor-pointer" style={{ color: "#5A83F3" }}>View Details →</button>
                 </div>
               </Card>
             ))}
@@ -116,6 +160,35 @@ export function Schools({ student, readOnly = false }: SchoolsProps) {
       {detail && (
         <Modal title={detail.name} onClose={() => setDetail(null)}>
           <div style={{ maxHeight: "70vh", overflowY: "auto" as const, paddingRight: 4 }}>
+            {/* Add to list bar */}
+            {!readOnly && (
+              <div className="flex items-center justify-between p-3 rounded-xl mb-4" style={{ background: "#252525" }}>
+                {isOnList(detail.name) ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm" style={{ color: "#4aba6a" }}>✓</span>
+                    <span className="text-sm text-heading">On your school list</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-sub">Add as:</span>
+                    {(["reach", "match", "safety"] as const).map(t => (
+                      <button key={t} onClick={() => setAddType(t)}
+                        className="text-xs font-semibold px-3 py-1.5 rounded-full cursor-pointer"
+                        style={{ background: addType === t ? tc[t] + "20" : "transparent", color: tc[t], border: addType === t ? "1.5px solid " + tc[t] : "1.5px solid #333" }}>
+                        {t.charAt(0).toUpperCase() + t.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {!isOnList(detail.name) && (
+                  <button onClick={() => addToList(detail.name, addType)} disabled={adding}
+                    className="text-xs font-semibold px-4 py-2 rounded-full border-none cursor-pointer"
+                    style={{ background: "#5A83F3", color: "#fff" }}>
+                    {adding ? "Adding..." : "+ Add to My List"}
+                  </button>
+                )}
+              </div>
+            )}
             <div className="flex items-center gap-2 mb-4">
               <span className="text-xs text-sub">{detail.city}, {detail.state}</span>
               <span className="text-xs text-faint">&middot;</span>
