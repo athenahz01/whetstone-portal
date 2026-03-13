@@ -33,10 +33,31 @@ const FIELDS = [
   "latest.programs.cip_4_digit",
 ].join(",");
 
+// Curated international schools (not in College Scorecard)
+const INTL_SCHOOLS = [
+  { id: 900001, name: "University of Oxford", city: "Oxford", state: "UK", url: "ox.ac.uk", ownership: 1, admissionRate: 0.17, satAvg: null, satReading: null, satMath: null, actAvg: null, studentSize: 27000, tuitionInState: null, tuitionOutState: 38000, avgNetPrice: 38000, medianDebt: null, pellGrantRate: null, completionRate: 0.95, medianEarnings: 52000, demographics: { white: null, black: null, hispanic: null, asian: null }, programs: [{ title: "Philosophy, Politics & Economics (PPE)", count: 250 }, { title: "Medicine", count: 150 }, { title: "Law (Jurisprudence)", count: 200 }, { title: "Computer Science", count: 120 }, { title: "Mathematics", count: 170 }, { title: "History", count: 180 }, { title: "English Language & Literature", count: 200 }, { title: "Biochemistry", count: 100 }] },
+  { id: 900002, name: "University of Cambridge", city: "Cambridge", state: "UK", url: "cam.ac.uk", ownership: 1, admissionRate: 0.20, satAvg: null, satReading: null, satMath: null, actAvg: null, studentSize: 24000, tuitionInState: null, tuitionOutState: 37000, avgNetPrice: 37000, medianDebt: null, pellGrantRate: null, completionRate: 0.95, medianEarnings: 50000, demographics: { white: null, black: null, hispanic: null, asian: null }, programs: [{ title: "Natural Sciences", count: 300 }, { title: "Engineering", count: 250 }, { title: "Mathematics", count: 200 }, { title: "Law", count: 180 }, { title: "Computer Science", count: 150 }, { title: "Medicine", count: 140 }, { title: "Economics", count: 170 }, { title: "History", count: 130 }] },
+  { id: 900003, name: "University of Edinburgh", city: "Edinburgh", state: "UK", url: "ed.ac.uk", ownership: 1, admissionRate: 0.37, satAvg: null, satReading: null, satMath: null, actAvg: null, studentSize: 36000, tuitionInState: null, tuitionOutState: 28000, avgNetPrice: 28000, medianDebt: null, pellGrantRate: null, completionRate: 0.89, medianEarnings: 38000, demographics: { white: null, black: null, hispanic: null, asian: null }, programs: [{ title: "Medicine", count: 200 }, { title: "Computer Science & AI", count: 250 }, { title: "Law", count: 180 }, { title: "Business", count: 220 }, { title: "Biological Sciences", count: 190 }, { title: "Psychology", count: 170 }] },
+  { id: 900004, name: "University of St Andrews", city: "St Andrews", state: "UK", url: "st-andrews.ac.uk", ownership: 1, admissionRate: 0.08, satAvg: null, satReading: null, satMath: null, actAvg: null, studentSize: 10000, tuitionInState: null, tuitionOutState: 30000, avgNetPrice: 30000, medianDebt: null, pellGrantRate: null, completionRate: 0.93, medianEarnings: 36000, demographics: { white: null, black: null, hispanic: null, asian: null }, programs: [{ title: "International Relations", count: 180 }, { title: "Computer Science", count: 120 }, { title: "Management", count: 150 }, { title: "Psychology", count: 130 }, { title: "History", count: 100 }, { title: "Art History", count: 80 }] },
+  { id: 900005, name: "London School of Economics (LSE)", city: "London", state: "UK", url: "lse.ac.uk", ownership: 1, admissionRate: 0.10, satAvg: null, satReading: null, satMath: null, actAvg: null, studentSize: 13000, tuitionInState: null, tuitionOutState: 33000, avgNetPrice: 33000, medianDebt: null, pellGrantRate: null, completionRate: 0.91, medianEarnings: 55000, demographics: { white: null, black: null, hispanic: null, asian: null }, programs: [{ title: "Economics", count: 300 }, { title: "Finance", count: 250 }, { title: "International Relations", count: 200 }, { title: "Law", count: 180 }, { title: "Management", count: 170 }, { title: "Philosophy", count: 90 }] },
+  { id: 900006, name: "University College London (UCL)", city: "London", state: "UK", url: "ucl.ac.uk", ownership: 1, admissionRate: 0.25, satAvg: null, satReading: null, satMath: null, actAvg: null, studentSize: 50000, tuitionInState: null, tuitionOutState: 30000, avgNetPrice: 30000, medianDebt: null, pellGrantRate: null, completionRate: 0.90, medianEarnings: 42000, demographics: { white: null, black: null, hispanic: null, asian: null }, programs: [{ title: "Medicine", count: 250 }, { title: "Architecture", count: 200 }, { title: "Computer Science", count: 220 }, { title: "Law", count: 190 }, { title: "Economics", count: 180 }, { title: "Psychology", count: 170 }] },
+  { id: 900007, name: "Universit\u00e9 Paris-Sorbonne (Sorbonne University)", city: "Paris", state: "France", url: "sorbonne-universite.fr", ownership: 1, admissionRate: 0.30, satAvg: null, satReading: null, satMath: null, actAvg: null, studentSize: 55000, tuitionInState: null, tuitionOutState: 3800, avgNetPrice: 3800, medianDebt: null, pellGrantRate: null, completionRate: 0.85, medianEarnings: 35000, demographics: { white: null, black: null, hispanic: null, asian: null }, programs: [{ title: "Literature & Humanities", count: 400 }, { title: "Medicine", count: 300 }, { title: "Mathematics", count: 200 }, { title: "Physics", count: 180 }, { title: "History", count: 250 }, { title: "Philosophy", count: 150 }] },
+  { id: 900008, name: "Sciences Po", city: "Paris", state: "France", url: "sciencespo.fr", ownership: 1, admissionRate: 0.15, satAvg: null, satReading: null, satMath: null, actAvg: null, studentSize: 14000, tuitionInState: null, tuitionOutState: 14500, avgNetPrice: 14500, medianDebt: null, pellGrantRate: null, completionRate: 0.92, medianEarnings: 45000, demographics: { white: null, black: null, hispanic: null, asian: null }, programs: [{ title: "Political Science", count: 300 }, { title: "International Relations", count: 280 }, { title: "Economics", count: 200 }, { title: "Law", count: 180 }, { title: "Journalism", count: 120 }, { title: "Urban Policy", count: 100 }] },
+];
+
 // GET /api/schools?q=harvard  or  GET /api/schools?id=166027
 export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams.get("q");
   const id = request.nextUrl.searchParams.get("id");
+
+  // Check international schools first for ID lookups
+  if (id) {
+    const intlMatch = INTL_SCHOOLS.find(s => s.id === Number(id));
+    if (intlMatch) return NextResponse.json({ schools: [intlMatch], total: 1 });
+  }
+
+  // Search international schools by name
+  const intlResults = q ? INTL_SCHOOLS.filter(s => s.name.toLowerCase().includes(q.toLowerCase())) : [];
 
   let url: string;
   if (id) {
@@ -89,9 +110,11 @@ export async function GET(request: NextRequest) {
         .map((p: any) => ({ title: p.title, count: p.counts?.ipeds_awards2 || 0 })),
     }));
 
-    return NextResponse.json({ schools, total: data.metadata?.total || schools.length });
+    return NextResponse.json({ schools: [...intlResults, ...schools], total: (data.metadata?.total || schools.length) + intlResults.length });
   } catch (err) {
     console.error("[schools API] Error:", err);
+    // If US API fails, still return international results
+    if (intlResults.length > 0) return NextResponse.json({ schools: intlResults, total: intlResults.length });
     return NextResponse.json({ error: "Failed to fetch" }, { status: 500 });
   }
 }
