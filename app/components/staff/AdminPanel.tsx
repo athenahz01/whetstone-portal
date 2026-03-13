@@ -29,11 +29,27 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
   const [manualPw, setManualPw] = useState("");
   const [resetResult, setResetResult] = useState<string|null>(null);
   const [resetting, setResetting] = useState(false);
+  const [showCaseload, setShowCaseload] = useState<AdminUser|null>(null);
+  const [caseloadAssignments, setCaseloadAssignments] = useState<Record<string, number[]>>({});
+  const [caseloadLoading, setCaseloadLoading] = useState(false);
 
   const IS: React.CSSProperties = { width:"100%", padding:"10px 14px", background:"#1e1e1e", border:"1.5px solid #333", borderRadius:10, color:"#ebebeb", fontSize:14, outline:"none", boxSizing:"border-box" };
 
   const loadUsers = async () => { setLoading(true); try { const r = await fetch("/api/admin/users"); const d = await r.json(); setUsers(d.users||[]); } catch { setUsers([]); } setLoading(false); };
-  useEffect(() => { loadUsers(); }, []);
+  useEffect(() => { loadUsers(); loadAllCaseloads(); }, []);
+
+  const loadAllCaseloads = async () => {
+    try {
+      const res = await fetch("/api/caseload");
+      const data = await res.json();
+      const map: Record<string, number[]> = {};
+      for (const a of (data.assignments || [])) {
+        if (!map[a.strategist_email]) map[a.strategist_email] = [];
+        map[a.strategist_email].push(a.student_id);
+      }
+      setCaseloadAssignments(map);
+    } catch {}
+  };
 
   let filtered = users;
   if (filterRole !== "all") filtered = filtered.filter(u => u.role === filterRole);
@@ -162,6 +178,55 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
           ))}
           {/* Hover row actions */}
         </Card>
+
+        {/* ── Caseload Management ── */}
+        <h3 className="text-base font-bold text-heading mt-6 mb-3">Caseload Assignments</h3>
+        <p className="text-xs text-sub mb-4 mt-0">Assign which students each strategist can see. Strategists with no assignments see all students.</p>
+        <div className="grid grid-cols-2 gap-3">
+          {users.filter(u => u.role === "strategist").map(strat => {
+            const assigned = caseloadAssignments[strat.email] || [];
+            return (
+              <Card key={strat.id} style={{ padding: 16 }}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ background: "#a480f220", color: "#a480f2" }}>
+                      {strat.name.split(" ").map(w => w[0]).join("").substring(0, 2)}
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-heading">{strat.name}</div>
+                      <div className="text-[10px] text-faint">{assigned.length > 0 ? `${assigned.length} student${assigned.length !== 1 ? "s" : ""}` : "All students (no filter)"}</div>
+                    </div>
+                  </div>
+                  <button onClick={() => {
+                    setShowCaseload(strat);
+                    // Load assignments for this strategist
+                    setCaseloadLoading(true);
+                    fetch(`/api/caseload?strategistEmail=${encodeURIComponent(strat.email)}`)
+                      .then(r => r.json())
+                      .then(d => {
+                        const ids = (d.assignments || []).map((a: any) => a.student_id);
+                        setCaseloadAssignments(prev => ({ ...prev, [strat.email]: ids }));
+                        setCaseloadLoading(false);
+                      })
+                      .catch(() => setCaseloadLoading(false));
+                  }}
+                    className="text-[10px] font-semibold px-3 py-1.5 rounded-full cursor-pointer"
+                    style={{ background: "rgba(164,128,242,0.08)", color: "#a480f2", border: "1px solid rgba(164,128,242,0.2)" }}>
+                    Edit Caseload
+                  </button>
+                </div>
+                {assigned.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {assigned.map(sid => {
+                      const s = students.find(st => st.id === sid);
+                      return s ? <span key={sid} className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: "#252525", color: "#a0a0a0" }}>{s.name}</span> : null;
+                    })}
+                  </div>
+                )}
+              </Card>
+            );
+          })}
+        </div>
       </div>
 
       {showCreate && <Modal title="Add New User" onClose={()=>setShowCreate(false)}>
@@ -218,6 +283,60 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
           </div>
         </form>
       </Modal>}
+
+      {/* ── Caseload Assignment Modal ── */}
+      {showCaseload && (
+        <Modal title={`Caseload — ${showCaseload.name}`} onClose={() => setShowCaseload(null)}>
+          <p className="text-xs text-sub mb-3 mt-0">Select which students {showCaseload.name} can see. Uncheck all to show all students.</p>
+          {caseloadLoading ? <div className="text-sm text-sub text-center py-4">Loading...</div> : (
+            <div className="flex flex-col gap-1 max-h-[400px] overflow-y-auto">
+              {students.map(s => {
+                const assigned = (caseloadAssignments[showCaseload.email] || []);
+                const isAssigned = assigned.includes(s.id);
+                return (
+                  <label key={s.id} className="flex items-center gap-3 p-2.5 rounded-lg cursor-pointer"
+                    style={{ background: isAssigned ? "rgba(164,128,242,0.06)" : "transparent" }}>
+                    <input type="checkbox" checked={isAssigned} onChange={async () => {
+                      // Optimistic update
+                      const newAssigned = isAssigned ? assigned.filter(id => id !== s.id) : [...assigned, s.id];
+                      setCaseloadAssignments(prev => ({ ...prev, [showCaseload!.email]: newAssigned }));
+                      await fetch("/api/caseload", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ action: "toggle", strategistEmail: showCaseload!.email, studentId: s.id }),
+                      });
+                    }} style={{ accentColor: "#a480f2", width: 16, height: 16 }} />
+                    <div className="flex items-center gap-2 flex-1">
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-bold"
+                        style={{ background: "rgba(90,131,243,0.1)", color: "#5A83F3" }}>
+                        {s.av || s.name.split(" ").map(w => w[0]).join("").substring(0, 2)}
+                      </div>
+                      <div>
+                        <div className="text-sm text-heading">{s.name}</div>
+                        <div className="text-[10px] text-faint">Gr. {s.grade} · {s.school}</div>
+                      </div>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+          <div className="flex justify-between mt-4 pt-3 border-t border-line">
+            <button onClick={async () => {
+              setCaseloadAssignments(prev => ({ ...prev, [showCaseload!.email]: [] }));
+              await fetch("/api/caseload", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "set", strategistEmail: showCaseload!.email, studentIds: [] }),
+              });
+            }}
+              className="text-xs font-semibold bg-transparent border-none cursor-pointer" style={{ color: "#e55b5b" }}>
+              Clear All (show all students)
+            </button>
+            <Button primary onClick={() => setShowCaseload(null)}>Done</Button>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

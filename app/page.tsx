@@ -60,6 +60,7 @@ export default function Home() {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
   const [allStudents, setAllStudents] = useState<Student[]>([]);
+  const [caseloadFilter, setCaseloadFilter] = useState<number[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -168,7 +169,7 @@ export default function Home() {
   const loadProfile = async (userId: string) => {
     const { data } = await supabase
       .from("profiles")
-      .select("role, display_name, student_id, timezone")
+      .select("role, display_name, student_id, timezone, email")
       .eq("id", userId)
       .single();
 
@@ -186,6 +187,17 @@ export default function Home() {
         }),
       }).catch(() => {});  // fire-and-forget
 
+      // Load caseload filter for strategists
+      if (data.role === "strategist" && data.email) {
+        fetch(`/api/caseload?strategistEmail=${encodeURIComponent(data.email)}`)
+          .then(r => r.json())
+          .then(d => {
+            const ids = (d.assignments || []).map((a: any) => a.student_id);
+            setCaseloadFilter(ids.length > 0 ? ids : null);
+          })
+          .catch(() => {});
+      }
+
       loadData();
 
       const { data: tokenData } = await supabase
@@ -200,7 +212,7 @@ export default function Home() {
       setTimeout(async () => {
         const { data: retryData } = await supabase
           .from("profiles")
-          .select("role, display_name, student_id, timezone")
+          .select("role, display_name, student_id, timezone, email")
           .eq("id", userId)
           .single();
 
@@ -268,12 +280,13 @@ export default function Home() {
   const isAdmin = role === "strategist" && !!userEmail && ADMIN_EMAILS.includes(userEmail);
   const isParent = role === "parent";
   const isStudentOrParent = role === "student" || role === "parent";
+  const visibleStudents = (role === "strategist" && caseloadFilter) ? allStudents.filter(s => caseloadFilter.includes(s.id)) : allStudents;
 
   // For students & parents, find THEIR linked student record
   // For strategists, me is not used the same way
   const me = isStudentOrParent && profile.student_id
     ? allStudents.find((s) => s.id === profile.student_id) || null
-    : allStudents[0] || null;
+    : visibleStudents[0] || null;
 
   const renderMain = () => {
     // Unlinked student or parent
@@ -358,7 +371,7 @@ export default function Home() {
     if (role === "strategist" && view === "dashboard") {
       return (
         <StaffDashboard
-          students={allStudents}
+          students={visibleStudents}
           onSelectStudent={setSelectedStudent}
           onNavigate={setView}
           onRefresh={handleRefresh}
@@ -370,7 +383,7 @@ export default function Home() {
     if (role === "strategist" && view === "master") {
       return (
         <MasterTimeline
-          students={allStudents}
+          students={visibleStudents}
           onSelectStudent={setSelectedStudent}
           onNavigate={setView}
           profileId={profileId}
@@ -380,7 +393,7 @@ export default function Home() {
     if (role === "strategist" && view === "caseload") {
       return (
         <Caseload
-          students={allStudents}
+          students={visibleStudents}
           onSelectStudent={setSelectedStudent}
           onNavigate={setView}
           onRefresh={loadData}
@@ -404,7 +417,7 @@ export default function Home() {
     if (role === "strategist" && view === "analytics") {
       return (
         <Analytics
-          students={allStudents}
+          students={visibleStudents}
           onSelectStudent={setSelectedStudent}
           onNavigate={setView}
         />
