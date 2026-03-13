@@ -286,9 +286,14 @@ export async function updateDeadline(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ deadlineId, ...data }),
     });
+    const result = await res.json();
+    if (!res.ok) {
+      console.error("[updateDeadline] API error:", result);
+      if (result.note) console.warn("[updateDeadline]", result.note);
+    }
     return res.ok;
-  } catch {
-    console.error("Error updating deadline");
+  } catch (err) {
+    console.error("Error updating deadline:", err);
     return false;
   }
 }
