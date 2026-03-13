@@ -6,11 +6,16 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Strategist email → profile mapping
-const STRATEGIST_MAP: Record<string, string> = {
-  "Athena Huo": "athena@whetstoneadmissions.com",
-  "Ren Yu": "ren@whetstoneadmissions.com",
-};
+// Dynamically look up strategist email by name from profiles table
+async function getStrategistEmail(name: string): Promise<string | null> {
+  const { data } = await supabase
+    .from("profiles")
+    .select("email")
+    .eq("role", "strategist")
+    .eq("display_name", name)
+    .single();
+  return data?.email || null;
+}
 
 // GET: fetch booking requests for a user (student or strategist)
 export async function GET(request: NextRequest) {
@@ -40,7 +45,7 @@ export async function POST(request: NextRequest) {
     // Student submits a booking request
     case "request": {
       const { studentId, studentName, specialist, date, startTime, sessionName, sessionType, notes } = body;
-      const strategistEmail = STRATEGIST_MAP[specialist] || null;
+      const strategistEmail = await getStrategistEmail(specialist);
 
       const { data, error } = await supabase.from("booking_requests").insert({
         student_id: studentId,

@@ -84,16 +84,22 @@ export function SessionPrep({ student, onRefresh }: SessionPrepProps) {
   const past = events.filter((e) => e.date < todayStr).sort((a: any, b: any) => b.date.localeCompare(a.date));
   const displayEvents = sessionTab === "upcoming" ? upcoming : past;
 
-  const SPECIALISTS = [
-    "Cole Whetstone",
-    "Stephanie Whetstone",
-    "Eric Newman",
-    "Christopher Colby",
-    "Brigitte Gemme",
-    "Howard Rogatnick",
-    "Ren Yu",
-    "Athena Huo",
-  ];
+  const [strategists, setStrategists] = useState<{ name: string; email: string }[]>([]);
+
+  // Fetch strategist list dynamically from all user accounts
+  useEffect(() => {
+    fetch("/api/admin/users")
+      .then(r => r.json())
+      .then(data => {
+        const strats = (data.users || [])
+          .filter((u: any) => u.role === "strategist" && u.name && u.name !== "—")
+          .map((u: any) => ({ name: u.name, email: u.email }));
+        setStrategists(strats);
+      })
+      .catch(() => {});
+  }, []);
+
+  const SPECIALISTS = strategists.map(s => s.name);
 
   const [activeRecall, setActiveRecall] = useState("");
   const [actions, setActions] = useState([

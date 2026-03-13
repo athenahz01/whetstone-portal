@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Deadline } from "../../types";
 import { PageHeader } from "../ui/PageHeader";
 import { Card } from "../ui/Card";
@@ -49,12 +49,23 @@ const STATUS_LABELS: Record<string, string> = {
 type SortField = "due" | "priority" | "title" | "specialist" | "status";
 type FilterStatus = "all" | "pending" | "in-progress" | "overdue" | "completed" | "blocked";
 
-const SPECIALISTS = [
-  "Cole Whetstone", "Stephanie Whetstone", "Eric Newman", "Christopher Colby",
-  "Brigitte Gemme", "Howard Rogatnick", "Ren Yu", "Athena Huo",
-];
-
 export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = false, headerRight }: DeadlinesViewProps) {
+  const [specialists, setSpecialists] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetch("/api/admin/users")
+      .then(r => r.json())
+      .then(data => {
+        setSpecialists(
+          (data.users || [])
+            .filter((u: any) => u.role === "strategist" && u.name && u.name !== "—")
+            .map((u: any) => u.name)
+        );
+      })
+      .catch(() => {});
+  }, []);
+
+  const SPECIALISTS = specialists;
   const [sortBy, setSortBy] = useState<SortField>("due");
   const [sortAsc, setSortAsc] = useState(true);
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());

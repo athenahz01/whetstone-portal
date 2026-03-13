@@ -42,9 +42,9 @@ export function Roadmap({ tasks, setTasks, deadlines = [], studentId, onRefresh,
             id: d.id,
             title: d.title,
             date: d.due,
-            bgColor: d.status === "overdue" ? "rgba(229,91,91,0.08)" : d.createdBy === "student" ? "#f5f3ff" : "#fefce8",
-            borderColor: d.status === "overdue" ? "#e55b5b" : d.createdBy === "student" ? "#a480f2" : "#e5a83b",
-            textColor: d.status === "overdue" ? "#e55b5b" : d.createdBy === "student" ? "#a480f2" : "#e5a83b",
+            bgColor: d.status === "completed" ? "rgba(74,186,106,0.1)" : "rgba(229,91,91,0.1)",
+            borderColor: d.status === "completed" ? "#4aba6a" : "#e55b5b",
+            textColor: d.status === "completed" ? "#4aba6a" : "#e55b5b",
           })),
         }]
       : []),
@@ -158,7 +158,7 @@ export function Roadmap({ tasks, setTasks, deadlines = [], studentId, onRefresh,
                       </div>
                       <div className="ml-[120px] flex flex-col gap-1.5">
                         {tasks.sort((a, b) => a.due.localeCompare(b.due)).map((t) => {
-                          const color = CATEGORY_COLORS[t.cat] || "#5A83F3";
+                          const color = t.status === "completed" ? "#4aba6a" : "#e55b5b";
                           return (
                             <div key={t.id} className="flex items-center gap-3 px-3 py-2 rounded-lg"
                               style={{ background: "#252525", borderLeft: `3px solid ${color}`, opacity: t.status === "completed" ? 0.4 : 1 }}>

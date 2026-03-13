@@ -42,8 +42,10 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
   const baseDate = startDate || today;
 
   const viewStart = new Date(baseDate);
-  // Start on Sunday of the current week
-  viewStart.setDate(viewStart.getDate() - viewStart.getDay() + weekOffset * 7);
+  // Start on Monday of the current week
+  const dayOfWeek = viewStart.getDay();
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Sunday → go back 6 days, otherwise go back to Monday
+  viewStart.setDate(viewStart.getDate() + mondayOffset + weekOffset * 7);
 
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(viewStart);
@@ -51,7 +53,7 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
     return d;
   });
 
-  const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+  const dayNames = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
@@ -204,7 +206,7 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
                   className="text-[9px] font-semibold uppercase tracking-wide"
                   style={{ color: isToday ? "#5A83F3" : "#505050" }}
                 >
-                  {dayNames[d.getDay()]}
+                  {["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][d.getDay()]}
                 </div>
                 <div
                   className="text-sm font-bold mt-0.5 mx-auto flex items-center justify-center"
