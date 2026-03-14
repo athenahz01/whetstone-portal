@@ -144,7 +144,6 @@ export function StaffDashboard({
               <h2 className="m-0 text-base font-bold text-heading">Timeline</h2>
               <button onClick={() => onNavigate("master")} className="bg-transparent border-none cursor-pointer text-xs font-semibold" style={{ color: "#7aabff" }}>View all →</button>
             </div>
-            <div className="text-[10px] uppercase tracking-widest font-semibold mb-2" style={{ color: "#505050" }}>Planned / In Progress only</div>
             {timelineItems.length === 0 && <p className="text-sm text-sub py-4 text-center">All caught up!</p>}
             {timelineItems.map((d, i) => (
               <div key={`${d.id}-${i}`}
@@ -155,7 +154,6 @@ export function StaffDashboard({
                   <div className="text-sm font-medium text-heading truncate">{d.title}</div>
                   <div className="text-xs text-sub">{d.sn}</div>
                 </div>
-                <Tag color={getStatusColor(d.status)}>{d.status === "in-progress" ? "In Progress" : "Planned"}</Tag>
                 <span className="text-xs font-medium flex-shrink-0" style={{ color: d.days <= 1 ? "#e55b5b" : d.days <= 3 ? "#e5a83b" : "#717171" }}>
                   {d.days < 0 ? `${Math.abs(d.days)}d late` : d.days === 0 ? "Today" : `${d.days}d`}
                 </span>

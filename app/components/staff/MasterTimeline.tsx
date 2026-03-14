@@ -207,13 +207,14 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
   const [viewMode, setViewMode] = useState<"calendar" | "table">("calendar");
   const [showModal, setShowModal] = useState(false);
   const [showDeadlineModal, setShowDeadlineModal] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [counselorEvents, setCounselorEvents] = useState<any[]>([]);
   const [googleEvents, setGoogleEvents] = useState<any[]>([]);
   const [sortField, setSortField] = useState<SortField>("due");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
-  // Per-column filters — empty array = show all
+  // Per-column filters — empty array = show all, populated = only show these
   const [colFilters, setColFilters] = useState<ColumnFilters>({
     student: [],
     category: [],
@@ -322,6 +323,10 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
   const filteredDeadlines = useMemo(() => {
     let items = allDeadlines;
 
+    // Hide completed unless toggle is on
+    if (!showCompleted)
+      items = items.filter((d) => d.status !== "completed");
+
     if (colFilters.student.length > 0)
       items = items.filter((d) => colFilters.student.includes(d.studentName));
     if (colFilters.category.length > 0)
@@ -345,7 +350,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
     });
 
     return items;
-  }, [allDeadlines, colFilters, sortField, sortDir]);
+  }, [allDeadlines, colFilters, sortField, sortDir, showCompleted]);
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -437,7 +442,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
       <div className="p-4 px-8">
         {/* View Toggle */}
         <div className="flex items-center justify-between mb-4">
-          <div className="inline-flex gap-0.5 bg-white border border-line rounded-lg p-1">
+          <div className="inline-flex gap-0.5 border border-line rounded-lg p-1" style={{ background: "#252525" }}>
             {([["calendar", "Calendar"], ["table", "Table"]] as const).map(([id, l]) => (
               <button key={id} onClick={() => setViewMode(id)}
                 className="px-5 py-2 rounded-lg border-none cursor-pointer text-sm font-semibold"
@@ -464,20 +469,39 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
             </div>
           )}
 
-          {/* Active filters summary (only in table mode) */}
-          {viewMode === "table" && activeFilterCount > 0 && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-sub">
-                {activeFilterCount} filter{activeFilterCount > 1 ? "s" : ""} active
-                · {filteredDeadlines.length} result{filteredDeadlines.length !== 1 ? "s" : ""}
-              </span>
-              <button
-                onClick={clearAllFilters}
-                className="text-xs font-semibold px-2.5 py-1 rounded-lg border-none cursor-pointer"
-                style={{ background: "rgba(229,91,91,0.08)", color: "#e55b5b" }}
-              >
-                Clear all
-              </button>
+          {/* Show Completed toggle + Active filters summary (only in table mode) */}
+          {viewMode === "table" && (
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <div
+                  onClick={() => setShowCompleted(!showCompleted)}
+                  className="w-9 h-5 rounded-full relative transition-colors cursor-pointer"
+                  style={{ background: showCompleted ? "#4aba6a" : "#333" }}
+                >
+                  <div
+                    className="w-4 h-4 rounded-full absolute top-0.5 transition-all"
+                    style={{ background: "#fff", left: showCompleted ? 18 : 2 }}
+                  />
+                </div>
+                <span className="text-xs font-medium" style={{ color: showCompleted ? "#4aba6a" : "#717171" }}>
+                  Show Completed
+                </span>
+              </label>
+              {activeFilterCount > 0 && (
+                <>
+                  <span className="text-xs text-sub">
+                    {activeFilterCount} filter{activeFilterCount > 1 ? "s" : ""} active
+                    · {filteredDeadlines.length} result{filteredDeadlines.length !== 1 ? "s" : ""}
+                  </span>
+                  <button
+                    onClick={clearAllFilters}
+                    className="text-xs font-semibold px-2.5 py-1 rounded-lg border-none cursor-pointer"
+                    style={{ background: "rgba(229,91,91,0.08)", color: "#e55b5b" }}
+                  >
+                    Clear all
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -644,7 +668,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
                   <span className="w-2 h-2 rounded-full" style={{ background: "#e5a83b" }} /> In Progress
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full" style={{ background: "#505050" }} /> Pending
+                  <span className="w-2 h-2 rounded-full" style={{ background: "#505050" }} /> Planned
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="text-[10px]">📅</span> Strategist Event

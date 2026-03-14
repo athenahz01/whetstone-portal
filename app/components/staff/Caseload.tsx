@@ -81,6 +81,7 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh, isA
       ? currentTeam.filter((t) => t !== memberName)
       : [...currentTeam, memberName];
     await updateStudent(studentId, { team: newTeam });
+    // Silent refresh in background — don't navigate or scroll
     onRefresh();
   };
 
@@ -194,7 +195,7 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh, isA
       <div className="p-6 px-8">
         {/* ── TABLE VIEW ── */}
         {viewMode === "table" && (
-          <Card noPadding style={{ overflow: "hidden" }}>
+          <Card noPadding style={{ overflow: "visible" }}>
             <div className="px-6 py-4 border-b border-line">
               <h2 className="m-0 text-base font-bold text-heading">Student Overview</h2>
             </div>

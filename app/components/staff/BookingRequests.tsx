@@ -19,6 +19,7 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
   const [counterNote, setCounterNote] = useState("");
   const [processing, setProcessing] = useState(false);
   const [tab, setTab] = useState<"pending" | "all">("pending");
+  const [detailModal, setDetailModal] = useState<any>(null);
 
   const IS: React.CSSProperties = { width: "100%", padding: "10px 14px", background: "#1e1e1e", border: "1.5px solid #333", borderRadius: 10, color: "#ebebeb", fontSize: 14, outline: "none", boxSizing: "border-box" };
 
@@ -152,8 +153,10 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
 
                     <div className="flex flex-col items-end gap-3 ml-4">
                       <div className="flex items-center gap-4">
-                        <span className="text-sm font-semibold" style={{ color: "#5A83F3" }}>Agenda</span>
-                        <span className="text-sm font-semibold" style={{ color: "#5A83F3" }}>Notes</span>
+                        <span className="text-sm font-semibold cursor-pointer hover:underline" style={{ color: "#5A83F3" }}
+                          onClick={(e) => { e.stopPropagation(); setDetailModal({ ...r, view: "agenda" }); }}>Agenda</span>
+                        <span className="text-sm font-semibold cursor-pointer hover:underline" style={{ color: r.notes ? "#5A83F3" : "#505050" }}
+                          onClick={(e) => { e.stopPropagation(); setDetailModal({ ...r, view: "notes" }); }}>Notes</span>
                       </div>
                       <span className="text-xs font-semibold px-3 py-1 rounded-full"
                         style={{ background: "transparent", border: `1.5px solid ${sc.color}`, color: sc.color }}>
@@ -223,6 +226,63 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
             <Button primary onClick={handleCounter} disabled={processing || !counterDate}>
               {processing ? "Sending..." : "Send Counter-offer"}
             </Button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Session Detail Modal (Agenda/Notes) */}
+      {detailModal && (
+        <Modal title={detailModal.session_name || "Session Details"} onClose={() => setDetailModal(null)}>
+          <div className="space-y-4">
+            <div className="p-3 rounded-lg" style={{ background: "#252525", borderLeft: "3px solid #5A83F3" }}>
+              <div className="text-sm font-semibold text-heading">{detailModal.session_name}</div>
+              <div className="text-xs text-sub mt-1">
+                📅 {detailModal.date} {detailModal.start_time && `· 🕐 ${detailModal.start_time}`} · 📋 {detailModal.session_type || "session"}
+              </div>
+            </div>
+
+            <div>
+              <div className="text-xs uppercase tracking-widest font-bold mb-2" style={{ color: "#505050" }}>Student</div>
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ background: "#7c3aed", color: "#fff" }}>
+                  {(detailModal.student_name || "?").split(" ").map((w: string) => w[0]).join("").substring(0, 2)}
+                </div>
+                <span className="text-sm text-heading">{detailModal.student_name}</span>
+              </div>
+            </div>
+
+            {detailModal.view === "agenda" && (
+              <div>
+                <div className="text-xs uppercase tracking-widest font-bold mb-2" style={{ color: "#505050" }}>Agenda</div>
+                <div className="p-3 rounded-lg text-sm" style={{ background: "#252525" }}>
+                  {detailModal.notes ? (
+                    <div className="text-body whitespace-pre-wrap">{detailModal.notes}</div>
+                  ) : (
+                    <div className="text-faint text-center py-2">No agenda items yet</div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {detailModal.view === "notes" && (
+              <div>
+                <div className="text-xs uppercase tracking-widest font-bold mb-2" style={{ color: "#505050" }}>Notes</div>
+                <div className="p-3 rounded-lg text-sm" style={{ background: "#252525" }}>
+                  {detailModal.notes ? (
+                    <div className="text-body whitespace-pre-wrap">{detailModal.notes}</div>
+                  ) : (
+                    <div className="text-faint text-center py-2">No notes recorded yet. Notes will appear here after the session.</div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div>
+              <div className="text-xs uppercase tracking-widest font-bold mb-2" style={{ color: "#505050" }}>Status</div>
+              <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ background: "transparent", border: "1.5px solid #5A83F3", color: "#5A83F3" }}>
+                {detailModal.status}
+              </span>
+            </div>
           </div>
         </Modal>
       )}

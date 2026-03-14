@@ -157,7 +157,7 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
 
   return (
     <>
-      <div className="bg-white border border-line rounded-xl overflow-hidden">
+      <div className="border border-line rounded-xl overflow-hidden" style={{ background: "#1e1e1e" }}>
         {/* Header with navigation */}
         <div className="flex items-center justify-between px-4 py-2.5 border-b border-line" style={{ background: "#252525" }}>
           <div className="flex items-center gap-3">
@@ -175,13 +175,13 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
             <div className="flex gap-1">
               <button
                 onClick={() => setWeekOffset((w) => w - 1)}
-                className="w-7 h-7 rounded-full border border-line bg-white cursor-pointer text-sub text-sm flex items-center justify-center hover:bg-mist"
+                className="w-7 h-7 rounded-full border border-line cursor-pointer text-sub text-sm flex items-center justify-center hover:bg-mist"
               >
                 ‹
               </button>
               <button
                 onClick={() => setWeekOffset((w) => w + 1)}
-                className="w-7 h-7 rounded-full border border-line bg-white cursor-pointer text-sub text-sm flex items-center justify-center hover:bg-mist"
+                className="w-7 h-7 rounded-full border border-line cursor-pointer text-sub text-sm flex items-center justify-center hover:bg-mist"
               >
                 ›
               </button>
