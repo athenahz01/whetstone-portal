@@ -52,8 +52,9 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh, isA
   useEffect(() => {
     fetch("/api/admin/users")
       .then((r) => r.json())
-      .then((users) => {
-        const staff = (Array.isArray(users) ? users : [])
+      .then((data) => {
+        const userList = data.users || data || [];
+        const staff = (Array.isArray(userList) ? userList : [])
           .filter((u: any) => u.role === "strategist")
           .map((u: any) => ({
             name: u.name || u.email,
