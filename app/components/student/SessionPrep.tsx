@@ -306,57 +306,56 @@ export function SessionPrep({ student, onRefresh, readOnly = false }: SessionPre
 
                     return (
                       <div key={ev.id}>
-                        <div className="p-5 rounded-xl group cursor-pointer"
+                        <div className="p-5 rounded-xl group cursor-pointer border"
                           onClick={() => setSelectedSession(selectedSession?.id === ev.id ? null : ev)}
-                          style={{ background: "#252525", borderLeft: `3px solid ${isCompleted ? "#4aba6a" : "#528bff"}`, opacity: isCompleted ? 0.7 : 1 }}>
+                          style={{ background: "#1e1e1e", border: "1px solid #2a2a2a" }}>
                           <div className="flex items-start justify-between">
                             <div className="flex-1 min-w-0">
-                              {ev.start_time && <div className="text-xs mb-1" style={{ color: "#717171" }}>{ev.start_time}{ev.end_time ? ` — ${ev.end_time}` : ""}</div>}
-                              <div className="text-base font-bold text-heading mb-2">{ev.title}</div>
-                              <div className="flex items-center gap-3">
-                                {ev.specialist && (
+                              {ev.start_time && <div className="text-sm mb-1" style={{ color: "#717171" }}>{ev.start_time}{ev.end_time ? ` — ${ev.end_time}` : ""}</div>}
+                              <div className="text-base font-bold text-heading mb-3">{ev.title}</div>
+                              <div className="flex items-center gap-2.5">
+                                {ev.specialist ? (
                                   <>
-                                    <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold"
-                                      style={{ background: "rgba(164,128,242,0.1)", color: "#a480f2" }}>
+                                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold"
+                                      style={{ background: "#7c3aed", color: "#fff" }}>
                                       {ev.specialist.split(" ").map((n: string) => n[0]).join("").substring(0, 2)}
                                     </div>
-                                    <span className="text-xs text-sub">{ev.specialist}</span>
+                                    <span className="text-sm text-body">{ev.specialist}</span>
                                   </>
-                                )}
-                                {!ev.specialist && (
+                                ) : (
                                   <>
-                                    <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold"
-                                      style={{ background: "rgba(82,139,255,0.1)", color: "#528bff" }}>
+                                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold"
+                                      style={{ background: "#7c3aed", color: "#fff" }}>
                                       {student.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2)}
                                     </div>
-                                    <span className="text-xs text-sub">{student.name}</span>
+                                    <span className="text-sm text-body">{student.name}</span>
                                   </>
                                 )}
-                                {ev.notes && <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}>📝 Has notes</span>}
                               </div>
                             </div>
-                            <div className="flex flex-col items-end gap-2" onClick={(e) => e.stopPropagation()}>
-                              <div className="flex items-center gap-3">
-                                <span className="text-xs font-semibold cursor-pointer hover:underline"
-                                  style={{ color: "#7aabff" }}
+                            <div className="flex flex-col items-end gap-3" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex items-center gap-4">
+                                <span className="text-sm font-semibold cursor-pointer hover:underline"
+                                  style={{ color: "#5A83F3" }}
                                   onClick={() => setSelectedSession(selectedSession?.id === ev.id ? null : ev)}>
                                   Agenda
                                 </span>
-                                <span className="text-xs font-semibold cursor-pointer hover:underline"
-                                  style={{ color: ev.notes ? "#7aabff" : "#505050" }}
+                                <span className="text-sm font-semibold cursor-pointer hover:underline"
+                                  style={{ color: ev.notes ? "#5A83F3" : "#505050" }}
                                   onClick={() => setSelectedSession(selectedSession?.id === ev.id ? null : ev)}>
                                   Notes
                                 </span>
                               </div>
                               <div className="flex items-center gap-2">
                                 <button onClick={isBooked ? toggleStatus : undefined}
-                                  className="text-[10px] font-semibold px-2.5 py-1 rounded-full border-none"
+                                  className="text-xs font-semibold px-3 py-1 rounded-full"
                                   style={{
-                                    background: isCompleted ? "rgba(74,186,106,0.08)" : "rgba(229,168,59,0.08)",
+                                    background: "transparent",
+                                    border: isCompleted ? "1.5px solid #4aba6a" : "1.5px solid #e5a83b",
                                     color: isCompleted ? "#4aba6a" : "#e5a83b",
                                     cursor: isBooked ? "pointer" : "default",
                                   }}>
-                                  {isCompleted ? "✓ Confirmed" : "Pending"}
+                                  {isCompleted ? "Confirmed" : "Pending"}
                                 </button>
                                 {isBooked && (
                                   <button onClick={deleteSession}

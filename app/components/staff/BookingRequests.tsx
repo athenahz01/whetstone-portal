@@ -119,32 +119,29 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
             {display.map((r: any) => {
               const sc = statusColor(r.status);
               return (
-                <Card key={r.id} style={{ padding: 20 }}>
+                <div key={r.id} className="p-5 rounded-xl border" style={{ background: "#1e1e1e", border: "1px solid #2a2a2a" }}>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
+                      {r.start_time && <div className="text-sm mb-1" style={{ color: "#717171" }}>{r.start_time}{r.start_time ? " — " : ""}{r.end_time || ""}</div>}
+                      <div className="text-base font-bold text-heading mb-3">{r.session_name}</div>
+                      <div className="flex items-center gap-2.5 mb-3">
                         <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold"
-                          style={{ background: "rgba(82,139,255,0.1)", color: "#5A83F3" }}>
+                          style={{ background: "#7c3aed", color: "#fff" }}>
                           {(r.student_name || "?").split(" ").map((w: string) => w[0]).join("").substring(0, 2)}
                         </div>
                         <div>
-                          <div className="text-sm font-bold text-heading">{r.student_name}</div>
-                          <div className="text-xs text-sub">requests a session</div>
+                          <div className="text-sm font-medium text-heading">{r.student_name}</div>
                         </div>
                       </div>
 
-                      <div className="p-3 rounded-lg mb-2" style={{ background: "#1e1e1e" }}>
-                        <div className="text-sm font-semibold text-heading mb-1">{r.session_name}</div>
-                        <div className="flex items-center gap-4 text-xs text-sub">
-                          <span>📅 {r.date}</span>
-                          {r.start_time && <span>🕐 {r.start_time}</span>}
-                          <span>📋 {r.session_type}</span>
-                        </div>
-                        {r.notes && <div className="text-xs text-body mt-2">{r.notes}</div>}
+                      <div className="flex items-center gap-4 text-xs text-sub">
+                        <span>📅 {r.date}</span>
+                        <span>📋 {r.session_type}</span>
                       </div>
+                      {r.notes && <div className="text-xs text-body mt-2">{r.notes}</div>}
 
                       {r.status === "countered" && (
-                        <div className="p-3 rounded-lg" style={{ background: "rgba(229,168,59,0.04)", border: "1px solid rgba(229,168,59,0.15)" }}>
+                        <div className="p-3 rounded-lg mt-3" style={{ background: "rgba(229,168,59,0.04)", border: "1px solid rgba(229,168,59,0.15)" }}>
                           <div className="text-xs font-semibold mb-1" style={{ color: "#e5a83b" }}>Your counter-offer:</div>
                           <div className="text-sm text-heading">{r.counter_date} at {r.counter_start_time}</div>
                           {r.counter_note && <div className="text-xs text-sub mt-1">{r.counter_note}</div>}
@@ -153,14 +150,15 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
                       )}
                     </div>
 
-                    <div className="flex flex-col items-end gap-2 ml-4">
-                      <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full"
-                        style={{ background: sc.bg, color: sc.color }}>
-                        {r.status}
-                      </span>
-                      <div className="text-[10px] text-faint">
-                        {new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    <div className="flex flex-col items-end gap-3 ml-4">
+                      <div className="flex items-center gap-4">
+                        <span className="text-sm font-semibold" style={{ color: "#5A83F3" }}>Agenda</span>
+                        <span className="text-sm font-semibold" style={{ color: "#5A83F3" }}>Notes</span>
                       </div>
+                      <span className="text-xs font-semibold px-3 py-1 rounded-full"
+                        style={{ background: "transparent", border: `1.5px solid ${sc.color}`, color: sc.color }}>
+                        {r.status === "pending" ? `Pending (${r.student_name?.split(" ")[0]})` : r.status}
+                      </span>
                     </div>
                   </div>
 
@@ -184,7 +182,7 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
                       </button>
                     </div>
                   )}
-                </Card>
+                </div>
               );
             })}
           </div>
