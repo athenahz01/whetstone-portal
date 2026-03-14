@@ -84,13 +84,13 @@ export function getGoogleAuthUrl(profileId: string) {
         .filter((e: any) => e.title?.startsWith("[Whetstone]") || e.title?.endsWith("[Whetstone]"))
         .map((e: any) => ({
           id: e.id,
-          // Strip [Whetstone] prefix/suffix to get original task name
           title: (e.title || "")
             .replace(/^\[Whetstone\]\s*/, "")
             .replace(/\s*\[Whetstone\]$/, ""),
           date: e.date || "",
           startMinutes: e.startMinutes ?? null,
           durationMinutes: e.durationMinutes ?? null,
+          colorKey: e.colorKey || null,
         }));
     } catch (err) {
       console.error("Failed to pull Whetstone events from GCal:", err);

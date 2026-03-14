@@ -220,26 +220,45 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
           let anyUpdated = false;
           for (const gce of gcalEvents) {
             if (gce.startMinutes == null || !gce.date) continue;
-            // Match by title (strip whitespace for fuzzy match)
             const cleanTitle = gce.title.trim().toLowerCase();
             const match = events.find((e) =>
               e.task_text.trim().toLowerCase() === cleanTitle
             );
-            if (match && (match.date !== gce.date || match.top_minutes !== gce.startMinutes || match.minutes !== gce.durationMinutes)) {
+            if (!match) continue;
+
+            // Detect changes: date, time, duration, or color
+            const dateChanged = match.date !== gce.date;
+            const timeChanged = match.top_minutes !== gce.startMinutes;
+            const durationChanged = gce.durationMinutes && match.minutes !== gce.durationMinutes;
+
+            // Detect color change from GCal
+            // Current color is stored in quadrant as "color:keyname"
+            const currentColorKey = match.quadrant?.startsWith("color:") ? match.quadrant.replace("color:", "") : null;
+            const gcalColorKey = gce.colorKey || null;
+            const colorChanged = gcalColorKey && gcalColorKey !== currentColorKey;
+
+            if (dateChanged || timeChanged || durationChanged || colorChanged) {
               const updates: any = {};
-              if (match.date !== gce.date) updates.date = gce.date;
-              if (match.top_minutes !== gce.startMinutes) updates.top_minutes = gce.startMinutes;
-              if (gce.durationMinutes && match.minutes !== gce.durationMinutes) updates.minutes = gce.durationMinutes;
+              if (dateChanged) updates.date = gce.date;
+              if (timeChanged) updates.top_minutes = gce.startMinutes;
+              if (durationChanged) updates.minutes = gce.durationMinutes;
+              if (colorChanged) updates.quadrant = `color:${gcalColorKey}`;
               updateReceptacleEvent(match.id, updates);
               setCalEvents((prev) => prev.map((ev) =>
                 ev.dbId === match.id
-                  ? { ...ev, date: gce.date, topMinutes: gce.startMinutes!, ...(gce.durationMinutes ? { minutes: gce.durationMinutes } : {}) }
+                  ? {
+                      ...ev,
+                      date: dateChanged ? gce.date : ev.date,
+                      topMinutes: timeChanged ? gce.startMinutes! : ev.topMinutes,
+                      ...(durationChanged ? { minutes: gce.durationMinutes! } : {}),
+                      ...(colorChanged ? { color: gcalColorKey! } : {}),
+                    }
                   : ev
               ));
               anyUpdated = true;
             }
           }
-          if (anyUpdated) console.log("[GCal sync-back] Updated events from GCal changes");
+          if (anyUpdated) console.log("[GCal sync-back] Updated events from GCal changes (including color)");
         });
       }
     });
@@ -911,7 +930,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                                     <div key={`gcal-${ge.id}`}
                                       className="absolute left-0.5 right-0.5 rounded-md px-1.5 pt-1 z-0 overflow-hidden pointer-events-none"
                                       style={{ top: topPx, height: minutesToHeight(dur), background: "rgba(74,186,106,0.06)", border: "1px dashed rgba(74,186,106,0.25)" }}>
-                                      <div className="text-[9px] font-medium leading-tight truncate" style={{ color: "#4aba6a" }}>{ge.title}</div>
+                                      <div className="text-[9px] font-medium leading-tight truncate" style={{ color: "#4aba6a" }}>{ge.title?.replace(/\s*\[Whetstone\]\s*/g, "")}</div>
                                       <div className="text-[8px] mt-0.5" style={{ color: "rgba(74,186,106,0.5)" }}>{fmtMinutes(ge.startMinutes)} · {dur}m</div>
                                     </div>
                                   );

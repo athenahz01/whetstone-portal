@@ -18,8 +18,15 @@ interface TestingProps {
 
 export function Testing({ tests, setTests, readOnly = false, studentId }: TestingProps) {
   const [showModal, setShowModal] = useState(false);
+  const [testType, setTestType] = useState("SAT");
   const [mathScore, setMathScore] = useState("");
   const [englishScore, setEnglishScore] = useState("");
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%", padding: "10px 14px", background: "#1e1e1e",
+    border: "1.5px solid #333", borderRadius: 10, color: "#ebebeb",
+    fontSize: 14, outline: "none", boxSizing: "border-box",
+  };
 
   const composite = useMemo(() => {
     const m = parseInt(mathScore);
@@ -28,60 +35,59 @@ export function Testing({ tests, setTests, readOnly = false, studentId }: Testin
     return null;
   }, [mathScore, englishScore]);
 
-  // Calculate superscore from all SAT attempts
+  // SAT superscore
   const superscore = useMemo(() => {
     const satTests = tests.filter((t) => t.type === "SAT");
     if (satTests.length === 0) return null;
-
-    let bestMath = 0;
-    let bestEnglish = 0;
-
+    let bestMath = 0, bestEnglish = 0;
     satTests.forEach((t) => {
       if (t.mathScore && t.mathScore > bestMath) bestMath = t.mathScore;
       if (t.englishScore && t.englishScore > bestEnglish) bestEnglish = t.englishScore;
-
-      // Also try parsing from breakdown string for legacy data
-      if (!t.mathScore && t.bd) {
-        const mathMatch = t.bd.match(/Math:\s*(\d+)/);
-        if (mathMatch) {
-          const val = parseInt(mathMatch[1]);
-          if (val > bestMath) bestMath = val;
-        }
-      }
-      if (!t.englishScore && t.bd) {
-        const erwMatch = t.bd.match(/ERW:\s*(\d+)/);
-        if (erwMatch) {
-          const val = parseInt(erwMatch[1]);
-          if (val > bestEnglish) bestEnglish = val;
-        }
-      }
     });
-
-    if (bestMath > 0 && bestEnglish > 0) {
-      return { math: bestMath, english: bestEnglish, total: bestMath + bestEnglish };
-    }
-    return null;
+    if (bestMath === 0 && bestEnglish === 0) return null;
+    return { total: bestMath + bestEnglish, math: bestMath, english: bestEnglish };
   }, [tests]);
 
-  const inputStyle: React.CSSProperties = {
-    width: "100%", padding: "10px 14px", background: "#252525",
-    border: "1px solid #333", borderRadius: 8, color: "#ebebeb",
-    fontSize: 14, outline: "none", boxSizing: "border-box",
-  };
+  // ACT best composite
+  const actBest = useMemo(() => {
+    const actTests = tests.filter((t) => t.type === "ACT");
+    if (actTests.length === 0) return null;
+    return actTests.reduce((best, t) => t.total > best.total ? t : best, actTests[0]);
+  }, [tests]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const f = new FormData(e.target as HTMLFormElement);
     const type = f.get("t") as string;
     const date = f.get("d") as string;
-    const math = parseInt(f.get("math") as string) || 0;
-    const english = parseInt(f.get("english") as string) || 0;
-    const total = type === "SAT" ? math + english : Number(f.get("s") || 0);
-    const breakdown = type === "SAT"
-      ? `Math: ${math} · ERW: ${english}`
-      : (f.get("b") as string) || "N/A";
 
-    // Persist to DB
+    let total = 0;
+    let breakdown = "";
+    let math: number | null = null;
+    let english: number | null = null;
+    let subject: string | null = null;
+
+    if (type === "SAT") {
+      math = parseInt(f.get("math") as string) || 0;
+      english = parseInt(f.get("english") as string) || 0;
+      total = math + english;
+      breakdown = `Math: ${math} · ERW: ${english}`;
+    } else if (type === "ACT") {
+      const eng = parseInt(f.get("actEnglish") as string) || 0;
+      const mth = parseInt(f.get("actMath") as string) || 0;
+      const rdg = parseInt(f.get("actReading") as string) || 0;
+      const sci = parseInt(f.get("actScience") as string) || 0;
+      total = Math.round((eng + mth + rdg + sci) / 4);
+      breakdown = `E: ${eng} · M: ${mth} · R: ${rdg} · S: ${sci}`;
+    } else if (type === "AP") {
+      subject = f.get("subject") as string;
+      total = parseInt(f.get("apScore") as string) || 0;
+      breakdown = subject || "";
+    } else {
+      total = parseInt(f.get("s") as string) || 0;
+      breakdown = (f.get("b") as string) || "N/A";
+    }
+
     if (studentId) {
       try {
         await fetch("/api/save-test", {
@@ -91,25 +97,41 @@ export function Testing({ tests, setTests, readOnly = false, studentId }: Testin
             studentId, type, date, total, breakdown,
             mathScore: type === "SAT" ? math : null,
             englishScore: type === "SAT" ? english : null,
+            subject: type === "AP" ? subject : null,
           }),
         });
       } catch (err) { console.error("Failed to save test:", err); }
     }
 
     setTests([...tests, {
-      id: Date.now(),
-      type, date, total,
-      bd: breakdown,
-      v: false,
+      id: Date.now(), type, date, total,
+      bd: breakdown, v: false,
       mathScore: type === "SAT" ? math : null,
       englishScore: type === "SAT" ? english : null,
     }]);
     setShowModal(false);
-    setMathScore("");
-    setEnglishScore("");
+    setMathScore(""); setEnglishScore(""); setTestType("SAT");
   };
 
-  const [testType, setTestType] = useState("SAT");
+  const handleDelete = async (testId: number) => {
+    if (!confirm("Delete this test score?")) return;
+    if (studentId) {
+      try {
+        await fetch("/api/save-test", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ testId }),
+        });
+      } catch {}
+    }
+    setTests(tests.filter((t) => t.id !== testId));
+  };
+
+  // Group tests by type
+  const satTests = tests.filter((t) => t.type === "SAT");
+  const actTests = tests.filter((t) => t.type === "ACT");
+  const apTests = tests.filter((t) => t.type === "AP");
+  const otherTests = tests.filter((t) => !["SAT", "ACT", "AP"].includes(t.type));
 
   return (
     <div>
@@ -125,7 +147,7 @@ export function Testing({ tests, setTests, readOnly = false, studentId }: Testin
         }
       />
       <div className="p-6 px-8">
-        {/* Superscore Card */}
+        {/* SAT Superscore */}
         {superscore && (
           <Card style={{ marginBottom: 14, borderTop: "3px solid #7c3aed" }}>
             <div className="flex items-center justify-between">
@@ -133,60 +155,156 @@ export function Testing({ tests, setTests, readOnly = false, studentId }: Testin
                 <div className="text-xs text-sub uppercase tracking-widest font-semibold mb-1">SAT Superscore</div>
                 <div className="text-4xl font-bold text-heading">{superscore.total}</div>
                 <div className="flex gap-4 mt-2">
-                  <div>
-                    <span className="text-xs text-sub">Math: </span>
-                    <span className="text-sm font-bold text-heading">{superscore.math}</span>
-                  </div>
-                  <div>
-                    <span className="text-xs text-sub">ERW: </span>
-                    <span className="text-sm font-bold text-heading">{superscore.english}</span>
-                  </div>
+                  <div><span className="text-xs text-sub">Math: </span><span className="text-sm font-bold text-heading">{superscore.math}</span></div>
+                  <div><span className="text-xs text-sub">ERW: </span><span className="text-sm font-bold text-heading">{superscore.english}</span></div>
                 </div>
               </div>
               <div className="text-right">
-                <Tag color="#a480f2">Best of {tests.filter((t) => t.type === "SAT").length} attempt{tests.filter((t) => t.type === "SAT").length !== 1 ? "s" : ""}</Tag>
+                <Tag color="#a480f2">Best of {satTests.length} attempt{satTests.length !== 1 ? "s" : ""}</Tag>
                 <div className="text-xs text-sub mt-1">Highest Math + Highest ERW</div>
               </div>
             </div>
           </Card>
         )}
 
-        {/* Individual Test Cards */}
-        <div className="grid grid-cols-2 gap-3.5">
-          {tests.map((t) => (
-            <Card key={t.id}>
-              <div className="flex justify-between mb-4">
-                <div>
-                  <div className="text-xl font-bold text-heading">{t.type}</div>
-                  <div className="text-sm text-sub mt-0.5">{new Date(t.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>
-                </div>
-                {t.v && <Tag color="#4aba6a">Verified</Tag>}
+        {/* ACT Best */}
+        {actBest && (
+          <Card style={{ marginBottom: 14, borderTop: "3px solid #5A83F3" }}>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs text-sub uppercase tracking-widest font-semibold mb-1">ACT Best Composite</div>
+                <div className="text-4xl font-bold text-heading">{actBest.total}</div>
+                <div className="text-xs text-sub mt-1">{actBest.bd}</div>
               </div>
-              <div className="mb-4">
-                <div className="text-xs text-sub uppercase tracking-widest font-semibold mb-1">Composite Score</div>
-                <div className="text-4xl font-bold text-heading">{t.total}</div>
-              </div>
-              {/* Split scores for SAT */}
-              {t.type === "SAT" && (t.mathScore || t.englishScore) ? (
-                <div className="flex gap-3">
-                  <div className="flex-1 p-3 rounded-lg" style={{ background: "rgba(82,139,255,0.06)" }}>
-                    <div className="text-xs text-sub uppercase tracking-widest font-semibold mb-1">Math</div>
-                    <div className="text-2xl font-bold" style={{ color: "#7aabff" }}>{t.mathScore || "—"}</div>
+              <Tag color="#5A83F3">Best of {actTests.length}</Tag>
+            </div>
+          </Card>
+        )}
+
+        {/* SAT Section */}
+        {satTests.length > 0 && (
+          <div className="mb-5">
+            <h3 className="text-sm font-bold text-heading mb-3">SAT Scores</h3>
+            <div className="grid grid-cols-2 gap-3.5">
+              {satTests.map((t) => (
+                <Card key={t.id}>
+                  <div className="flex justify-between mb-3">
+                    <div>
+                      <div className="text-lg font-bold text-heading">SAT</div>
+                      <div className="text-xs text-sub">{new Date(t.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {t.v && <Tag color="#4aba6a">Verified</Tag>}
+                      {!readOnly && <button onClick={() => handleDelete(t.id)} className="text-[10px] px-2 py-1 rounded border-none cursor-pointer" style={{ background: "rgba(229,91,91,0.08)", color: "#e55b5b" }}>✕</button>}
+                    </div>
                   </div>
-                  <div className="flex-1 p-3 rounded-lg" style={{ background: "rgba(74,186,106,0.08)" }}>
-                    <div className="text-xs text-sub uppercase tracking-widest font-semibold mb-1">ERW</div>
-                    <div className="text-2xl font-bold" style={{ color: "#4aba6a" }}>{t.englishScore || "—"}</div>
+                  <div className="text-3xl font-bold text-heading mb-3">{t.total}</div>
+                  <div className="flex gap-3">
+                    <div className="flex-1 p-3 rounded-lg" style={{ background: "rgba(82,139,255,0.06)" }}>
+                      <div className="text-[10px] text-sub uppercase tracking-widest font-semibold mb-1">Math</div>
+                      <div className="text-xl font-bold" style={{ color: "#7aabff" }}>{t.mathScore || "—"}</div>
+                    </div>
+                    <div className="flex-1 p-3 rounded-lg" style={{ background: "rgba(74,186,106,0.08)" }}>
+                      <div className="text-[10px] text-sub uppercase tracking-widest font-semibold mb-1">ERW</div>
+                      <div className="text-xl font-bold" style={{ color: "#4aba6a" }}>{t.englishScore || "—"}</div>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="p-3 rounded-lg" style={{ background: "#252525" }}>
-                  <div className="text-xs text-sub uppercase tracking-widest font-semibold mb-0.5">Breakdown</div>
-                  <div className="text-sm text-body">{t.bd}</div>
-                </div>
-              )}
-            </Card>
-          ))}
-        </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ACT Section */}
+        {actTests.length > 0 && (
+          <div className="mb-5">
+            <h3 className="text-sm font-bold text-heading mb-3">ACT Scores</h3>
+            <div className="grid grid-cols-2 gap-3.5">
+              {actTests.map((t) => {
+                const parts = t.bd?.split("·").map((p: string) => p.trim()) || [];
+                return (
+                  <Card key={t.id}>
+                    <div className="flex justify-between mb-3">
+                      <div>
+                        <div className="text-lg font-bold text-heading">ACT</div>
+                        <div className="text-xs text-sub">{new Date(t.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {!readOnly && <button onClick={() => handleDelete(t.id)} className="text-[10px] px-2 py-1 rounded border-none cursor-pointer" style={{ background: "rgba(229,91,91,0.08)", color: "#e55b5b" }}>✕</button>}
+                      </div>
+                    </div>
+                    <div className="text-3xl font-bold text-heading mb-3">Composite: {t.total}</div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {["English", "Math", "Reading", "Science"].map((sec, i) => {
+                        const val = parts[i]?.split(":")[1]?.trim() || "—";
+                        const colors = ["#5A83F3", "#e5a83b", "#4aba6a", "#a480f2"];
+                        return (
+                          <div key={sec} className="p-2 rounded-lg text-center" style={{ background: `${colors[i]}10` }}>
+                            <div className="text-[9px] text-sub uppercase tracking-widest font-semibold mb-1">{sec.slice(0, 3)}</div>
+                            <div className="text-lg font-bold" style={{ color: colors[i] }}>{val}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* AP Section */}
+        {apTests.length > 0 && (
+          <div className="mb-5">
+            <h3 className="text-sm font-bold text-heading mb-3">AP Scores</h3>
+            <div className="grid grid-cols-3 gap-3.5">
+              {apTests.map((t) => (
+                <Card key={t.id}>
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <div className="text-sm font-bold text-heading">{t.bd || "AP"}</div>
+                      <div className="text-xs text-sub">{new Date(t.date).toLocaleDateString("en-US", { month: "short", year: "numeric" })}</div>
+                    </div>
+                    {!readOnly && <button onClick={() => handleDelete(t.id)} className="text-[10px] px-1.5 py-0.5 rounded border-none cursor-pointer" style={{ background: "rgba(229,91,91,0.08)", color: "#e55b5b" }}>✕</button>}
+                  </div>
+                  <div className="text-4xl font-bold text-center py-2" style={{ color: t.total >= 4 ? "#4aba6a" : t.total >= 3 ? "#e5a83b" : "#e55b5b" }}>
+                    {t.total}
+                  </div>
+                  <div className="text-[10px] text-sub text-center">out of 5</div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Other Tests */}
+        {otherTests.length > 0 && (
+          <div className="mb-5">
+            <h3 className="text-sm font-bold text-heading mb-3">Other Tests</h3>
+            <div className="grid grid-cols-2 gap-3.5">
+              {otherTests.map((t) => (
+                <Card key={t.id}>
+                  <div className="flex justify-between mb-2">
+                    <div className="text-lg font-bold text-heading">{t.type}</div>
+                    {!readOnly && <button onClick={() => handleDelete(t.id)} className="text-[10px] px-2 py-1 rounded border-none cursor-pointer" style={{ background: "rgba(229,91,91,0.08)", color: "#e55b5b" }}>✕</button>}
+                  </div>
+                  <div className="text-sm text-sub mb-2">{new Date(t.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>
+                  <div className="text-3xl font-bold text-heading">{t.total}</div>
+                  {t.bd && t.bd !== "N/A" && <div className="text-xs text-sub mt-1">{t.bd}</div>}
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {tests.length === 0 && (
+          <Card>
+            <div className="text-center py-8">
+              <div className="text-3xl mb-2">📝</div>
+              <div className="text-sm text-sub">No test scores yet. Add your first score above.</div>
+            </div>
+          </Card>
+        )}
       </div>
 
       {/* Add Score Modal */}
@@ -207,61 +325,83 @@ export function Testing({ tests, setTests, readOnly = false, studentId }: Testin
               </FormField>
             </div>
 
-            {testType === "SAT" ? (
+            {testType === "SAT" && (
               <>
                 <div className="grid grid-cols-2 gap-3">
                   <FormField label="Math Score">
-                    <input
-                      required
-                      name="math"
-                      type="number"
-                      min="200"
-                      max="800"
-                      placeholder="200–800"
-                      style={inputStyle}
-                      value={mathScore}
-                      onChange={(e) => setMathScore(e.target.value)}
-                    />
+                    <input required name="math" type="number" min="200" max="800" placeholder="200–800" style={inputStyle} value={mathScore} onChange={(e) => setMathScore(e.target.value)} />
                   </FormField>
                   <FormField label="ERW (English) Score">
-                    <input
-                      required
-                      name="english"
-                      type="number"
-                      min="200"
-                      max="800"
-                      placeholder="200–800"
-                      style={inputStyle}
-                      value={englishScore}
-                      onChange={(e) => setEnglishScore(e.target.value)}
-                    />
+                    <input required name="english" type="number" min="200" max="800" placeholder="200–800" style={inputStyle} value={englishScore} onChange={(e) => setEnglishScore(e.target.value)} />
                   </FormField>
                 </div>
-                {/* Auto-calculated composite */}
                 {composite && (
-                  <div className="p-3 rounded-lg mb-4 flex items-center justify-between" style={{ background: "rgba(164,128,242,0.08)", border: "1px solid #ddd6fe" }}>
+                  <div className="p-3 rounded-lg mb-3 flex items-center justify-between" style={{ background: "rgba(164,128,242,0.08)", border: "1px solid rgba(164,128,242,0.2)" }}>
                     <div>
-                      <div className="text-xs font-semibold" style={{ color: "#a480f2" }}>Composite (auto-calculated)</div>
+                      <div className="text-xs font-semibold" style={{ color: "#a480f2" }}>Composite</div>
                       <div className="text-2xl font-bold text-heading">{composite}</div>
                     </div>
-                    <div className="text-xs text-sub text-right">
-                      Math {mathScore} + ERW {englishScore}
-                    </div>
+                    <div className="text-xs text-sub text-right">Math {mathScore} + ERW {englishScore}</div>
                   </div>
                 )}
               </>
-            ) : (
+            )}
+
+            {testType === "ACT" && (
+              <div className="grid grid-cols-2 gap-3">
+                <FormField label="English (1-36)">
+                  <input required name="actEnglish" type="number" min="1" max="36" placeholder="1–36" style={inputStyle} />
+                </FormField>
+                <FormField label="Math (1-36)">
+                  <input required name="actMath" type="number" min="1" max="36" placeholder="1–36" style={inputStyle} />
+                </FormField>
+                <FormField label="Reading (1-36)">
+                  <input required name="actReading" type="number" min="1" max="36" placeholder="1–36" style={inputStyle} />
+                </FormField>
+                <FormField label="Science (1-36)">
+                  <input required name="actScience" type="number" min="1" max="36" placeholder="1–36" style={inputStyle} />
+                </FormField>
+              </div>
+            )}
+
+            {testType === "AP" && (
+              <div className="grid grid-cols-2 gap-3">
+                <FormField label="AP Subject">
+                  <select name="subject" required style={inputStyle}>
+                    <option value="">Select subject...</option>
+                    {["Biology", "Calculus AB", "Calculus BC", "Chemistry", "Computer Science A", "Computer Science Principles",
+                      "English Language", "English Literature", "Environmental Science", "European History",
+                      "Human Geography", "Macroeconomics", "Microeconomics", "Physics 1", "Physics 2", "Physics C: Mech",
+                      "Physics C: E&M", "Psychology", "Spanish Language", "Statistics", "US Government",
+                      "US History", "World History"].map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </FormField>
+                <FormField label="Score (1-5)">
+                  <select name="apScore" required style={inputStyle}>
+                    <option value="5">5 — Extremely well qualified</option>
+                    <option value="4">4 — Well qualified</option>
+                    <option value="3">3 — Qualified</option>
+                    <option value="2">2 — Possibly qualified</option>
+                    <option value="1">1 — No recommendation</option>
+                  </select>
+                </FormField>
+              </div>
+            )}
+
+            {testType === "TOEFL" && (
               <>
-                <FormField label="Score">
-                  <input required name="s" type="number" style={inputStyle} />
+                <FormField label="Total Score">
+                  <input required name="s" type="number" style={inputStyle} placeholder="e.g. 110" />
                 </FormField>
                 <FormField label="Breakdown (optional)">
-                  <input name="b" style={inputStyle} placeholder="e.g. Math: 36, English: 34" />
+                  <input name="b" style={inputStyle} placeholder="e.g. R:28 L:29 S:26 W:27" />
                 </FormField>
               </>
             )}
 
-            <div className="flex justify-end mt-2">
+            <div className="flex justify-end mt-3">
               <Button primary type="submit">Save Score</Button>
             </div>
           </form>
