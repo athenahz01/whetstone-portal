@@ -18,8 +18,10 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
   const [counterTime, setCounterTime] = useState("");
   const [counterNote, setCounterNote] = useState("");
   const [processing, setProcessing] = useState(false);
-  const [tab, setTab] = useState<"pending" | "all">("pending");
+  const [tab, setTab] = useState<"pending" | "upcoming" | "past">("pending");
   const [detailModal, setDetailModal] = useState<any>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [students, setStudents] = useState<any[]>([]);
 
   const IS: React.CSSProperties = { width: "100%", padding: "10px 14px", background: "#1e1e1e", border: "1.5px solid #333", borderRadius: 10, color: "#ebebeb", fontSize: 14, outline: "none", boxSizing: "border-box" };
 
@@ -33,55 +35,66 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
     setLoading(false);
   };
 
+  // Load students for create modal
+  useEffect(() => {
+    fetch("/api/admin/users").then(r => r.json()).then(data => {
+      const userList = data.users || data || [];
+      const studentUsers = (Array.isArray(userList) ? userList : [])
+        .filter((u: any) => u.role === "student" || u.studentId)
+        .sort((a: any, b: any) => (a.name || "").localeCompare(b.name || ""));
+      setStudents(studentUsers);
+    }).catch(() => {});
+  }, []);
+
   useEffect(() => { loadRequests(); }, [strategistEmail]);
 
   const handleApprove = async (id: number) => {
     setProcessing(true);
-    await fetch("/api/booking-requests", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "approve", requestId: id }),
-    });
-    loadRequests();
-    setProcessing(false);
+    await fetch("/api/booking-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "approve", requestId: id }) });
+    loadRequests(); setProcessing(false);
   };
-
   const handleDecline = async (id: number) => {
     if (!confirm("Decline this booking request?")) return;
-    await fetch("/api/booking-requests", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "decline", requestId: id }),
-    });
+    await fetch("/api/booking-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "decline", requestId: id }) });
     loadRequests();
   };
-
   const handleCounter = async () => {
     if (!counterModal || !counterDate) return;
     setProcessing(true);
+    await fetch("/api/booking-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "counter", requestId: counterModal.id, newDate: counterDate, newStartTime: counterTime, counterNote }) });
+    setCounterModal(null); setCounterDate(""); setCounterTime(""); setCounterNote("");
+    loadRequests(); setProcessing(false);
+  };
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setProcessing(true);
+    const f = new FormData(e.target as HTMLFormElement);
+    const studentId = Number(f.get("studentId"));
+    const studentUser = students.find((s: any) => s.studentId === studentId || s.id === String(studentId));
     await fetch("/api/booking-requests", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        action: "counter",
-        requestId: counterModal.id,
-        newDate: counterDate,
-        newStartTime: counterTime,
-        counterNote,
+        action: "request",
+        studentId,
+        studentName: studentUser?.name || f.get("studentName") || "Student",
+        specialist: f.get("specialist") || strategistEmail,
+        date: f.get("date"),
+        startTime: f.get("startTime"),
+        sessionName: f.get("sessionName"),
+        sessionType: f.get("sessionType"),
+        notes: f.get("notes") || "",
       }),
     });
-    setCounterModal(null);
-    setCounterDate("");
-    setCounterTime("");
-    setCounterNote("");
+    // Auto-approve since strategist created it
     loadRequests();
-    setProcessing(false);
+    setProcessing(false); setShowCreateModal(false);
   };
 
-  const pending = requests.filter(r => r.status === "pending");
-  const countered = requests.filter(r => r.status === "countered");
-  const resolved = requests.filter(r => ["approved", "confirmed", "declined"].includes(r.status));
-  const display = tab === "pending" ? [...pending, ...countered] : requests;
+  const todayStr = new Date().toISOString().split("T")[0];
+  const pending = requests.filter(r => r.status === "pending" || r.status === "countered");
+  const upcoming = requests.filter(r => (r.status === "approved" || r.status === "confirmed") && r.date >= todayStr);
+  const past = requests.filter(r => (r.status === "approved" || r.status === "confirmed") && r.date < todayStr);
+  const display = tab === "pending" ? pending : tab === "upcoming" ? upcoming : past;
 
   const statusColor = (s: string) => {
     switch (s) {
@@ -96,13 +109,24 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
   return (
     <div>
       <PageHeader
-        title="Booking Requests"
-        sub={`${pending.length} pending · ${countered.length} awaiting student response`}
+        title="Classes"
+        sub={`${pending.length} pending · ${upcoming.length} upcoming · ${past.length} past`}
+        right={
+          <button onClick={() => setShowCreateModal(true)}
+            className="px-4 py-2 rounded-full border-none cursor-pointer text-xs font-semibold"
+            style={{ background: "#5A83F3", color: "#fff" }}>
+            + Create Session
+          </button>
+        }
       />
       <div className="p-6 px-8">
         {/* Tabs */}
         <div className="flex gap-0.5 mb-5 p-0.5 rounded-full" style={{ background: "#1e1e1e", display: "inline-flex" }}>
-          {([["pending", `Pending (${pending.length + countered.length})`], ["all", "All Requests"]] as const).map(([key, label]) => (
+          {([
+            ["pending", `Pending (${pending.length})`],
+            ["upcoming", `Upcoming (${upcoming.length})`],
+            ["past", `Past (${past.length})`],
+          ] as const).map(([key, label]) => (
             <button key={key} onClick={() => setTab(key as any)}
               className="px-5 py-2 rounded-full border-none cursor-pointer text-xs font-semibold"
               style={{ background: tab === key ? "#5A83F3" : "transparent", color: tab === key ? "#fff" : "#717171" }}>
@@ -112,9 +136,9 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
         </div>
 
         {loading ? (
-          <div className="text-sm text-sub text-center py-8">Loading requests...</div>
+          <div className="text-sm text-sub text-center py-8">Loading...</div>
         ) : display.length === 0 ? (
-          <Card><div className="text-center py-10"><div className="text-3xl mb-2">📅</div><p className="text-sm text-sub m-0">No {tab === "pending" ? "pending " : ""}booking requests.</p></div></Card>
+          <Card><div className="text-center py-10"><div className="text-3xl mb-2">📅</div><p className="text-sm text-sub m-0">No {tab} sessions.</p></div></Card>
         ) : (
           <div className="flex flex-col gap-3">
             {display.map((r: any) => {
@@ -123,40 +147,34 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
                 <div key={r.id} className="p-5 rounded-xl border" style={{ background: "#1e1e1e", border: "1px solid #2a2a2a" }}>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      {r.start_time && <div className="text-sm mb-1" style={{ color: "#717171" }}>{r.start_time}{r.start_time ? " — " : ""}{r.end_time || ""}</div>}
+                      {r.start_time && <div className="text-sm mb-1" style={{ color: "#717171" }}>{r.start_time}{r.end_time ? ` — ${r.end_time}` : ""}</div>}
                       <div className="text-base font-bold text-heading mb-3">{r.session_name}</div>
-                      <div className="flex items-center gap-2.5 mb-3">
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold"
-                          style={{ background: "#7c3aed", color: "#fff" }}>
+                      <div className="flex items-center gap-2.5 mb-2">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: "#7c3aed", color: "#fff" }}>
                           {(r.student_name || "?").split(" ").map((w: string) => w[0]).join("").substring(0, 2)}
                         </div>
-                        <div>
-                          <div className="text-sm font-medium text-heading">{r.student_name}</div>
-                        </div>
+                        <span className="text-sm text-heading">{r.student_name}</span>
                       </div>
-
                       <div className="flex items-center gap-4 text-xs text-sub">
                         <span>📅 {r.date}</span>
                         <span>📋 {r.session_type}</span>
+                        {tab === "past" && <span>⏱ {r.duration || "1h"}</span>}
                       </div>
                       {r.notes && <div className="text-xs text-body mt-2">{r.notes}</div>}
-
                       {r.status === "countered" && (
                         <div className="p-3 rounded-lg mt-3" style={{ background: "rgba(229,168,59,0.04)", border: "1px solid rgba(229,168,59,0.15)" }}>
                           <div className="text-xs font-semibold mb-1" style={{ color: "#e5a83b" }}>Your counter-offer:</div>
                           <div className="text-sm text-heading">{r.counter_date} at {r.counter_start_time}</div>
                           {r.counter_note && <div className="text-xs text-sub mt-1">{r.counter_note}</div>}
-                          <div className="text-[10px] text-faint mt-1">Waiting for student to accept...</div>
                         </div>
                       )}
                     </div>
-
                     <div className="flex flex-col items-end gap-3 ml-4">
                       <div className="flex items-center gap-4">
                         <span className="text-sm font-semibold cursor-pointer hover:underline" style={{ color: "#5A83F3" }}
-                          onClick={(e) => { e.stopPropagation(); setDetailModal({ ...r, view: "agenda" }); }}>Agenda</span>
-                        <span className="text-sm font-semibold cursor-pointer hover:underline" style={{ color: r.notes ? "#5A83F3" : "#505050" }}
-                          onClick={(e) => { e.stopPropagation(); setDetailModal({ ...r, view: "notes" }); }}>Notes</span>
+                          onClick={() => setDetailModal({ ...r, view: "agenda" })}>Agenda</span>
+                        <span className="text-sm font-semibold cursor-pointer hover:underline" style={{ color: r.session_notes ? "#5A83F3" : "#505050" }}
+                          onClick={() => setDetailModal({ ...r, view: "notes" })}>Notes</span>
                       </div>
                       <span className="text-xs font-semibold px-3 py-1 rounded-full"
                         style={{ background: "transparent", border: `1.5px solid ${sc.color}`, color: sc.color }}>
@@ -165,24 +183,14 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
                     </div>
                   </div>
 
-                  {/* Action buttons — only for pending requests */}
                   {r.status === "pending" && (
                     <div className="flex items-center gap-2 mt-3 pt-3 border-t border-line">
                       <button onClick={() => handleApprove(r.id)} disabled={processing}
-                        className="px-4 py-2 rounded-full border-none cursor-pointer text-xs font-semibold"
-                        style={{ background: "#4aba6a", color: "#fff" }}>
-                        ✓ Approve
-                      </button>
+                        className="px-4 py-2 rounded-full border-none cursor-pointer text-xs font-semibold" style={{ background: "#4aba6a", color: "#fff" }}>✓ Approve</button>
                       <button onClick={() => { setCounterModal(r); setCounterDate(r.date); setCounterTime(r.start_time || ""); setCounterNote(""); }}
-                        className="px-4 py-2 rounded-full cursor-pointer text-xs font-semibold"
-                        style={{ background: "transparent", color: "#e5a83b", border: "1.5px solid #e5a83b" }}>
-                        ↻ Counter-offer
-                      </button>
+                        className="px-4 py-2 rounded-full cursor-pointer text-xs font-semibold" style={{ background: "transparent", color: "#e5a83b", border: "1.5px solid #e5a83b" }}>↻ Counter-offer</button>
                       <button onClick={() => handleDecline(r.id)}
-                        className="px-4 py-2 rounded-full cursor-pointer text-xs font-semibold"
-                        style={{ background: "transparent", color: "#e55b5b", border: "1.5px solid rgba(229,91,91,0.3)" }}>
-                        ✕ Decline
-                      </button>
+                        className="px-4 py-2 rounded-full cursor-pointer text-xs font-semibold" style={{ background: "transparent", color: "#e55b5b", border: "1.5px solid rgba(229,91,91,0.3)" }}>✕ Decline</button>
                     </div>
                   )}
                 </div>
@@ -194,61 +202,35 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
 
       {/* Counter-offer modal */}
       {counterModal && (
-        <Modal title={`Counter-offer for ${counterModal.student_name}`} onClose={() => setCounterModal(null)}>
-          <div className="mb-3 p-3 rounded-lg" style={{ background: "#1e1e1e" }}>
-            <div className="text-xs text-sub mb-1">Original request:</div>
-            <div className="text-sm text-heading">{counterModal.date} · {counterModal.start_time}</div>
+        <Modal title="Counter-offer" onClose={() => setCounterModal(null)}>
+          <div className="p-3 rounded-lg mb-4" style={{ background: "#252525", borderLeft: "3px solid #e5a83b" }}>
+            <div className="text-sm font-semibold text-heading">{counterModal.session_name}</div>
+            <div className="text-xs text-sub mt-1">Original: {counterModal.date} at {counterModal.start_time}</div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <FormField label="New Date">
-              <input type="date" value={counterDate} onChange={(e) => setCounterDate(e.target.value)} style={IS} />
-            </FormField>
-            <FormField label="New Time">
-              <select value={counterTime} onChange={(e) => setCounterTime(e.target.value)} style={IS}>
-                {(() => {
-                  const t: string[] = [];
-                  for (let h = 9; h <= 20; h++) for (const m of [0, 30]) {
-                    const hr = h > 12 ? h - 12 : h;
-                    t.push(`${hr}:${String(m).padStart(2, "0")} ${h >= 12 ? "pm" : "am"}`);
-                  }
-                  return t.map(s => <option key={s} value={s}>{s}</option>);
-                })()}
-              </select>
-            </FormField>
-          </div>
-          <FormField label="Note (optional)">
-            <textarea value={counterNote} onChange={(e) => setCounterNote(e.target.value)}
-              placeholder="e.g. I'm not available at that time, how about..."
-              rows={2} style={{ ...IS, resize: "vertical" }} />
-          </FormField>
+          <FormField label="New Date"><input type="date" value={counterDate} onChange={(e) => setCounterDate(e.target.value)} style={IS} /></FormField>
+          <FormField label="New Time"><input type="time" value={counterTime} onChange={(e) => setCounterTime(e.target.value)} style={IS} /></FormField>
+          <FormField label="Note to student (optional)"><textarea value={counterNote} onChange={(e) => setCounterNote(e.target.value)} rows={2} placeholder="Why the change..." style={{ ...IS, resize: "vertical", lineHeight: 1.6 }} /></FormField>
           <div className="flex justify-end gap-2 mt-3">
             <Button onClick={() => setCounterModal(null)}>Cancel</Button>
-            <Button primary onClick={handleCounter} disabled={processing || !counterDate}>
-              {processing ? "Sending..." : "Send Counter-offer"}
-            </Button>
+            <Button primary onClick={handleCounter} disabled={processing || !counterDate}>{processing ? "Sending..." : "Send Counter-offer"}</Button>
           </div>
         </Modal>
       )}
 
-      {/* Session Detail Modal (Agenda/Notes) */}
+      {/* Agenda/Notes Detail Modal */}
       {detailModal && (
         <Modal title={detailModal.session_name || "Session Details"} onClose={() => { setDetailModal(null); loadRequests(); }}>
           <div className="space-y-4">
             <div className="p-3 rounded-lg" style={{ background: "#252525", borderLeft: "3px solid #5A83F3" }}>
               <div className="text-sm font-semibold text-heading">{detailModal.session_name}</div>
-              <div className="text-xs text-sub mt-1">
-                📅 {detailModal.date} {detailModal.start_time && `· 🕐 ${detailModal.start_time}`} · 📋 {detailModal.session_type || "session"}
-              </div>
+              <div className="text-xs text-sub mt-1">📅 {detailModal.date} {detailModal.start_time && `· 🕐 ${detailModal.start_time}`} · 📋 {detailModal.session_type || "session"}</div>
             </div>
-
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ background: "#7c3aed", color: "#fff" }}>
                 {(detailModal.student_name || "?").split(" ").map((w: string) => w[0]).join("").substring(0, 2)}
               </div>
               <span className="text-sm text-heading">{detailModal.student_name}</span>
             </div>
-
-            {/* Tab toggle */}
             <div className="flex gap-0.5 p-0.5 rounded-lg" style={{ background: "#252525", display: "inline-flex" }}>
               {(["agenda", "notes"] as const).map((t) => (
                 <button key={t} onClick={() => setDetailModal({ ...detailModal, view: t })}
@@ -258,51 +240,73 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
                 </button>
               ))}
             </div>
-
             {detailModal.view === "agenda" && (
               <div>
                 <div className="text-xs uppercase tracking-widest font-bold mb-2" style={{ color: "#505050" }}>Agenda</div>
-                <textarea
-                  defaultValue={detailModal.agenda || ""}
-                  placeholder="Add agenda items for this session..."
-                  rows={5}
-                  onBlur={async (e) => {
-                    const val = e.target.value;
-                    await fetch("/api/booking-requests", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ action: "update_notes", requestId: detailModal.id, agenda: val }),
-                    });
-                    setDetailModal({ ...detailModal, agenda: val });
-                  }}
-                  style={{ width: "100%", padding: "12px 14px", background: "#252525", border: "1.5px solid #333", borderRadius: 10, color: "#ebebeb", fontSize: 14, outline: "none", boxSizing: "border-box", resize: "vertical", lineHeight: 1.6, minHeight: 120 }}
-                />
+                <textarea defaultValue={detailModal.agenda || ""} placeholder="Add agenda items..." rows={5}
+                  onBlur={async (e) => { const v = e.target.value; await fetch("/api/booking-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update_notes", requestId: detailModal.id, agenda: v }) }); setDetailModal({ ...detailModal, agenda: v }); }}
+                  style={{ ...IS, resize: "vertical", lineHeight: 1.6, minHeight: 120 }} />
                 <div className="text-[10px] mt-1" style={{ color: "#505050" }}>Auto-saves when you click away</div>
               </div>
             )}
-
             {detailModal.view === "notes" && (
               <div>
                 <div className="text-xs uppercase tracking-widest font-bold mb-2" style={{ color: "#505050" }}>Session Notes</div>
-                <textarea
-                  defaultValue={detailModal.session_notes || ""}
-                  placeholder="Take notes during or after the session..."
-                  rows={5}
-                  onBlur={async (e) => {
-                    const val = e.target.value;
-                    await fetch("/api/booking-requests", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ action: "update_notes", requestId: detailModal.id, session_notes: val }),
-                    });
-                    setDetailModal({ ...detailModal, session_notes: val });
-                  }}
-                  style={{ width: "100%", padding: "12px 14px", background: "#252525", border: "1.5px solid #333", borderRadius: 10, color: "#ebebeb", fontSize: 14, outline: "none", boxSizing: "border-box", resize: "vertical", lineHeight: 1.6, minHeight: 120 }}
-                />
+                <textarea defaultValue={detailModal.session_notes || ""} placeholder="Take notes during or after..." rows={5}
+                  onBlur={async (e) => { const v = e.target.value; await fetch("/api/booking-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update_notes", requestId: detailModal.id, session_notes: v }) }); setDetailModal({ ...detailModal, session_notes: v }); }}
+                  style={{ ...IS, resize: "vertical", lineHeight: 1.6, minHeight: 120 }} />
                 <div className="text-[10px] mt-1" style={{ color: "#505050" }}>Auto-saves when you click away</div>
               </div>
             )}
           </div>
+        </Modal>
+      )}
+
+      {/* Create Session Modal */}
+      {showCreateModal && (
+        <Modal title="Create Session" onClose={() => setShowCreateModal(false)}>
+          <form onSubmit={handleCreate}>
+            <FormField label="Student">
+              <select required name="studentId" style={IS}>
+                <option value="">Select student...</option>
+                {students.sort((a: any, b: any) => (a.name || "").localeCompare(b.name || "")).map((s: any) => (
+                  <option key={s.id} value={s.studentId || s.id}>{s.name}</option>
+                ))}
+              </select>
+            </FormField>
+            <FormField label="Session Name">
+              <input required name="sessionName" placeholder="e.g. Essay Review with Jack" style={IS} />
+            </FormField>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Date"><input required name="date" type="date" style={IS} /></FormField>
+              <FormField label="Start Time"><input name="startTime" type="time" style={IS} /></FormField>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Session Type">
+                <select name="sessionType" style={IS}>
+                  <option value="strategy">Strategy Meeting</option>
+                  <option value="essay">Essay Review</option>
+                  <option value="tutoring">Tutoring</option>
+                  <option value="check-in">Check-in</option>
+                  <option value="other">Other</option>
+                </select>
+              </FormField>
+              <FormField label="Specialist">
+                <input name="specialist" placeholder="Your name" defaultValue={strategistEmail.split("@")[0]} style={IS} />
+              </FormField>
+            </div>
+            <FormField label="Quick Note (optional)">
+              <textarea name="notes" rows={2} placeholder="Any context..." style={{ ...IS, resize: "vertical", lineHeight: 1.6 }} />
+            </FormField>
+            <div className="flex justify-end gap-2 mt-3">
+              <Button onClick={() => setShowCreateModal(false)}>Cancel</Button>
+              <button type="submit" disabled={processing}
+                className="px-5 py-2 rounded-full border-none cursor-pointer text-sm font-semibold"
+                style={{ background: "#5A83F3", color: "#fff", opacity: processing ? 0.5 : 1 }}>
+                {processing ? "Creating..." : "Create Session"}
+              </button>
+            </div>
+          </form>
         </Modal>
       )}
     </div>

@@ -8,7 +8,7 @@ import { Button } from "../ui/Button";
 import { Tag } from "../ui/Tag";
 import { WeeklyCalendar } from "../ui/WeeklyCalendar";
 import { getCategoryColor, getStatusColor } from "../../lib/colors";
-import { addCounselorEvent, fetchCounselorEvents, deleteCounselorEvent, addDeadline } from "../../lib/queries";
+import { addCounselorEvent, fetchCounselorEvents, deleteCounselorEvent, addDeadline, updateDeadline } from "../../lib/queries";
 import { pushToGoogleCalendar, pullFromGoogleCalendar } from "../../lib/calendar";
 import { useState, useEffect, useMemo, useRef } from "react";
 
@@ -208,6 +208,20 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
   const [showModal, setShowModal] = useState(false);
   const [showDeadlineModal, setShowDeadlineModal] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 25;
+  const [editingCell, setEditingCell] = useState<{ id: number; field: string } | null>(null);
+
+  const handleInlineUpdate = async (deadlineId: number, field: string, value: string) => {
+    const data: any = {};
+    if (field === "due") data.due = value;
+    if (field === "category") data.category = value;
+    if (field === "status") data.status = value;
+    if (field === "specialist") data.specialist = value;
+    await updateDeadline(deadlineId, data);
+    if (onRefresh) await onRefresh();
+    setEditingCell(null);
+  };
   const [saving, setSaving] = useState(false);
   const [counselorEvents, setCounselorEvents] = useState<any[]>([]);
   const [googleEvents, setGoogleEvents] = useState<any[]>([]);
@@ -509,7 +523,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
         {viewMode === "calendar" ? (
           <WeeklyCalendar rows={calendarRows} personalRow={personalRow} />
         ) : (
-          <div className="bg-white border border-line rounded-xl overflow-hidden">
+          <div className="border border-line rounded-xl overflow-hidden" style={{ background: "#1e1e1e" }}>
             {/* Table Header with per-column filters */}
             <div
               className="grid px-5 py-3 border-b border-line"
@@ -585,71 +599,123 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
                 </button>
               </div>
             ) : (
-              filteredDeadlines.map((d, idx) => {
+              filteredDeadlines.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((d, idx) => {
                 const isOverdue = d.status === "overdue";
                 const isCE = (d as any).isCounselorEvent;
+                const deadlineId = typeof d.id === "string" ? 0 : d.id;
+                const canEdit = !isCE && deadlineId > 0;
                 return (
                   <div
                     key={d.id + "-" + idx}
-                    className="grid px-5 py-3 border-b border-line items-center hover:bg-mist cursor-pointer"
+                    className="grid px-5 py-3 border-b border-line items-center hover:bg-mist"
                     style={{
                       gridTemplateColumns: "110px 2fr 1fr 1.5fr 1fr 1fr 90px",
                       background: isOverdue ? "rgba(229,91,91,0.06)" : isCE ? "rgba(82,139,255,0.04)" : "#1e1e1e",
                     }}
-                    onClick={() => {
-                      const student = students.find((s) => s.id === d.studentId);
-                      if (student) { onSelectStudent(student); onNavigate("detail"); }
-                    }}
                   >
-                    <div className="text-sm font-medium" style={{ color: isOverdue ? "#e55b5b" : "#ebebeb" }}>
-                      {new Date(d.due + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    {/* DUE DATE — click to edit via date picker */}
+                    <div className="relative" onClick={(e) => e.stopPropagation()}>
+                      {editingCell?.id === deadlineId && editingCell?.field === "due" ? (
+                        <input type="date" autoFocus defaultValue={d.due}
+                          onBlur={(e) => handleInlineUpdate(deadlineId, "due", e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); if (e.key === "Escape") setEditingCell(null); }}
+                          className="text-sm rounded px-1 py-0.5 border-none outline-none"
+                          style={{ background: "#333", color: "#ebebeb", width: 130 }} />
+                      ) : (
+                        <div onClick={() => canEdit && setEditingCell({ id: deadlineId, field: "due" })}
+                          className="text-sm font-medium cursor-pointer hover:underline" style={{ color: isOverdue ? "#e55b5b" : "#ebebeb" }}>
+                          {new Date(d.due + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        </div>
+                      )}
                     </div>
 
-                    <div className="flex items-center gap-2 min-w-0">
+                    {/* TASK/PROJECT — click to open student detail */}
+                    <div className="flex items-center gap-2 min-w-0 cursor-pointer" onClick={() => {
+                      const student = students.find((s) => s.id === d.studentId);
+                      if (student) { onSelectStudent(student); onNavigate("detail"); }
+                    }}>
                       {isCE && <span className="text-[10px]">📅</span>}
                       {(d as any).internalOnly && (
                         <span className="text-[9px] px-1.5 py-0.5 rounded font-bold flex-shrink-0" style={{ background: "rgba(229,168,59,0.08)", color: "#e5a83b", border: "1px solid rgba(229,168,59,0.15)" }}>Internal</span>
                       )}
-                      <span className="text-sm font-medium text-heading truncate">{d.title}</span>
+                      <span className="text-sm font-medium text-heading truncate hover:underline">{d.title}</span>
                       {(d as any).responsible?.length > 0 && (
                         <span className="text-[10px] flex-shrink-0" style={{ color: "#717171" }}>→ {(d as any).responsible.join(", ")}</span>
                       )}
                     </div>
 
-                    <div>
-                      <span
-                        className="text-[10px] px-2 py-0.5 rounded font-semibold"
-                        style={{ background: getCategoryColor(d.cat) + "15", color: getCategoryColor(d.cat) }}
-                      >
-                        {d.cat}
-                      </span>
+                    {/* TYPE — click to change via dropdown */}
+                    <div className="relative" onClick={(e) => e.stopPropagation()}>
+                      {editingCell?.id === deadlineId && editingCell?.field === "category" ? (
+                        <select autoFocus defaultValue={d.cat}
+                          onChange={(e) => handleInlineUpdate(deadlineId, "category", e.target.value)}
+                          onBlur={() => setEditingCell(null)}
+                          className="text-[10px] rounded px-1.5 py-1 border-none outline-none font-semibold"
+                          style={{ background: "#333", color: "#ebebeb" }}>
+                          {["planning", "essays", "applications", "testing", "extracurricular", "Academics", "research"].map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span onClick={() => canEdit && setEditingCell({ id: deadlineId, field: "category" })}
+                          className="text-[10px] px-2 py-0.5 rounded font-semibold cursor-pointer hover:opacity-80"
+                          style={{ background: getCategoryColor(d.cat) + "15", color: getCategoryColor(d.cat) }}>
+                          {d.cat}
+                        </span>
+                      )}
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0"
-                        style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}
-                      >
-                        {d.studentAv}
-                      </div>
-                      <span className="text-sm text-body truncate">{d.studentName}</span>
+                    {/* STUDENT */}
+                    <div className="flex items-center gap-2 cursor-pointer" onClick={() => {
+                      const student = students.find((s) => s.id === d.studentId);
+                      if (student) { onSelectStudent(student); onNavigate("detail"); }
+                    }}>
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0"
+                        style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}>{d.studentAv}</div>
+                      <span className="text-sm text-body truncate hover:underline">{d.studentName}</span>
                     </div>
 
-                    <div className="text-sm text-sub truncate">{d.specialist || "—"}</div>
+                    {/* SPECIALIST — click to change */}
+                    <div className="relative" onClick={(e) => e.stopPropagation()}>
+                      {editingCell?.id === deadlineId && editingCell?.field === "specialist" ? (
+                        <input type="text" autoFocus defaultValue={d.specialist}
+                          placeholder="Name..."
+                          onBlur={(e) => handleInlineUpdate(deadlineId, "specialist", e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); if (e.key === "Escape") setEditingCell(null); }}
+                          className="text-sm rounded px-1 py-0.5 border-none outline-none w-full"
+                          style={{ background: "#333", color: "#ebebeb" }} />
+                      ) : (
+                        <div onClick={() => canEdit && setEditingCell({ id: deadlineId, field: "specialist" })}
+                          className="text-sm text-sub truncate cursor-pointer hover:underline">{d.specialist || "—"}</div>
+                      )}
+                    </div>
 
-                    <Tag color={getStatusColor(d.status)}>
-                      {isOverdue ? Math.abs(d.days) + "d late" : d.days === 0 ? "Today" : d.days + "d"}
-                    </Tag>
+                    {/* STATUS — click to change via dropdown */}
+                    <div className="relative" onClick={(e) => e.stopPropagation()}>
+                      {editingCell?.id === deadlineId && editingCell?.field === "status" ? (
+                        <select autoFocus defaultValue={d.status}
+                          onChange={(e) => handleInlineUpdate(deadlineId, "status", e.target.value)}
+                          onBlur={() => setEditingCell(null)}
+                          className="text-xs rounded px-1.5 py-1 border-none outline-none font-semibold"
+                          style={{ background: "#333", color: "#ebebeb" }}>
+                          {["pending", "in-progress", "completed", "overdue", "blocked"].map((s) => (
+                            <option key={s} value={s}>{s === "pending" ? "Planned" : s === "in-progress" ? "In Progress" : s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div onClick={() => canEdit && setEditingCell({ id: deadlineId, field: "status" })} className="cursor-pointer">
+                          <Tag color={getStatusColor(d.status)}>
+                            {isOverdue ? Math.abs(d.days) + "d late" : d.days === 0 ? "Today" : d.days + "d"}
+                          </Tag>
+                        </div>
+                      )}
+                    </div>
 
                     <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                       {isCE && (
-                        <button
-                          onClick={() => handleDeleteEvent((d as any).counselorEventId)}
+                        <button onClick={() => handleDeleteEvent((d as any).counselorEventId)}
                           className="text-[10px] px-2 py-1 rounded cursor-pointer border-none font-semibold"
-                          style={{ background: "rgba(229,91,91,0.08)", color: "#e55b5b" }}
-                        >
-                          Delete
-                        </button>
+                          style={{ background: "rgba(229,91,91,0.08)", color: "#e55b5b" }}>Delete</button>
                       )}
                     </div>
                   </div>
@@ -659,7 +725,20 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
 
             {/* Table Footer */}
             <div className="px-5 py-2.5 border-t border-line flex justify-between items-center" style={{ background: "#252525" }}>
-              <span className="text-xs text-sub">{filteredDeadlines.length} of {allDeadlines.length} items</span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-sub">{filteredDeadlines.length} of {allDeadlines.length} items</span>
+                {filteredDeadlines.length > PAGE_SIZE && (
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0}
+                      className="px-2 py-1 rounded text-xs border-none cursor-pointer font-semibold"
+                      style={{ background: page === 0 ? "#252525" : "#333", color: page === 0 ? "#505050" : "#ebebeb" }}>←</button>
+                    <span className="text-xs text-sub px-1">Page {page + 1} of {Math.ceil(filteredDeadlines.length / PAGE_SIZE)}</span>
+                    <button onClick={() => setPage(Math.min(Math.ceil(filteredDeadlines.length / PAGE_SIZE) - 1, page + 1))} disabled={(page + 1) * PAGE_SIZE >= filteredDeadlines.length}
+                      className="px-2 py-1 rounded text-xs border-none cursor-pointer font-semibold"
+                      style={{ background: (page + 1) * PAGE_SIZE >= filteredDeadlines.length ? "#252525" : "#333", color: (page + 1) * PAGE_SIZE >= filteredDeadlines.length ? "#505050" : "#ebebeb" }}>→</button>
+                  </div>
+                )}
+              </div>
               <div className="flex gap-2 text-xs text-sub">
                 <span className="flex items-center gap-1">
                   <span className="w-2 h-2 rounded-full" style={{ background: "#e55b5b" }} /> Overdue

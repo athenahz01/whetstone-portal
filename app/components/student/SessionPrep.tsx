@@ -94,7 +94,8 @@ export function SessionPrep({ student, onRefresh, readOnly = false }: SessionPre
       .then(data => {
         const strats = (data.users || [])
           .filter((u: any) => u.role === "strategist" && u.name && u.name !== "—")
-          .map((u: any) => ({ name: u.name, email: u.email }));
+          .map((u: any) => ({ name: u.name, email: u.email }))
+          .sort((a: any, b: any) => a.name.localeCompare(b.name));
         setStrategists(strats);
       })
       .catch(() => {});
