@@ -54,9 +54,24 @@ async function getValidToken(profileId: string) {
 }
 
 // PUSH: Add a deadline or timed event to Google Calendar
+// GCal colorId mapping: https://developers.google.com/calendar/api/v3/reference/colors
+const COLOR_KEY_TO_GCAL: Record<string, string> = {
+  blue: "9",     // Blueberry
+  green: "10",   // Basil  
+  red: "11",     // Tomato
+  purple: "3",   // Grape
+  amber: "5",    // Banana
+  teal: "7",     // Peacock
+  pink: "4",     // Flamingo
+  slate: "8",    // Graphite
+};
+const GCAL_TO_COLOR_KEY: Record<string, string> = Object.fromEntries(
+  Object.entries(COLOR_KEY_TO_GCAL).map(([k, v]) => [v, k])
+);
+
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { profileId, title, date, description, startMinutes, durationMinutes } = body;
+  const { profileId, title, date, description, startMinutes, durationMinutes, colorKey } = body;
 
   console.log("[calendar-sync] POST body:", JSON.stringify({ title, date, startMinutes, durationMinutes }));
 
@@ -109,6 +124,10 @@ export async function POST(request: NextRequest) {
       },
     };
   }
+
+  // Add color if specified
+  const gcalColorId = colorKey ? COLOR_KEY_TO_GCAL[colorKey] : undefined;
+  if (gcalColorId) (event as any).colorId = gcalColorId;
 
   const res = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
     method: "POST",
@@ -196,6 +215,7 @@ export async function GET(request: NextRequest) {
       allDay,
       startMinutes,
       durationMinutes,
+      colorKey: e.colorId ? GCAL_TO_COLOR_KEY[e.colorId] || null : null,
       attendees: (e.attendees || []).map((a: any) => a.email?.toLowerCase()).filter(Boolean),
       meetingLink: e.hangoutLink || e.conferenceData?.entryPoints?.[0]?.uri || "",
       location: e.location || "",
@@ -208,7 +228,7 @@ export async function GET(request: NextRequest) {
 // PATCH: Update an existing Whetstone event in Google Calendar (for repositioning)
 export async function PATCH(request: NextRequest) {
   const body = await request.json();
-  const { profileId, title, date, startMinutes, durationMinutes } = body;
+  const { profileId, title, date, startMinutes, durationMinutes, colorKey } = body;
 
   const token = await getValidToken(profileId);
   if (!token) {
@@ -244,6 +264,7 @@ export async function PATCH(request: NextRequest) {
         body: JSON.stringify({
           start: { dateTime: startTime, timeZone: "America/New_York" },
           end: { dateTime: endTime, timeZone: "America/New_York" },
+          ...(colorKey && COLOR_KEY_TO_GCAL[colorKey] ? { colorId: COLOR_KEY_TO_GCAL[colorKey] } : {}),
         }),
       }
     );

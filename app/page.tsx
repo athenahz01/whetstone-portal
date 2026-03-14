@@ -103,12 +103,14 @@ export default function Home() {
   }, [allStudents]);
 
   // Sync student sub-data (goals, tasks, etc.) from the linked student
+  const [studentDataLoaded, setStudentDataLoaded] = useState(false);
+
+  // For students/parents: fetch full data via API (bypasses RLS)
   useEffect(() => {
     if (!profile) return;
     const isStudentOrParent = profile.role === "student" || profile.role === "parent";
 
     if (isStudentOrParent && profile.student_id) {
-      // Fetch full student data via API (bypasses RLS for parent access)
       fetch(`/api/student-data?studentId=${profile.student_id}`)
         .then((r) => r.json())
         .then((data) => {
@@ -120,7 +122,6 @@ export default function Home() {
             setTests(s.tests || []);
             setActivities(s.acts || []);
             setHonors(s.honors || []);
-            // Also update allStudents so `me` resolves correctly
             setAllStudents((prev) => {
               const idx = prev.findIndex((p) => p.id === s.id);
               if (idx >= 0) {
@@ -131,20 +132,26 @@ export default function Home() {
               return [s, ...prev];
             });
           }
+          setStudentDataLoaded(true);
         })
-        .catch(() => {});
-    } else if (!isStudentOrParent) {
-      // Strategist: use allStudents data as before
-      const linkedStudent = allStudents[0];
-      if (linkedStudent) {
-        setGoals(linkedStudent.goals);
-        setTasks(linkedStudent.tasks);
-        setCourses(linkedStudent.courses);
-        setTests(linkedStudent.tests);
-        setActivities(linkedStudent.acts);
-        if (linkedStudent.id) {
-          fetchHonors(linkedStudent.id).then(setHonors);
-        }
+        .catch(() => setStudentDataLoaded(true));
+    } else {
+      setStudentDataLoaded(true);
+    }
+  }, [profile?.student_id, profile?.role]);
+
+  // For strategists: sync sub-data from allStudents
+  useEffect(() => {
+    if (!profile || profile.role === "student" || profile.role === "parent") return;
+    const linkedStudent = allStudents[0];
+    if (linkedStudent) {
+      setGoals(linkedStudent.goals);
+      setTasks(linkedStudent.tasks);
+      setCourses(linkedStudent.courses);
+      setTests(linkedStudent.tests);
+      setActivities(linkedStudent.acts);
+      if (linkedStudent.id) {
+        fetchHonors(linkedStudent.id).then(setHonors);
       }
     }
   }, [allStudents, profile]);
@@ -289,7 +296,7 @@ export default function Home() {
     return <LoginPage onLogin={handleLogin} />;
   }
 
-  if (loading || !profile) {
+  if (loading || !profile || !studentDataLoaded) {
     return (
       <div className="flex h-screen items-center justify-center bg-bg">
         <div className="text-center">

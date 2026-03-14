@@ -20,12 +20,12 @@ export function getGoogleAuthUrl(profileId: string) {
   );
 }
   
-  export async function pushToGoogleCalendar(profileId: string, title: string, date: string, description?: string, startMinutes?: number, durationMinutes?: number) {
+  export async function pushToGoogleCalendar(profileId: string, title: string, date: string, description?: string, startMinutes?: number, durationMinutes?: number, colorKey?: string) {
     try {
       const res = await fetch("/api/calendar/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ profileId, title, date, description, startMinutes, durationMinutes }),
+        body: JSON.stringify({ profileId, title, date, description, startMinutes, durationMinutes, colorKey }),
       });
       return await res.json();
     } catch (err) {
@@ -35,12 +35,12 @@ export function getGoogleAuthUrl(profileId: string) {
   }
 
   // Update an existing Whetstone event in GCal (for repositioning)
-  export async function updateGoogleCalendarEvent(profileId: string, title: string, date: string, startMinutes: number, durationMinutes: number) {
+  export async function updateGoogleCalendarEvent(profileId: string, title: string, date: string, startMinutes: number, durationMinutes: number, colorKey?: string) {
     try {
       const res = await fetch("/api/calendar/sync", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ profileId, title, date, startMinutes, durationMinutes }),
+        body: JSON.stringify({ profileId, title, date, startMinutes, durationMinutes, colorKey }),
       });
       return await res.json();
     } catch (err) {

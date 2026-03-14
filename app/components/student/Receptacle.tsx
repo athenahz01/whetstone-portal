@@ -411,7 +411,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
 
       // Auto-sync to Google Calendar
       if (profileId && gcalConnected) {
-        pushToGoogleCalendar(profileId, task.text, dateStr, `${task.minutes}min task`, clampedMinutes, task.minutes).then(() => {
+        pushToGoogleCalendar(profileId, task.text, dateStr, `${task.minutes}min task`, clampedMinutes, task.minutes, newEvent.color).then(() => {
           if (dbId) {
             updateReceptacleEvent(dbId, { synced: true });
           }
@@ -431,7 +431,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
 
       // Re-sync to Google Calendar if connected (update existing event, don't create duplicate)
       if (profileId && gcalConnected && existingEvent) {
-        updateGoogleCalendarEvent(profileId, existingEvent.text, dateStr, clampedMinutes, existingEvent.minutes);
+        updateGoogleCalendarEvent(profileId, existingEvent.text, dateStr, clampedMinutes, existingEvent.minutes, existingEvent.color);
       }
     }
   }, [dragging, draggingEvent, tasks, studentId, profileId, gcalConnected, calEvents, ghostPreview, getMinutesFromMouseY]);
@@ -450,6 +450,10 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
     const ev = calEvents.find((e) => e.taskId === taskId);
     if (ev?.dbId) {
       updateReceptacleEvent(ev.dbId, { quadrant: `color:${colorKey}` } as any);
+    }
+    // Sync color to GCal
+    if (profileId && gcalConnected && ev) {
+      updateGoogleCalendarEvent(profileId, ev.text, ev.date, ev.topMinutes, ev.minutes, colorKey);
     }
   };
 
@@ -486,7 +490,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
     setSyncDone(false);
     for (const ev of unsyncedEvents) {
       console.log("[Receptacle] Syncing event:", ev.text, ev.date, ev.topMinutes);
-      const result = await pushToGoogleCalendar(profileId, ev.text, ev.date, `${ev.minutes}min task`, ev.topMinutes, ev.minutes);
+      const result = await pushToGoogleCalendar(profileId, ev.text, ev.date, `${ev.minutes}min task`, ev.topMinutes, ev.minutes, ev.color);
       console.log("[Receptacle] Sync result:", result);
       if (ev.dbId) {
         await updateReceptacleEvent(ev.dbId, { synced: true });
