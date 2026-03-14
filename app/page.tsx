@@ -107,19 +107,44 @@ export default function Home() {
     if (!profile) return;
     const isStudentOrParent = profile.role === "student" || profile.role === "parent";
 
-    const linkedStudent = isStudentOrParent && profile.student_id
-      ? allStudents.find((s) => s.id === profile.student_id)
-      : allStudents[0];
-
-    if (linkedStudent) {
-      setGoals(linkedStudent.goals);
-      setTasks(linkedStudent.tasks);
-      setCourses(linkedStudent.courses);
-      setTests(linkedStudent.tests);
-      setActivities(linkedStudent.acts);
-
-      if (linkedStudent.id) {
-        fetchHonors(linkedStudent.id).then(setHonors);
+    if (isStudentOrParent && profile.student_id) {
+      // Fetch full student data via API (bypasses RLS for parent access)
+      fetch(`/api/student-data?studentId=${profile.student_id}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.student) {
+            const s = data.student;
+            setGoals(s.goals || []);
+            setTasks(s.tasks || []);
+            setCourses(s.courses || []);
+            setTests(s.tests || []);
+            setActivities(s.acts || []);
+            setHonors(s.honors || []);
+            // Also update allStudents so `me` resolves correctly
+            setAllStudents((prev) => {
+              const idx = prev.findIndex((p) => p.id === s.id);
+              if (idx >= 0) {
+                const updated = [...prev];
+                updated[idx] = s;
+                return updated;
+              }
+              return [s, ...prev];
+            });
+          }
+        })
+        .catch(() => {});
+    } else if (!isStudentOrParent) {
+      // Strategist: use allStudents data as before
+      const linkedStudent = allStudents[0];
+      if (linkedStudent) {
+        setGoals(linkedStudent.goals);
+        setTasks(linkedStudent.tasks);
+        setCourses(linkedStudent.courses);
+        setTests(linkedStudent.tests);
+        setActivities(linkedStudent.acts);
+        if (linkedStudent.id) {
+          fetchHonors(linkedStudent.id).then(setHonors);
+        }
       }
     }
   }, [allStudents, profile]);
@@ -360,11 +385,12 @@ export default function Home() {
           profileId={profileId}
           gcalConnected={gcalConnected}
           googleEvents={studentGoogleEvents}
+          readOnly={isParent}
         />
       );
     }
-    if (role === "student" && view === "prep" && me) {
-      return <SessionPrep student={me} onRefresh={handleRefresh} />;
+    if (isStudentOrParent && view === "prep" && me) {
+      return <SessionPrep student={me} onRefresh={handleRefresh} readOnly={isParent} />;
     }
 
     // ── Strategist views ──
