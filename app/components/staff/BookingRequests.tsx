@@ -232,7 +232,7 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
 
       {/* Session Detail Modal (Agenda/Notes) */}
       {detailModal && (
-        <Modal title={detailModal.session_name || "Session Details"} onClose={() => setDetailModal(null)}>
+        <Modal title={detailModal.session_name || "Session Details"} onClose={() => { setDetailModal(null); loadRequests(); }}>
           <div className="space-y-4">
             <div className="p-3 rounded-lg" style={{ background: "#252525", borderLeft: "3px solid #5A83F3" }}>
               <div className="text-sm font-semibold text-heading">{detailModal.session_name}</div>
@@ -241,48 +241,67 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
               </div>
             </div>
 
-            <div>
-              <div className="text-xs uppercase tracking-widest font-bold mb-2" style={{ color: "#505050" }}>Student</div>
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ background: "#7c3aed", color: "#fff" }}>
-                  {(detailModal.student_name || "?").split(" ").map((w: string) => w[0]).join("").substring(0, 2)}
-                </div>
-                <span className="text-sm text-heading">{detailModal.student_name}</span>
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ background: "#7c3aed", color: "#fff" }}>
+                {(detailModal.student_name || "?").split(" ").map((w: string) => w[0]).join("").substring(0, 2)}
               </div>
+              <span className="text-sm text-heading">{detailModal.student_name}</span>
+            </div>
+
+            {/* Tab toggle */}
+            <div className="flex gap-0.5 p-0.5 rounded-lg" style={{ background: "#252525", display: "inline-flex" }}>
+              {(["agenda", "notes"] as const).map((t) => (
+                <button key={t} onClick={() => setDetailModal({ ...detailModal, view: t })}
+                  className="px-4 py-1.5 rounded-md border-none cursor-pointer text-xs font-semibold capitalize"
+                  style={{ background: detailModal.view === t ? "#5A83F3" : "transparent", color: detailModal.view === t ? "#fff" : "#717171" }}>
+                  {t === "agenda" ? "Agenda" : "Notes"}
+                </button>
+              ))}
             </div>
 
             {detailModal.view === "agenda" && (
               <div>
                 <div className="text-xs uppercase tracking-widest font-bold mb-2" style={{ color: "#505050" }}>Agenda</div>
-                <div className="p-3 rounded-lg text-sm" style={{ background: "#252525" }}>
-                  {detailModal.notes ? (
-                    <div className="text-body whitespace-pre-wrap">{detailModal.notes}</div>
-                  ) : (
-                    <div className="text-faint text-center py-2">No agenda items yet</div>
-                  )}
-                </div>
+                <textarea
+                  defaultValue={detailModal.agenda || ""}
+                  placeholder="Add agenda items for this session..."
+                  rows={5}
+                  onBlur={async (e) => {
+                    const val = e.target.value;
+                    await fetch("/api/booking-requests", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ action: "update_notes", requestId: detailModal.id, agenda: val }),
+                    });
+                    setDetailModal({ ...detailModal, agenda: val });
+                  }}
+                  style={{ width: "100%", padding: "12px 14px", background: "#252525", border: "1.5px solid #333", borderRadius: 10, color: "#ebebeb", fontSize: 14, outline: "none", boxSizing: "border-box", resize: "vertical", lineHeight: 1.6, minHeight: 120 }}
+                />
+                <div className="text-[10px] mt-1" style={{ color: "#505050" }}>Auto-saves when you click away</div>
               </div>
             )}
 
             {detailModal.view === "notes" && (
               <div>
-                <div className="text-xs uppercase tracking-widest font-bold mb-2" style={{ color: "#505050" }}>Notes</div>
-                <div className="p-3 rounded-lg text-sm" style={{ background: "#252525" }}>
-                  {detailModal.notes ? (
-                    <div className="text-body whitespace-pre-wrap">{detailModal.notes}</div>
-                  ) : (
-                    <div className="text-faint text-center py-2">No notes recorded yet. Notes will appear here after the session.</div>
-                  )}
-                </div>
+                <div className="text-xs uppercase tracking-widest font-bold mb-2" style={{ color: "#505050" }}>Session Notes</div>
+                <textarea
+                  defaultValue={detailModal.session_notes || ""}
+                  placeholder="Take notes during or after the session..."
+                  rows={5}
+                  onBlur={async (e) => {
+                    const val = e.target.value;
+                    await fetch("/api/booking-requests", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ action: "update_notes", requestId: detailModal.id, session_notes: val }),
+                    });
+                    setDetailModal({ ...detailModal, session_notes: val });
+                  }}
+                  style={{ width: "100%", padding: "12px 14px", background: "#252525", border: "1.5px solid #333", borderRadius: 10, color: "#ebebeb", fontSize: 14, outline: "none", boxSizing: "border-box", resize: "vertical", lineHeight: 1.6, minHeight: 120 }}
+                />
+                <div className="text-[10px] mt-1" style={{ color: "#505050" }}>Auto-saves when you click away</div>
               </div>
             )}
-
-            <div>
-              <div className="text-xs uppercase tracking-widest font-bold mb-2" style={{ color: "#505050" }}>Status</div>
-              <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ background: "transparent", border: "1.5px solid #5A83F3", color: "#5A83F3" }}>
-                {detailModal.status}
-              </span>
-            </div>
           </div>
         </Modal>
       )}

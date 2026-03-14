@@ -134,6 +134,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
+    // Update agenda or session notes
+    case "update_notes": {
+      const { requestId, agenda, session_notes } = body;
+      const updateData: any = {};
+      if (agenda !== undefined) updateData.agenda = agenda;
+      if (session_notes !== undefined) updateData.session_notes = session_notes;
+      const { error } = await supabase.from("booking_requests").update(updateData).eq("id", requestId);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ success: true });
+    }
+
     default:
       return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   }
