@@ -7,7 +7,7 @@ import { PageHeader } from "../ui/PageHeader";
 import { Modal } from "../ui/Modal";
 
 interface SchoolsProps { student: Student; readOnly?: boolean; onRefresh?: () => void; }
-interface SchoolData { id: number; name: string; city: string; state: string; url: string; ownership: number; admissionRate: number|null; satAvg: number|null; satReading: number|null; satMath: number|null; actAvg: number|null; studentSize: number|null; tuitionInState: number|null; tuitionOutState: number|null; avgNetPrice: number|null; medianDebt: number|null; pellGrantRate: number|null; completionRate: number|null; medianEarnings: number|null; demographics: { white: number|null; black: number|null; hispanic: number|null; asian: number|null }; programs: { title: string; count: number }[]; }
+interface SchoolData { id: number; name: string; city: string; state: string; url: string; ownership: number; admissionRate: number|null; satAvg: number|null; satReading: number|null; satMath: number|null; sat25: number|null; sat75: number|null; actAvg: number|null; act25: number|null; act75: number|null; studentSize: number|null; tuitionInState: number|null; tuitionOutState: number|null; avgNetPrice: number|null; medianDebt: number|null; pellGrantRate: number|null; completionRate: number|null; medianEarnings: number|null; demographics: { white: number|null; black: number|null; hispanic: number|null; asian: number|null }; programs: { title: string; count: number }[]; }
 
 const tc: Record<string, string> = { reach: "#e55b5b", match: "#e5a83b", safety: "#4aba6a" };
 const ownerLabel = (o: number) => o === 1 ? "Public" : o === 2 ? "Private Nonprofit" : "Private";
@@ -32,6 +32,7 @@ export function Schools({ student, readOnly = false, onRefresh }: SchoolsProps) 
   const [detail, setDetail] = useState<SchoolData|null>(null);
   const [adding, setAdding] = useState(false);
   const [addType, setAddType] = useState<"reach"|"match"|"safety">("match");
+  const [schoolCache, setSchoolCache] = useState<Record<string, SchoolData>>({});
 
   const isOnList = (name: string) => student.schools.some(s => s.name.toLowerCase() === name.toLowerCase());
 
@@ -54,6 +55,30 @@ export function Schools({ student, readOnly = false, onRefresh }: SchoolsProps) 
     });
     if (onRefresh) onRefresh();
   };
+
+  const updateType = async (schoolId: number, newType: string) => {
+    await fetch("/api/student-schools", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "update", schoolId, type: newType }),
+    });
+    if (onRefresh) onRefresh();
+  };
+
+  // Fetch API data for saved schools on mount
+  useEffect(() => {
+    student.schools.forEach(s => {
+      if (!schoolCache[s.name]) {
+        fetch("/api/schools?q=" + encodeURIComponent(s.name))
+          .then(r => r.json())
+          .then(data => {
+            const match = (data.schools || []).find((sc: SchoolData) => sc.name.toLowerCase() === s.name.toLowerCase()) || (data.schools || [])[0];
+            if (match) setSchoolCache(prev => ({ ...prev, [s.name]: match }));
+          })
+          .catch(() => {});
+      }
+    });
+  }, [student.schools]);
 
   const doSearch = useCallback(async (q: string) => {
     if (q.length < 2) { setResults([]); return; }
@@ -126,29 +151,58 @@ export function Schools({ student, readOnly = false, onRefresh }: SchoolsProps) 
 
         {student.schools.length > 0 && (<>
           <h3 className="text-sm font-bold text-heading mb-3">My School List</h3>
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            {student.schools.map((s, i) => (
-              <Card key={i} style={{ borderTop: "3px solid " + tc[s.type], cursor: "pointer" }}>
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="m-0 text-base font-bold text-heading cursor-pointer" onClick={() => { setQuery(s.name); doSearch(s.name); }}>{s.name}</h3>
-                  <div className="flex items-center gap-2">
-                    <Tag color={tc[s.type]}>{s.type}</Tag>
-                    {!readOnly && (
-                      <button onClick={() => s.id && removeFromList(s.id)}
-                        className="text-[10px] bg-transparent border-none cursor-pointer" style={{ color: "#e55b5b" }}>✕</button>
-                    )}
+          <div className="flex flex-col gap-3 mb-6">
+            {student.schools.map((s, i) => {
+              const cached = schoolCache[s.name];
+              return (
+                <Card key={i} style={{ borderLeft: "3px solid " + tc[s.type], padding: 16 }}>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0 cursor-pointer" onClick={() => { if (cached) setDetail(cached); else { setQuery(s.name); doSearch(s.name); } }}>
+                      <div className="text-base font-bold text-heading">{s.name}</div>
+                      {cached && <div className="text-xs text-sub mt-0.5">{cached.city}, {cached.state} &middot; {ownerLabel(cached.ownership)}</div>}
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {/* Clickable type toggle */}
+                      {!readOnly && (["reach", "match", "safety"] as const).map(t => (
+                        <button key={t} onClick={() => s.id && updateType(s.id, t)}
+                          className="text-[10px] font-semibold px-2 py-1 rounded-full cursor-pointer"
+                          style={{ background: s.type === t ? tc[t] + "20" : "transparent", color: tc[t], border: s.type === t ? "1.5px solid " + tc[t] : "1.5px solid #333" }}>
+                          {t.charAt(0).toUpperCase() + t.slice(1)}
+                        </button>
+                      ))}
+                      {readOnly && <Tag color={tc[s.type]}>{s.type}</Tag>}
+                      {!readOnly && (
+                        <button onClick={() => s.id && removeFromList(s.id)}
+                          className="text-xs bg-transparent border-none cursor-pointer ml-1" style={{ color: "#e55b5b" }}>✕</button>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div className="flex gap-4 text-xs text-sub">
-                  <span>Status: {s.status || "\u2014"}</span>
-                  <span>Deadline: {s.deadline || "\u2014"}</span>
-                </div>
-                <div className="mt-2">
-                  <button onClick={() => { setQuery(s.name); doSearch(s.name); }}
-                    className="text-[10px] font-semibold bg-transparent border-none cursor-pointer" style={{ color: "#5A83F3" }}>View Details →</button>
-                </div>
-              </Card>
-            ))}
+                  {/* Quick stats row */}
+                  {cached && (
+                    <div className="flex items-center gap-5 mt-3 pt-3 border-t border-line">
+                      {cached.admissionRate != null && (
+                        <div><div className="text-[10px] text-faint uppercase">Accept</div><div className="text-sm font-bold" style={{ color: rateColor(cached.admissionRate) }}>{pct(cached.admissionRate)}</div></div>
+                      )}
+                      {(cached.sat25 || cached.satAvg) && (
+                        <div><div className="text-[10px] text-faint uppercase">SAT</div><div className="text-sm font-bold text-heading">{cached.sat25 && cached.sat75 ? `${cached.sat25}–${cached.sat75}` : cached.satAvg}</div></div>
+                      )}
+                      {(cached.act25 || cached.actAvg) && (
+                        <div><div className="text-[10px] text-faint uppercase">ACT</div><div className="text-sm font-bold text-heading">{cached.act25 && cached.act75 ? `${cached.act25}–${cached.act75}` : cached.actAvg}</div></div>
+                      )}
+                      {cached.studentSize != null && (
+                        <div><div className="text-[10px] text-faint uppercase">Size</div><div className="text-sm font-bold text-heading">{numFmt(cached.studentSize)}</div></div>
+                      )}
+                      <div className="flex-1" />
+                      <button onClick={() => { if (cached) setDetail(cached); }}
+                        className="text-[10px] font-semibold bg-transparent border-none cursor-pointer" style={{ color: "#5A83F3" }}>View Details →</button>
+                    </div>
+                  )}
+                  {!cached && (
+                    <div className="mt-2 text-xs text-faint">Loading stats...</div>
+                  )}
+                </Card>
+              );
+            })}
           </div>
         </>)}
 
@@ -199,8 +253,8 @@ export function Schools({ student, readOnly = false, onRefresh }: SchoolsProps) 
             <h4 className="text-xs font-bold uppercase tracking-wider text-sub mb-2">Admissions</h4>
             <div className="grid grid-cols-3 gap-2.5 mb-5">
               <Stat label="Acceptance Rate" value={pct(detail.admissionRate)} color={rateColor(detail.admissionRate)} />
-              <Stat label="SAT Average" value={detail.satAvg ? String(detail.satAvg) : "\u2014"} sub={detail.satReading && detail.satMath ? "R: " + detail.satReading + " \u00b7 M: " + detail.satMath : undefined} />
-              <Stat label="ACT Average" value={detail.actAvg ? String(detail.actAvg) : "\u2014"} />
+              <Stat label="SAT" value={detail.satAvg ? String(detail.satAvg) : "\u2014"} sub={detail.sat25 && detail.sat75 ? `25th: ${detail.sat25} \u00b7 75th: ${detail.sat75}` : detail.satReading && detail.satMath ? "R: " + detail.satReading + " \u00b7 M: " + detail.satMath : undefined} />
+              <Stat label="ACT" value={detail.actAvg ? String(detail.actAvg) : "\u2014"} sub={detail.act25 && detail.act75 ? `25th: ${detail.act25} \u00b7 75th: ${detail.act75}` : undefined} />
             </div>
 
             <h4 className="text-xs font-bold uppercase tracking-wider text-sub mb-2">Student Body &amp; Outcomes</h4>
