@@ -1,6 +1,7 @@
 "use client";
 
 import { getGoogleAuthUrl } from "../../lib/calendar";
+import { isMentor } from "../../lib/constants";
 import { useState } from "react";
 
 const TIMEZONES = [
@@ -21,6 +22,7 @@ const TIMEZONES = [
 interface SidebarProps {
   role: "student" | "strategist" | "parent";
   isAdmin?: boolean;
+  userEmail?: string;
   view: string;
   setView: (v: string) => void;
   collapsed: boolean;
@@ -37,6 +39,7 @@ interface SidebarProps {
 export function Sidebar({
   role,
   isAdmin,
+  userEmail,
   view,
   setView,
   collapsed,
@@ -100,7 +103,9 @@ export function Sidebar({
       : name;
 
   const userRole =
-    role === "strategist" ? "Mentor" : role === "parent" ? "Parent" : "Student";
+    role === "strategist"
+      ? (isMentor(userEmail || "") ? "Mentor" : "Specialist")
+      : role === "parent" ? "Parent" : "Student";
 
   const currentTzLabel =
     TIMEZONES.find((t) => t.value === timezone)?.label || timezone || "Eastern (ET)";
@@ -141,7 +146,9 @@ export function Sidebar({
             ? "Parent"
             : isAdmin
             ? "Admin"
-            : "Mentor"}
+            : isMentor(userEmail || "")
+            ? "Mentor"
+            : "Specialist"}
           {role === "parent" && (
             <span className="ml-1.5 text-[9px] opacity-60 normal-case tracking-normal">
               (view only)

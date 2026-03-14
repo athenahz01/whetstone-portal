@@ -488,6 +488,7 @@ export default function Home() {
       <Sidebar
         role={role}
         isAdmin={isAdmin}
+        userEmail={userEmail || ""}
         view={view}
         setView={setView}
         collapsed={!sidebarOpen}

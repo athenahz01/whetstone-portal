@@ -7,6 +7,7 @@ import { Modal } from "../ui/Modal";
 import { FormField } from "../ui/FormField";
 import { Student } from "../../types";
 import { addStudent } from "../../lib/queries";
+import { isMentor } from "../../lib/constants";
 
 interface AdminPanelProps { students: Student[]; onRefresh: () => void; }
 interface AdminUser { id: string; email: string; name: string; role: string; studentId: number|null; status: string; lastSignIn: string|null; createdAt: string; password: string|null; }
@@ -52,10 +53,14 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
   };
 
   let filtered = users;
-  if (filterRole !== "all") filtered = filtered.filter(u => u.role === filterRole);
+  if (filterRole === "mentor") filtered = filtered.filter(u => u.role === "strategist" && isMentor(u.email));
+  else if (filterRole === "specialist") filtered = filtered.filter(u => u.role === "strategist" && !isMentor(u.email));
+  else if (filterRole !== "all") filtered = filtered.filter(u => u.role === filterRole);
   if (search.trim()) { const q = search.toLowerCase(); filtered = filtered.filter(u => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)); }
 
-  const stats = { total:users.length, strategists:users.filter(u=>u.role==="strategist").length, students:users.filter(u=>u.role==="student").length, parents:users.filter(u=>u.role==="parent").length, active:users.filter(u=>u.status==="active").length };
+  const mentorCount = users.filter(u => u.role === "strategist" && isMentor(u.email)).length;
+  const specialistCount = users.filter(u => u.role === "strategist" && !isMentor(u.email)).length;
+  const stats = { total:users.length, mentors:mentorCount, specialists:specialistCount, students:users.filter(u=>u.role==="student").length, parents:users.filter(u=>u.role==="parent").length, active:users.filter(u=>u.status==="active").length };
 
   const timeAgo = (d: string|null) => {
     if (!d) return "Never";
@@ -121,18 +126,18 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
       <PageHeader title="User Management" sub={`${stats.total} users · ${stats.active} active`}
         right={<Button primary onClick={() => { setShowCreate(true); setCreateResult(null); setError(null); setSelectedRole("student"); }}>+ Add New User</Button>} />
       <div className="p-6 px-8">
-        <div className="grid grid-cols-4 gap-3 mb-5">
-          {[{l:"Total",c:stats.total,cl:"#ebebeb"},{l:"Mentors",c:stats.strategists,cl:"#a480f2"},{l:"Students",c:stats.students,cl:"#5A83F3"},{l:"Parents",c:stats.parents,cl:"#e5a83b"}].map(s=>(
+        <div className="grid grid-cols-5 gap-3 mb-5">
+          {[{l:"Total",c:stats.total,cl:"#ebebeb"},{l:"Mentors",c:stats.mentors,cl:"#a480f2"},{l:"Specialists",c:stats.specialists,cl:"#4aba6a"},{l:"Students",c:stats.students,cl:"#5A83F3"},{l:"Parents",c:stats.parents,cl:"#e5a83b"}].map(s=>(
             <Card key={s.l} style={{padding:14}}><div className="text-center"><div className="text-2xl font-bold" style={{color:s.cl}}>{s.c}</div><div className="text-xs text-sub mt-0.5">{s.l}</div></div></Card>
           ))}
         </div>
 
         <div className="flex items-center gap-3 mb-4">
           <div className="flex gap-1">
-            {["all","strategist","student","parent"].map(r=>(
+            {["all","mentor","specialist","student","parent"].map(r=>(
               <button key={r} onClick={()=>setFilterRole(r)} className="px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer"
                 style={{background:filterRole===r?"rgba(82,139,255,0.12)":"#252525",color:filterRole===r?"#7aabff":"#717171",border:filterRole===r?"1.5px solid #5A83F3":"1.5px solid #333"}}>
-                {r==="all"?"All Users":r==="strategist"?"Mentors":r.charAt(0).toUpperCase()+r.slice(1)+"s"}
+                {r==="all"?"All Users":r==="mentor"?"Mentors":r==="specialist"?"Specialists":r.charAt(0).toUpperCase()+r.slice(1)+"s"}
               </button>
             ))}
           </div>
@@ -161,7 +166,7 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
                 <button onClick={()=>setShowEditUser(u)} className="text-sm font-medium bg-transparent border-none cursor-pointer p-0 truncate" style={{color:"#7aabff"}}>{u.name}</button>
               </div>
               <div className="text-xs text-body truncate">{u.email}</div>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{background:`${RC[u.role]}15`,color:RC[u.role]}}>{u.role === "strategist" ? "mentor" : u.role}</span>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{background:`${RC[u.role]}15`,color:RC[u.role]}}>{u.role === "strategist" ? (isMentor(u.email) ? "mentor" : "specialist") : u.role}</span>
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full cursor-pointer" onClick={()=>handleToggle(u)}
                 style={{background:u.status==="active"?"rgba(74,186,106,0.08)":u.status==="suspended"?"rgba(229,91,91,0.08)":"rgba(229,168,59,0.08)",color:u.status==="active"?"#4aba6a":u.status==="suspended"?"#e55b5b":"#e5a83b"}}>
                 {u.status}
