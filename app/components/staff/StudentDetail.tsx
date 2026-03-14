@@ -353,22 +353,22 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
 
         {/* ── Main Grid ────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 gap-3.5">
-          {/* Deadlines */}
+          {/* Tasks */}
           <Card>
             <div className="flex justify-between items-center mb-3.5">
-              <h3 className="m-0 text-lg font-bold text-heading">Deadlines</h3>
+              <h3 className="m-0 text-lg font-bold text-heading">Tasks</h3>
               <button
                 onClick={() => setAddingDeadline(true)}
                 className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
                 style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff", border: "1px solid #bfdbfe" }}
               >
-                + Add Deadline
+                + Add Task
               </button>
             </div>
-            {s.dl.length === 0 && (
-              <p className="text-sm text-sub py-4 text-center">No deadlines yet</p>
+            {s.dl.filter((d) => d.status !== "completed").length === 0 && (
+              <p className="text-sm text-sub py-4 text-center">No active tasks</p>
             )}
-            {s.dl.sort((a, b) => a.days - b.days).map((d) => {
+            {s.dl.filter((d) => d.status !== "completed").sort((a, b) => a.days - b.days).map((d) => {
               const isStrategistCreated = !d.createdBy || d.createdBy === "strategist";
               return (
                 <div
@@ -385,7 +385,7 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
                       <span className="truncate">{d.title}</span>
                       {/* Lock icon for strategist-created deadlines */}
                       {isStrategistCreated && (
-                        <span className="text-[10px] flex-shrink-0 text-faint" title="Added by strategist">🔒</span>
+                        <span className="text-[10px] flex-shrink-0 text-faint" title="Added by mentor">🔒</span>
                       )}
                       {d.googleDocLink && (
                         <span
@@ -488,7 +488,7 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
 
       {/* ── Add Deadline Modal (strategist) ──────────────────────────────── */}
       {addingDeadline && (
-        <Modal title="Add Deadline" onClose={() => setAddingDeadline(false)}>
+        <Modal title="Add Task" onClose={() => setAddingDeadline(false)}>
           <form onSubmit={handleAddDeadline}>
             <FormField label="Title">
               <input required name="title" placeholder="e.g. Common App Essay Draft" style={inputStyle} />
@@ -516,7 +516,7 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
             </FormField>
             <div className="flex gap-2 justify-end mt-3">
               <Button onClick={() => setAddingDeadline(false)}>Cancel</Button>
-              <Button primary type="submit">{saving ? "Adding..." : "Add Deadline"}</Button>
+              <Button primary type="submit">{saving ? "Adding..." : "Add Task"}</Button>
             </div>
           </form>
         </Modal>
@@ -524,7 +524,7 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
 
       {/* ── Edit Deadline Modal (strategist — all deadlines editable) ────── */}
       {editingDeadline && (
-        <Modal title="Edit Deadline" onClose={() => setEditingDeadline(null)}>
+        <Modal title="Edit Task" onClose={() => setEditingDeadline(null)}>
           <form onSubmit={handleSaveDeadline}>
             <FormField label="Title">
               <input required name="title" defaultValue={editingDeadline.title} style={inputStyle} />
