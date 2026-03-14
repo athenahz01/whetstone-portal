@@ -408,7 +408,7 @@ export default function Home() {
           onSelectStudent={setSelectedStudent}
           onNavigate={setView}
           onRefresh={handleRefresh}
-          counselorName={profile?.display_name || "Strategist"}
+          counselorName={profile?.display_name || "Mentor"}
           refreshing={refreshing}
           strategistEmail={userEmail || ""}
         />
@@ -495,7 +495,7 @@ export default function Home() {
         onSignOut={handleSignOut}
         studentName={
           role === "strategist"
-            ? profile?.display_name || "Strategist"
+            ? profile?.display_name || "Mentor"
             : me?.name || profile?.display_name || "Student"
         }
         profileId={profileId}

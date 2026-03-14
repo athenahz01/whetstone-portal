@@ -57,7 +57,7 @@ export function Sidebar({
           ["dashboard", "Dashboard"],
           ["master", "Timeline"],
           ["caseload", "Students"],
-          ["booking-requests", "Classes"],
+          ["booking-requests", "Sessions"],
           ["analytics", "Analytics"],
           ...(isAdmin ? [["admin", "Admin"]] : []),
         ]
@@ -71,7 +71,7 @@ export function Sidebar({
           ["honors", "Honors"],
           ["receptacle", "Planning"],
           ["schools", "Schools"],
-          ...(role === "student" ? [["prep", "Sessions"]] : []),
+          ...((role === "student" || role === "parent") ? [["prep", "Sessions"]] : []),
         ];
 
   const name = studentName || "User";
@@ -100,7 +100,7 @@ export function Sidebar({
       : name;
 
   const userRole =
-    role === "strategist" ? "Strategist" : role === "parent" ? "Parent" : "Student";
+    role === "strategist" ? "Mentor" : role === "parent" ? "Parent" : "Student";
 
   const currentTzLabel =
     TIMEZONES.find((t) => t.value === timezone)?.label || timezone || "Eastern (ET)";
@@ -141,7 +141,7 @@ export function Sidebar({
             ? "Parent"
             : isAdmin
             ? "Admin"
-            : "Strategist"}
+            : "Mentor"}
           {role === "parent" && (
             <span className="ml-1.5 text-[9px] opacity-60 normal-case tracking-normal">
               (view only)

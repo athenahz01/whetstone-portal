@@ -32,9 +32,10 @@ interface WeeklyCalendarProps {
   rows: CalendarRow[];
   personalRow?: CalendarRow | null;
   startDate?: Date;
+  onCellClick?: (studentId: string | number, date: string, studentName: string) => void;
 }
 
-export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarProps) {
+export function WeeklyCalendar({ rows, personalRow, startDate, onCellClick }: WeeklyCalendarProps) {
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
@@ -101,8 +102,16 @@ export function WeeklyCalendar({ rows, personalRow, startDate }: WeeklyCalendarP
 
         {days.map((d, i) => {
           const dayEvents = getEventsForDay(row.events, d);
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, "0");
+          const dd = String(d.getDate()).padStart(2, "0");
+          const cellDate = `${y}-${m}-${dd}`;
           return (
-            <div key={i} className="flex-1 border-r border-line p-0.5 flex flex-col gap-0.5" style={{ minWidth: 0 }}>
+            <div key={i}
+              className="flex-1 border-r border-line p-0.5 flex flex-col gap-0.5 cursor-pointer hover:bg-mist transition-colors"
+              style={{ minWidth: 0, minHeight: 28 }}
+              onClick={() => onCellClick?.(row.id, cellDate, row.name)}
+            >
               {dayEvents.map((evt, idx) => {
                 const hasLink = evt.meetingLink && evt.meetingLink.length > 0;
                 return (

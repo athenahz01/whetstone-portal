@@ -129,7 +129,7 @@ export function StudentDeadlines({ deadlines, studentId, onRefresh, readOnly = f
                   <span className="truncate">{d.title}</span>
                   {!isOwn && (
                     <span className="text-[10px] text-faint flex-shrink-0" title="Added by your strategist">
-                      🔒 Strategist
+                      🔒 Mentor
                     </span>
                   )}
                   {isOwn && (

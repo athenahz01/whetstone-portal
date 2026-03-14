@@ -109,7 +109,7 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
   return (
     <div>
       <PageHeader
-        title="Classes"
+        title="Sessions"
         sub={`${pending.length} pending · ${upcoming.length} upcoming · ${past.length} past`}
         right={
           <button onClick={() => setShowCreateModal(true)}

@@ -122,7 +122,7 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
         right={<Button primary onClick={() => { setShowCreate(true); setCreateResult(null); setError(null); setSelectedRole("student"); }}>+ Add New User</Button>} />
       <div className="p-6 px-8">
         <div className="grid grid-cols-4 gap-3 mb-5">
-          {[{l:"Total",c:stats.total,cl:"#ebebeb"},{l:"Strategists",c:stats.strategists,cl:"#a480f2"},{l:"Students",c:stats.students,cl:"#5A83F3"},{l:"Parents",c:stats.parents,cl:"#e5a83b"}].map(s=>(
+          {[{l:"Total",c:stats.total,cl:"#ebebeb"},{l:"Mentors",c:stats.strategists,cl:"#a480f2"},{l:"Students",c:stats.students,cl:"#5A83F3"},{l:"Parents",c:stats.parents,cl:"#e5a83b"}].map(s=>(
             <Card key={s.l} style={{padding:14}}><div className="text-center"><div className="text-2xl font-bold" style={{color:s.cl}}>{s.c}</div><div className="text-xs text-sub mt-0.5">{s.l}</div></div></Card>
           ))}
         </div>
@@ -132,7 +132,7 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
             {["all","strategist","student","parent"].map(r=>(
               <button key={r} onClick={()=>setFilterRole(r)} className="px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer"
                 style={{background:filterRole===r?"rgba(82,139,255,0.12)":"#252525",color:filterRole===r?"#7aabff":"#717171",border:filterRole===r?"1.5px solid #5A83F3":"1.5px solid #333"}}>
-                {r==="all"?"All Users":r.charAt(0).toUpperCase()+r.slice(1)+"s"}
+                {r==="all"?"All Users":r==="strategist"?"Mentors":r.charAt(0).toUpperCase()+r.slice(1)+"s"}
               </button>
             ))}
           </div>
@@ -161,7 +161,7 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
                 <button onClick={()=>setShowEditUser(u)} className="text-sm font-medium bg-transparent border-none cursor-pointer p-0 truncate" style={{color:"#7aabff"}}>{u.name}</button>
               </div>
               <div className="text-xs text-body truncate">{u.email}</div>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{background:`${RC[u.role]}15`,color:RC[u.role]}}>{u.role}</span>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{background:`${RC[u.role]}15`,color:RC[u.role]}}>{u.role === "strategist" ? "mentor" : u.role}</span>
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full cursor-pointer" onClick={()=>handleToggle(u)}
                 style={{background:u.status==="active"?"rgba(74,186,106,0.08)":u.status==="suspended"?"rgba(229,91,91,0.08)":"rgba(229,168,59,0.08)",color:u.status==="active"?"#4aba6a":u.status==="suspended"?"#e55b5b":"#e5a83b"}}>
                 {u.status}
@@ -181,7 +181,7 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
 
         {/* ── Caseload Management ── */}
         <h3 className="text-base font-bold text-heading mt-6 mb-3">Caseload Assignments</h3>
-        <p className="text-xs text-sub mb-4 mt-0">Assign which students each strategist can see. Strategists with no assignments see all students.</p>
+        <p className="text-xs text-sub mb-4 mt-0">Assign which students each mentor can see. Mentors with no assignments see all students.</p>
         <div className="grid grid-cols-2 gap-3">
           {users.filter(u => u.role === "strategist").map(strat => {
             const assigned = caseloadAssignments[strat.email] || [];
@@ -241,7 +241,7 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
           <FormField label="Role"><div className="flex gap-2">{(["student","parent","strategist"] as const).map(r=>(
             <button key={r} type="button" onClick={()=>setSelectedRole(r)} className="flex-1 py-2 rounded-lg text-sm font-semibold cursor-pointer"
               style={{background:selectedRole===r?`${RC[r]}15`:"#1e1e1e",color:selectedRole===r?RC[r]:"#717171",border:selectedRole===r?`1.5px solid ${RC[r]}`:"1.5px solid #333"}}>
-              {r.charAt(0).toUpperCase()+r.slice(1)}
+              {r === "strategist" ? "Mentor" : r.charAt(0).toUpperCase()+r.slice(1)}
             </button>
           ))}</div></FormField>
           <div className="grid grid-cols-2 gap-3"><FormField label="Full Name"><input required name="name" placeholder="John Smith" style={IS}/></FormField><FormField label="Email"><input required name="email" type="email" placeholder="john@example.com" style={IS}/></FormField></div>
@@ -276,7 +276,7 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
       {showEditUser && <Modal title={`Edit User — ${showEditUser.name}`} onClose={()=>setShowEditUser(null)}>
         <form onSubmit={handleEditUser}>
           <div className="grid grid-cols-2 gap-3"><FormField label="Name"><input required name="name" defaultValue={showEditUser.name} style={IS}/></FormField><FormField label="Email"><input required name="email" type="email" defaultValue={showEditUser.email} style={IS}/></FormField></div>
-          <FormField label="Role"><select name="role" defaultValue={showEditUser.role} style={IS}><option value="student">Student</option><option value="parent">Parent</option><option value="strategist">Strategist</option></select></FormField>
+          <FormField label="Role"><select name="role" defaultValue={showEditUser.role} style={IS}><option value="student">Student</option><option value="parent">Parent</option><option value="strategist">Mentor</option></select></FormField>
           <div className="flex justify-between mt-3">
             <button type="button" onClick={()=>handleDelete(showEditUser.id)} className="px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer" style={{background:"rgba(229,91,91,0.08)",color:"#e55b5b",border:"1px solid rgba(229,91,91,0.2)"}}>Delete User</button>
             <div className="flex gap-2"><Button onClick={()=>setShowEditUser(null)}>Cancel</Button><Button primary type="submit">{saving?"Updating...":"Update User"}</Button></div>

@@ -223,6 +223,8 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
     setEditingCell(null);
   };
   const [saving, setSaving] = useState(false);
+  const [prefillStudent, setPrefillStudent] = useState<number | null>(null);
+  const [prefillDate, setPrefillDate] = useState<string>("");
   const [counselorEvents, setCounselorEvents] = useState<any[]>([]);
   const [googleEvents, setGoogleEvents] = useState<any[]>([]);
   const [sortField, setSortField] = useState<SortField>("due");
@@ -444,11 +446,10 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
     <div>
       <PageHeader
         title="Timeline"
-        sub="All deadlines at a glance."
+        sub="All tasks at a glance."
         right={
           <div className="flex gap-2 items-center">
-            <Button onClick={() => setShowDeadlineModal(true)}>+ New Deadline</Button>
-            <Button primary onClick={() => setShowModal(true)}>+ New Event</Button>
+            <Button primary onClick={() => setShowDeadlineModal(true)}>+ New Task</Button>
           </div>
         }
       />
@@ -521,7 +522,13 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
         </div>
 
         {viewMode === "calendar" ? (
-          <WeeklyCalendar rows={calendarRows} personalRow={personalRow} />
+          <WeeklyCalendar rows={calendarRows} personalRow={personalRow} onCellClick={(studentId, date) => {
+            const sid = typeof studentId === "string" ? parseInt(studentId as string) : studentId as number;
+            if (isNaN(sid) || sid === 0) return;
+            setPrefillStudent(sid);
+            setPrefillDate(date);
+            setShowDeadlineModal(true);
+          }} />
         ) : (
           <div className="border border-line rounded-xl overflow-hidden" style={{ background: "#1e1e1e" }}>
             {/* Table Header with per-column filters */}
@@ -750,7 +757,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
                   <span className="w-2 h-2 rounded-full" style={{ background: "#505050" }} /> Planned
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="text-[10px]">📅</span> Strategist Event
+                  <span className="text-[10px]">📅</span> Mentor Event
                 </span>
               </div>
             </div>
@@ -800,7 +807,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
 
       {/* Create Deadline Modal */}
       {showDeadlineModal && (
-        <Modal title="Create Deadline" onClose={() => setShowDeadlineModal(false)}>
+        <Modal title="Create Task" onClose={() => { setShowDeadlineModal(false); setPrefillStudent(null); setPrefillDate(""); }}>
           <form onSubmit={async (e) => {
             e.preventDefault();
             setSaving(true);
@@ -824,12 +831,12 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
               actual_deadline: actualDeadline || undefined,
             });
             if (onRefresh) await onRefresh();
-            setSaving(false); setShowDeadlineModal(false);
+            setSaving(false); setShowDeadlineModal(false); setPrefillStudent(null); setPrefillDate("");
           }}>
             <FormField label="Title"><input required name="title" placeholder="e.g. Send Jing school tour links for Columbia" style={inputStyle} /></FormField>
             <div className="grid grid-cols-2 gap-3">
               <FormField label="Student">
-                <select required name="student" style={inputStyle}>
+                <select required name="student" defaultValue={prefillStudent || ""} style={inputStyle}>
                   {students.map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}
                 </select>
               </FormField>
@@ -843,7 +850,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
               </FormField>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <FormField label="Due Date (Internal)"><input required name="due" type="date" style={inputStyle} /></FormField>
+              <FormField label="Due Date (Internal)"><input required name="due" type="date" defaultValue={prefillDate || ""} style={inputStyle} /></FormField>
               <FormField label="Actual Deadline (optional)">
                 <input name="actualDeadline" type="date" style={inputStyle} />
                 <div className="text-[10px] mt-1" style={{ color: "#717171" }}>Set internal due 48h before this date</div>
@@ -863,7 +870,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
             </div>
             <div className="flex justify-end gap-2 mt-2">
               <Button onClick={() => setShowDeadlineModal(false)}>Cancel</Button>
-              <Button primary type="submit">{saving ? "Creating..." : "Create Deadline"}</Button>
+              <Button primary type="submit">{saving ? "Creating..." : "Create Task"}</Button>
             </div>
           </form>
         </Modal>

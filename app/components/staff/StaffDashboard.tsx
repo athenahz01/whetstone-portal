@@ -37,7 +37,7 @@ export function StaffDashboard({
   onNavigate,
   onRefresh,
   refreshing = false,
-  counselorName = "Strategist",
+  counselorName = "Mentor",
   strategistEmail = "",
 }: StaffDashboardProps) {
   const [showInactiveModal, setShowInactiveModal] = useState(false);
