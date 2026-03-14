@@ -11,7 +11,7 @@ import { isMentor } from "../../lib/constants";
 
 interface AdminPanelProps { students: Student[]; onRefresh: () => void; }
 interface AdminUser { id: string; email: string; name: string; role: string; studentId: number|null; status: string; lastSignIn: string|null; createdAt: string; password: string|null; }
-const RC: Record<string,string> = { strategist:"#a480f2", student:"#5A83F3", parent:"#e5a83b", unknown:"#505050" };
+const RC: Record<string,string> = { strategist:"#a480f2", mentor:"#a480f2", specialist:"#4aba6a", student:"#5A83F3", parent:"#e5a83b", unknown:"#505050" };
 
 export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -158,15 +158,19 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
           : filtered.map(u=>(
             <div key={u.id} className="grid items-center px-4 py-3 border-b border-line hover:bg-raised group cursor-pointer"
               style={{gridTemplateColumns:"2fr 2fr 80px 90px 110px 140px"}}>
+              {(() => {
+                const displayRole = u.role === "strategist" ? (isMentor(u.email) ? "mentor" : "specialist") : u.role;
+                const roleColor = RC[displayRole] || RC[u.role] || "#505050";
+                return (<>
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
-                  style={{background:`${RC[u.role]||"#505050"}20`,color:RC[u.role]||"#505050"}}>
+                  style={{background:`${roleColor}20`,color:roleColor}}>
                   {u.name.split(" ").map(w=>w[0]).join("").toUpperCase().substring(0,2)}
                 </div>
                 <button onClick={()=>setShowEditUser(u)} className="text-sm font-medium bg-transparent border-none cursor-pointer p-0 truncate" style={{color:"#7aabff"}}>{u.name}</button>
               </div>
               <div className="text-xs text-body truncate">{u.email}</div>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{background:`${RC[u.role]}15`,color:RC[u.role]}}>{u.role === "strategist" ? (isMentor(u.email) ? "mentor" : "specialist") : u.role}</span>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{background:`${roleColor}15`,color:roleColor}}>{displayRole}</span>
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full cursor-pointer" onClick={()=>handleToggle(u)}
                 style={{background:u.status==="active"?"rgba(74,186,106,0.08)":u.status==="suspended"?"rgba(229,91,91,0.08)":"rgba(229,168,59,0.08)",color:u.status==="active"?"#4aba6a":u.status==="suspended"?"#e55b5b":"#e5a83b"}}>
                 {u.status}
@@ -179,6 +183,8 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
                   <button onClick={()=>copy(u.password!)} className="text-[9px] bg-transparent border-none cursor-pointer" style={{color:"#a480f2"}}>copy</button>
                 </> : <button onClick={()=>{setShowResetPw(u);setResetResult(null);setPwMode("auto");setManualPw("")}} className="text-[9px] bg-transparent border-none cursor-pointer" style={{color:"#e5a83b"}}>set password</button>}
               </div>
+              </>);
+              })()}
             </div>
           ))}
           {/* Hover row actions */}
