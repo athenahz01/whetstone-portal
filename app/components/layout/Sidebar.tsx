@@ -55,9 +55,9 @@ export function Sidebar({
     role === "strategist"
       ? [
           ["dashboard", "Dashboard"],
-          ["master", "Master Timeline"],
-          ["caseload", "Caseload"],
-          ["booking-requests", "Booking Requests"],
+          ["master", "Timeline"],
+          ["caseload", "Students"],
+          ["booking-requests", "Classes"],
           ["analytics", "Analytics"],
           ...(isAdmin ? [["admin", "Admin"]] : []),
         ]

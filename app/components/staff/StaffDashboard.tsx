@@ -4,9 +4,8 @@ import { useState, useEffect, useMemo } from "react";
 import { Student } from "../../types";
 import { Card } from "../ui/Card";
 import { Tag } from "../ui/Tag";
-import { MetricCard } from "../ui/MetricCard";
 import { PageHeader } from "../ui/PageHeader";
-import { getCategoryColor } from "../../lib/colors";
+import { getCategoryColor, getStatusColor } from "../../lib/colors";
 
 interface StaffDashboardProps {
   students: Student[];
@@ -15,11 +14,9 @@ interface StaffDashboardProps {
   onRefresh?: () => void;
   refreshing?: boolean;
   counselorName?: string;
+  strategistEmail?: string;
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 function daysSinceLogin(lastLogin: string | null | undefined): number {
   if (!lastLogin || lastLogin === "Never" || lastLogin === "") return Infinity;
   const parsed = new Date(lastLogin);
@@ -27,17 +24,13 @@ function daysSinceLogin(lastLogin: string | null | undefined): number {
   return Math.floor((Date.now() - parsed.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-function formatLastLogin(lastLogin: string | null | undefined): string {
-  const days = daysSinceLogin(lastLogin);
-  if (days === Infinity) return "Never";
-  if (days === 0) return "Today";
-  if (days === 1) return "Yesterday";
-  return `${days}d ago`;
+function hoursSinceLogin(lastLogin: string | null | undefined): number {
+  if (!lastLogin || lastLogin === "Never" || lastLogin === "") return Infinity;
+  const parsed = new Date(lastLogin);
+  if (isNaN(parsed.getTime())) return Infinity;
+  return Math.floor((Date.now() - parsed.getTime()) / (1000 * 60 * 60));
 }
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
 export function StaffDashboard({
   students,
   onSelectStudent,
@@ -45,45 +38,71 @@ export function StaffDashboard({
   onRefresh,
   refreshing = false,
   counselorName = "Strategist",
+  strategistEmail = "",
 }: StaffDashboardProps) {
   const [showInactiveModal, setShowInactiveModal] = useState(false);
-  const [authLogins, setAuthLogins] = useState<Record<string, string | null>>({});
+  const [pendingCount, setPendingCount] = useState(0);
 
-  // Fetch real last_sign_in from Supabase Auth via admin API
+  // Fetch actual pending booking requests from API
   useEffect(() => {
-    fetch("/api/admin/users")
-      .then(r => r.json())
-      .then(data => {
-        const map: Record<string, string | null> = {};
-        for (const u of (data.users || [])) {
-          if (u.studentId) map[u.studentId] = u.lastSignIn;
-          // Also try matching by email
-          if (u.email) map[`email:${u.email}`] = u.lastSignIn;
-        }
-        setAuthLogins(map);
+    if (!strategistEmail) return;
+    fetch(`/api/booking-requests?strategistEmail=${encodeURIComponent(strategistEmail)}`)
+      .then((r) => r.json())
+      .then((d) => {
+        const pending = (d.requests || []).filter((r: any) => r.status === "pending" || r.status === "countered");
+        setPendingCount(pending.length);
       })
-      .catch(() => {});
-  }, []);
+      .catch(() => setPendingCount(0));
+  }, [strategistEmail]);
 
-  // Get the real last login for a student (prefer auth data over students table)
-  const getRealLastLogin = (s: Student): string | null => {
-    return authLogins[s.id] || authLogins[`email:${s.email}`] || s.lastLogin || null;
-  };
+  const allDeadlines = students.flatMap((s) => s.dl.map((d) => ({ ...d, sn: s.name, sid: s.id })));
 
-  const all = students.flatMap((s) => s.dl.map((d) => ({ ...d, sn: s.name })));
-  const ov = all.filter((d) => d.status === "overdue");
-  const wk = all.filter((d) => d.days >= 0 && d.days <= 7 && d.status !== "completed");
-  const att = students.filter((s) => s.status === "needs-attention");
+  // Overdue: deadlines where status is "overdue" (past due date, not completed)
+  const overdue = allDeadlines.filter((d) => d.status === "overdue");
 
-  const inactiveStudents = useMemo(
-    () => students.filter((s) => daysSinceLogin(getRealLastLogin(s)) >= 3),
-    [students, authLogins]
+  // Upcoming ≤48h: deadlines due within 0-2 days that aren't completed or overdue
+  const upcoming48h = allDeadlines.filter((d) =>
+    d.days >= 0 && d.days <= 2 && d.status !== "completed" && d.status !== "overdue"
   );
 
-  const avgEngagement =
-    students.length > 0
-      ? Math.round(students.reduce((a, s) => a + s.engagement, 0) / students.length)
-      : 0;
+  // At risk: last login ≥36 hours
+  const atRiskStudents = useMemo(() => students.filter((s) => hoursSinceLogin(s.lastLogin) >= 36), [students]);
+
+  const timelineItems = useMemo(() => {
+    return allDeadlines
+      .filter((d) => d.status === "pending" || d.status === "in-progress")
+      .sort((a, b) => a.days - b.days)
+      .slice(0, 5);
+  }, [allDeadlines]);
+
+  const upcomingSessions = useMemo(() => {
+    const now = new Date();
+    return students
+      .flatMap((s) => s.sess.map((ss) => ({ ...ss, studentName: s.name, studentAv: s.av, studentId: s.id })))
+      .filter((ss) => new Date(ss.date) >= now)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .slice(0, 3);
+  }, [students]);
+
+  const recentActivity = useMemo(() => {
+    const items: { type: "overdue" | "completed"; title: string; student: string; date: string }[] = [];
+    students.forEach((s) => {
+      s.dl.forEach((d) => {
+        if (d.status === "overdue") items.push({ type: "overdue", title: d.title, student: s.name, date: d.due });
+        if (d.status === "completed") items.push({ type: "completed", title: d.title, student: s.name, date: d.due });
+      });
+    });
+    return items.slice(0, 6);
+  }, [students]);
+
+  // Stat card helper
+  const StatCard = ({ label, value, sub, danger }: { label: string; value: number | string; sub: string; danger?: boolean }) => (
+    <div className="rounded-xl p-5 border border-line" style={{ background: "#1e1e1e" }}>
+      <p className="text-[10px] font-bold tracking-widest uppercase mb-2" style={{ color: "#717171" }}>{label}</p>
+      <p className="text-3xl font-bold mb-1" style={{ color: danger ? "#e55b5b" : "#ebebeb" }}>{value}</p>
+      <p className="text-xs" style={{ color: "#505050" }}>{sub}</p>
+    </div>
+  );
 
   return (
     <div>
@@ -91,12 +110,9 @@ export function StaffDashboard({
         title="Dashboard"
         sub={`${counselorName} — ${students.length} active students`}
         right={
-          <button
-            onClick={onRefresh}
-            disabled={refreshing}
-            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-line bg-mist hover:bg-raised transition-colors disabled:opacity-50"
-            style={{ color: "#717171" }}
-          >
+          <button onClick={onRefresh} disabled={refreshing}
+            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-50"
+            style={{ borderColor: "#2a2a2a", background: "#1e1e1e", color: "#717171" }}>
             <span style={{ display: "inline-block", animation: refreshing ? "spin 1s linear infinite" : "none" }}>↻</span>
             {refreshing ? "Refreshing..." : "Refresh"}
           </button>
@@ -104,206 +120,131 @@ export function StaffDashboard({
       />
 
       <div className="p-6 px-8">
-        {/* Metric Cards */}
+        {/* ── Top Row: 5 Stat Cards ── */}
         <div className="grid grid-cols-5 gap-3.5 mb-5">
-          <MetricCard label="Students" value={students.length} color="#5A83F3" />
-          <MetricCard label="Overdue" value={ov.length} color="#e55b5b" />
-          <MetricCard label="This Week" value={wk.length} color="#e5a83b" />
-          <MetricCard label="Avg Engagement" value={`${avgEngagement}%`} color="#4aba6a" />
-
-          {/* Login Warning */}
+          <StatCard label="Active Students" value={students.length} sub="Assigned & active" />
+          <StatCard label="Overdue" value={overdue.length} sub={overdue.length === 0 ? "All clear" : "Past due"} danger={overdue.length > 0} />
+          <StatCard label="Next 48h" value={upcoming48h.length} sub="Due soon" />
+          <StatCard label="Pending Sessions" value={pendingCount} sub={pendingCount === 0 ? "All confirmed" : "Not confirmed"} danger={pendingCount > 0} />
           <div
-            onClick={() => inactiveStudents.length > 0 && setShowInactiveModal(true)}
-            className={`rounded-xl p-5 border-t-4 transition-all select-none bg-white border border-line
-              ${inactiveStudents.length > 0
-                ? "border-t-red-500 cursor-pointer hover:shadow-md hover:bg-red-50"
-                : "border-t-green-500"
-              }`}
+            onClick={() => atRiskStudents.length > 0 && setShowInactiveModal(true)}
+            className={`rounded-xl p-5 border border-line transition-all select-none ${atRiskStudents.length > 0 ? "cursor-pointer hover:border-danger" : ""}`}
+            style={{ background: "#1e1e1e" }}
           >
-            <p className="text-xs font-semibold tracking-widest text-faint uppercase mb-2">
-              Login Warning
-            </p>
-            <p className={`text-4xl font-bold mb-1 ${inactiveStudents.length > 0 ? "text-red-600" : "text-green-600"}`}>
-              {inactiveStudents.length}
-            </p>
-            <p className="text-xs text-sub leading-tight">
-              {inactiveStudents.length === 0
-                ? "All students active"
-                : inactiveStudents.length === 1
-                ? "1 student inactive 3+ days"
-                : `${inactiveStudents.length} students inactive 3+ days`}
-            </p>
+            <p className="text-[10px] font-bold tracking-widest uppercase mb-2" style={{ color: "#717171" }}>At Risk</p>
+            <p className="text-3xl font-bold mb-1" style={{ color: atRiskStudents.length > 0 ? "#e55b5b" : "#ebebeb" }}>{atRiskStudents.length}</p>
+            <p className="text-xs" style={{ color: "#505050" }}>{atRiskStudents.length === 0 ? "All active" : "Login ≥36h ago"}</p>
           </div>
         </div>
 
-        {/* Attention Banner */}
-        {att.length > 0 && (
-          <div
-            className="rounded-lg p-3 px-4 mb-4 flex items-center gap-3"
-            style={{ background: "rgba(229,91,91,0.08)", border: "1px solid rgba(239,68,68,0.12)" }}
-          >
-            <span className="text-base">⚠</span>
-            <div>
-              <div className="text-sm font-bold" style={{ color: "#e55b5b" }}>
-                {att.length} student{att.length > 1 ? "s" : ""} need{att.length === 1 ? "s" : ""} attention
-              </div>
-              <div className="text-sm text-sub">{att.map((s) => s.name).join(", ")}</div>
-            </div>
-          </div>
-        )}
-
-        {/* Main Grid */}
-        <div className="grid grid-cols-2 gap-3.5">
-          {/* Students list */}
+        {/* ── Main Grid: Timeline + Upcoming Sessions ── */}
+        <div className="grid grid-cols-2 gap-3.5 mb-5">
           <Card>
             <div className="flex justify-between mb-3.5">
-              <h2 className="m-0 text-lg font-bold text-heading">Students</h2>
-              <button
-                onClick={() => onNavigate("caseload")}
-                className="bg-transparent border-none text-accent-ink cursor-pointer text-sm font-semibold"
-              >
-                View all →
-              </button>
+              <h2 className="m-0 text-base font-bold text-heading">Timeline</h2>
+              <button onClick={() => onNavigate("master")} className="bg-transparent border-none cursor-pointer text-xs font-semibold" style={{ color: "#7aabff" }}>View all →</button>
             </div>
-            {students.map((s) => {
-              const days = daysSinceLogin(getRealLastLogin(s));
-              const loginWarning = days >= 3;
+            <div className="text-[10px] uppercase tracking-widest font-semibold mb-2" style={{ color: "#505050" }}>Planned / In Progress only</div>
+            {timelineItems.length === 0 && <p className="text-sm text-sub py-4 text-center">All caught up!</p>}
+            {timelineItems.map((d, i) => (
+              <div key={`${d.id}-${i}`}
+                onClick={() => { const s = students.find((s) => s.id === d.sid); if (s) { onSelectStudent(s); onNavigate("detail"); } }}
+                className="flex items-center gap-2.5 py-2.5 border-b border-line cursor-pointer rounded px-2 -mx-2 hover:bg-mist">
+                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: getCategoryColor(d.cat) }} />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-heading truncate">{d.title}</div>
+                  <div className="text-xs text-sub">{d.sn}</div>
+                </div>
+                <Tag color={getStatusColor(d.status)}>{d.status === "in-progress" ? "In Progress" : "Planned"}</Tag>
+                <span className="text-xs font-medium flex-shrink-0" style={{ color: d.days <= 1 ? "#e55b5b" : d.days <= 3 ? "#e5a83b" : "#717171" }}>
+                  {d.days < 0 ? `${Math.abs(d.days)}d late` : d.days === 0 ? "Today" : `${d.days}d`}
+                </span>
+              </div>
+            ))}
+          </Card>
+
+          <Card>
+            <div className="flex justify-between mb-3.5">
+              <h2 className="m-0 text-base font-bold text-heading">Upcoming Sessions</h2>
+              <span className="text-xs" style={{ color: "#505050" }}>Next 3</span>
+            </div>
+            {upcomingSessions.length === 0 && <p className="text-sm text-sub py-4 text-center">No upcoming sessions</p>}
+            {upcomingSessions.map((ss, i) => {
+              const d = new Date(ss.date);
               return (
-                <div
-                  key={s.id}
-                  onClick={() => { onSelectStudent(s); onNavigate("detail"); }}
-                  className="flex justify-between items-center p-2.5 px-3 rounded-lg mb-1.5 cursor-pointer"
-                  style={{
-                    background: "#252525",
-                    borderLeft: `3px solid ${
-                      s.status === "needs-attention" ? "#e55b5b"
-                      : s.engagement > 80 ? "#4aba6a"
-                      : "#e5a83b"
-                    }`,
-                  }}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
-                      style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}
-                    >
-                      {s.av}
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium text-heading">{s.name}</div>
-                      <div className="text-xs text-sub">Gr. {s.grade} · {s.school}</div>
-                    </div>
+                <div key={ss.id || i}
+                  onClick={() => { const s = students.find((st) => st.id === ss.studentId); if (s) { onSelectStudent(s); onNavigate("detail"); } }}
+                  className="p-3 rounded-lg mb-2 cursor-pointer hover:opacity-90 transition-opacity border border-line" style={{ background: "#252525" }}>
+                  <div className="text-xs mb-1" style={{ color: "#505050" }}>
+                    {d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
                   </div>
-                  <div className="text-right">
-                    <div
-                      className="text-sm font-bold"
-                      style={{ color: s.engagement > 80 ? "#4aba6a" : s.engagement > 60 ? "#e5a83b" : "#e55b5b" }}
-                    >
-                      {s.engagement}%
+                  <div className="text-sm font-semibold text-heading mb-1.5">
+                    {ss.notes ? ss.notes.split("\n")[0] : `Session with ${ss.studentName}`}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ background: "rgba(90,131,243,0.1)", color: "#5A83F3" }}>{ss.studentAv}</div>
+                      <span className="text-xs text-body">{ss.studentName}</span>
                     </div>
-                    <div className="text-xs" style={{ color: loginWarning ? "#e55b5b" : "#505050" }}>
-                      {formatLastLogin(getRealLastLogin(s))}
-                    </div>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: ss.action ? "rgba(74,186,106,0.08)" : "rgba(229,168,59,0.08)", color: ss.action ? "#4aba6a" : "#e5a83b" }}>
+                      {ss.action ? "Confirmed" : "Pending"}
+                    </span>
                   </div>
                 </div>
               );
             })}
           </Card>
+        </div>
 
-          {/* This Week */}
-          <Card>
-            <div className="flex justify-between mb-3.5">
-              <h2 className="m-0 text-lg font-bold text-heading">This Week</h2>
-              <button
-                onClick={() => onNavigate("master")}
-                className="bg-transparent border-none text-accent-ink cursor-pointer text-sm font-semibold"
-              >
-                Timeline →
-              </button>
-            </div>
-            {[...ov, ...wk].sort((a, b) => a.days - b.days).slice(0, 8).map((d, i) => (
-              <div key={`${d.id}-${i}`} className="flex items-center gap-2.5 py-2 border-b border-line">
-                <div
-                  className="w-2 h-2 rounded-full flex-shrink-0"
-                  style={{ background: d.status === "overdue" ? "#e55b5b" : getCategoryColor(d.cat) }}
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-heading whitespace-nowrap overflow-hidden text-ellipsis">
-                    {d.title}
-                  </div>
-                  <div className="text-xs text-sub">{d.sn}</div>
+        {/* ── Bottom: Recent Activity ── */}
+        <Card>
+          <div className="flex justify-between mb-3.5">
+            <h2 className="m-0 text-base font-bold text-heading">Recent Activity</h2>
+            <span className="text-xs" style={{ color: "#505050" }}>All students</span>
+          </div>
+          {recentActivity.length === 0 && <p className="text-sm text-sub py-4 text-center">No recent activity</p>}
+          <div className="grid grid-cols-2 gap-2">
+            {recentActivity.map((item, i) => (
+              <div key={i} className="flex items-center gap-2.5 py-2 px-3 rounded-lg" style={{ background: item.type === "overdue" ? "rgba(229,91,91,0.06)" : "rgba(74,186,106,0.06)" }}>
+                <span className="text-sm flex-shrink-0">{item.type === "overdue" ? "⚠️" : "✅"}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium text-heading truncate">{item.title}</div>
+                  <div className="text-xs text-sub">{item.student} · {item.date}</div>
                 </div>
-                <Tag color={d.status === "overdue" ? "#e55b5b" : "#505050"}>
-                  {d.days < 0 ? `${Math.abs(d.days)}d late` : d.days === 0 ? "Today" : `${d.days}d`}
-                </Tag>
               </div>
             ))}
-            {[...ov, ...wk].length === 0 && (
-              <p className="text-sm text-sub py-4 text-center">All caught up this week 🎉</p>
-            )}
-          </Card>
-        </div>
+          </div>
+        </Card>
       </div>
 
-      {/* Login Warning Modal */}
+      {/* ── At Risk Modal ── */}
       {showInactiveModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ background: "rgba(0,0,0,0.4)" }}
-          onClick={(e) => { if (e.target === e.currentTarget) setShowInactiveModal(false); }}
-        >
-          <div className="rounded-2xl border border-line w-full max-w-md mx-4 overflow-hidden"
-            style={{ background: "#181820" }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.6)" }} onClick={(e) => { if (e.target === e.currentTarget) setShowInactiveModal(false); }}>
+          <div className="rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden" style={{ background: "#1e1e1e", border: "1px solid #2a2a2a" }}>
             <div className="flex justify-between items-center px-6 py-4 border-b border-line">
               <div>
-                <h2 className="text-base font-bold text-heading m-0">Login Warning</h2>
-                <p className="text-xs text-faint mt-0.5">Students inactive for 3+ days</p>
+                <h2 className="text-base font-bold text-heading m-0">Students at Risk</h2>
+                <p className="text-xs mt-0.5" style={{ color: "#505050" }}>Last login ≥36 hours ago</p>
               </div>
-              <button
-                onClick={() => setShowInactiveModal(false)}
-                className="w-7 h-7 flex items-center justify-center rounded-full text-faint hover:bg-raised hover:text-body transition-colors text-lg font-bold bg-transparent border-none cursor-pointer"
-              >
-                ×
-              </button>
+              <button onClick={() => setShowInactiveModal(false)} className="w-7 h-7 flex items-center justify-center rounded-full text-lg font-bold bg-transparent border-none cursor-pointer" style={{ color: "#717171" }}>×</button>
             </div>
             <div className="px-6 py-4 space-y-2 max-h-80 overflow-y-auto">
-              {inactiveStudents.map((s) => {
-                const days = daysSinceLogin(getRealLastLogin(s));
+              {atRiskStudents.map((s) => {
+                const days = daysSinceLogin(s.lastLogin);
                 return (
-                  <div
-                    key={s.id}
-                    onClick={() => {
-                      setShowInactiveModal(false);
-                      onSelectStudent(s);
-                      onNavigate("detail");
-                    }}
-                    className="flex items-center justify-between p-3 rounded-lg cursor-pointer hover:bg-red-50 transition-colors"
-                    style={{ background: "rgba(229,91,91,0.08)" }}
-                  >
+                  <div key={s.id} onClick={() => { setShowInactiveModal(false); onSelectStudent(s); onNavigate("detail"); }}
+                    className="flex items-center justify-between p-3 rounded-lg cursor-pointer hover:opacity-80 transition-opacity" style={{ background: "rgba(229,91,91,0.06)" }}>
                     <div className="flex items-center gap-3">
-                      <div
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                        style={{ background: "#fee2e2", color: "#b91c1c" }}
-                      >
-                        {s.av}
-                      </div>
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: "rgba(229,91,91,0.1)", color: "#e55b5b" }}>{s.av}</div>
                       <div>
                         <div className="text-sm font-semibold text-heading">{s.name}</div>
-                        <div className="text-xs text-faint">Gr. {s.grade} · {s.school}</div>
+                        <div className="text-xs" style={{ color: "#505050" }}>Gr. {s.grade} · {s.school}</div>
                       </div>
                     </div>
-                    <div className="text-right flex-shrink-0 ml-3">
-                      <div className="text-xs font-semibold text-red-500">
-                        {days === Infinity ? "Never" : `${days}d ago`}
-                      </div>
-                      <div className="text-xs text-faint">{formatLastLogin(getRealLastLogin(s))}</div>
-                    </div>
+                    <div className="text-xs font-semibold" style={{ color: "#e55b5b" }}>{days === Infinity ? "Never" : `${days}d ago`}</div>
                   </div>
                 );
               })}
-            </div>
-            <div className="px-6 py-3 border-t border-line" style={{ background: "#252525" }}>
-              <p className="text-xs text-faint text-center">Click a student to view their profile</p>
             </div>
           </div>
         </div>

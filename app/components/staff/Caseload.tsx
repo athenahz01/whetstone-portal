@@ -7,8 +7,20 @@ import { Tag } from "../ui/Tag";
 import { PageHeader } from "../ui/PageHeader";
 import { Modal } from "../ui/Modal";
 import { FormField } from "../ui/FormField";
-import { addStudent } from "../../lib/queries";
-import { useState } from "react";
+import { addStudent, updateStudent } from "../../lib/queries";
+import { useState, useEffect, useMemo, useRef } from "react";
+
+function daysSinceLogin(lastLogin: string | null | undefined): number {
+  if (!lastLogin || lastLogin === "Never" || lastLogin === "") return Infinity;
+  const parsed = new Date(lastLogin);
+  if (isNaN(parsed.getTime())) return Infinity;
+  return Math.floor((Date.now() - parsed.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+interface StaffMember {
+  name: string;
+  initials: string;
+}
 
 interface CaseloadProps {
   students: Student[];
@@ -25,12 +37,51 @@ interface InviteResult {
 }
 
 export function Caseload({ students, onSelectStudent, onNavigate, onRefresh, isAdmin }: CaseloadProps) {
+  const [viewMode, setViewMode] = useState<"table" | "card">("table");
   const [sort, setSort] = useState("urgency");
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [inviteResult, setInviteResult] = useState<InviteResult | null>(null);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [copied, setCopied] = useState<"email" | "password" | null>(null);
+  const [staffList, setStaffList] = useState<StaffMember[]>([]);
+  const [teamDropdownId, setTeamDropdownId] = useState<number | null>(null);
+  const teamDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Fetch staff members for team multiselect
+  useEffect(() => {
+    fetch("/api/admin/users")
+      .then((r) => r.json())
+      .then((users) => {
+        const staff = (Array.isArray(users) ? users : [])
+          .filter((u: any) => u.role === "strategist")
+          .map((u: any) => ({
+            name: u.name || u.email,
+            initials: (u.name || "??").split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2),
+          }));
+        setStaffList(staff);
+      })
+      .catch(() => setStaffList([]));
+  }, []);
+
+  // Close team dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (teamDropdownRef.current && !teamDropdownRef.current.contains(e.target as Node)) {
+        setTeamDropdownId(null);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const handleTeamToggle = async (studentId: number, memberName: string, currentTeam: string[]) => {
+    const newTeam = currentTeam.includes(memberName)
+      ? currentTeam.filter((t) => t !== memberName)
+      : [...currentTeam, memberName];
+    await updateStudent(studentId, { team: newTeam });
+    onRefresh();
+  };
 
   const sorted = [...students].sort((a, b) =>
     sort === "name" ? a.name.localeCompare(b.name) :
@@ -113,29 +164,118 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh, isA
   return (
     <div>
       <PageHeader
-        title="Caseload"
+        title="Students"
         sub={`${students.length} students`}
         right={
           <div className="flex gap-2 items-center">
-            <div className="flex gap-1">
-              {["urgency", "engagement", "name"].map((s) => (
-                <button key={s} onClick={() => setSort(s)}
-                  className="px-3.5 py-1.5 rounded-lg cursor-pointer text-xs font-semibold capitalize"
-                  style={{
-                    background: sort === s ? "rgba(82,139,255,0.08)" : "#252525",
-                    border: `1px solid ${sort === s ? "#5A83F3" : "#333"}`,
-                    color: sort === s ? "#7aabff" : "#717171",
-                  }}>
-                  {s}
-                </button>
-              ))}
+            <div className="inline-flex gap-0.5 p-0.5 rounded-lg" style={{ background: "#252525", border: "1px solid #333" }}>
+              <button onClick={() => setViewMode("table")} className="px-3 py-1.5 rounded-md border-none cursor-pointer text-xs font-semibold"
+                style={{ background: viewMode === "table" ? "#5A83F3" : "transparent", color: viewMode === "table" ? "#fff" : "#717171" }}>☰ Table</button>
+              <button onClick={() => setViewMode("card")} className="px-3 py-1.5 rounded-md border-none cursor-pointer text-xs font-semibold"
+                style={{ background: viewMode === "card" ? "#5A83F3" : "transparent", color: viewMode === "card" ? "#fff" : "#717171" }}>▦ Cards</button>
             </div>
+            {viewMode === "card" && (
+              <div className="flex gap-1">
+                {["urgency", "engagement", "name"].map((s) => (
+                  <button key={s} onClick={() => setSort(s)}
+                    className="px-3.5 py-1.5 rounded-lg cursor-pointer text-xs font-semibold capitalize"
+                    style={{ background: sort === s ? "rgba(82,139,255,0.08)" : "#252525", border: `1px solid ${sort === s ? "#5A83F3" : "#333"}`, color: sort === s ? "#7aabff" : "#717171" }}>
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
             <Button primary onClick={() => { setShowModal(true); setInviteResult(null); setInviteError(null); }}>+ Add Student</Button>
           </div>
         }
       />
 
-      <div className="p-6 px-8 grid grid-cols-2 gap-3.5">
+      <div className="p-6 px-8">
+        {/* ── TABLE VIEW ── */}
+        {viewMode === "table" && (
+          <Card noPadding style={{ overflow: "hidden" }}>
+            <div className="px-6 py-4 border-b border-line">
+              <h2 className="m-0 text-base font-bold text-heading">Student Overview</h2>
+            </div>
+            <div className="grid px-6 py-2.5 border-b border-line text-[10px] uppercase tracking-widest font-semibold" style={{ gridTemplateColumns: "2fr 0.8fr 0.8fr 1fr 1.2fr 1.2fr", background: "#252525", color: "#505050" }}>
+              <div>Student</div><div>Grade</div><div>GPA</div><div>Overdue</div><div>Last Login</div><div>Team</div>
+            </div>
+            {sorted.map((s) => {
+              const overdue = s.dl.filter((d) => d.status === "overdue").length;
+              const loginDays = daysSinceLogin(s.lastLogin);
+              const loginLabel = loginDays === Infinity ? "Never" : loginDays === 0 ? "Today" : loginDays === 1 ? "Yesterday" : `${loginDays}d ago`;
+              const loginColor = loginDays === Infinity ? "#505050" : loginDays >= 3 ? "#e55b5b" : loginDays >= 1 ? "#e5a83b" : "#4aba6a";
+              return (
+                <div key={s.id} onClick={() => { onSelectStudent(s); onNavigate("detail"); }}
+                  className="grid px-6 py-3 border-b border-line items-center cursor-pointer hover:bg-mist transition-colors"
+                  style={{ gridTemplateColumns: "2fr 0.8fr 0.8fr 1fr 1.2fr 1.2fr" }}>
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: "rgba(90,131,243,0.1)", color: "#5A83F3" }}>{s.av}</div>
+                    <div><span className="text-sm font-medium text-heading">{s.name}</span><div className="text-xs text-sub">{s.school}</div></div>
+                  </div>
+                  <div className="text-sm text-body">{s.grade}</div>
+                  <div className="text-sm text-body">{s.gpa ?? "—"}</div>
+                  <div>{overdue > 0 ? <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(229,91,91,0.08)", color: "#e55b5b" }}>{overdue}</span> : <span className="text-xs text-sub">0</span>}</div>
+                  <div className="text-xs font-semibold" style={{ color: loginColor }}>{loginLabel}</div>
+                  <div className="relative" onClick={(e) => e.stopPropagation()}>
+                    <div
+                      onClick={() => setTeamDropdownId(teamDropdownId === s.id ? null : s.id)}
+                      className="flex items-center gap-1 cursor-pointer rounded-lg px-2 py-1 hover:bg-raised transition-colors min-h-[28px]"
+                    >
+                      {(s.team && s.team.length > 0) ? (
+                        <div className="flex items-center gap-1 flex-wrap">
+                          {s.team.map((name) => (
+                            <span key={name} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(90,131,243,0.1)", color: "#5A83F3" }}>
+                              {name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs" style={{ color: "#505050" }}>+ Assign</span>
+                      )}
+                    </div>
+                    {teamDropdownId === s.id && (
+                      <div ref={teamDropdownRef} className="absolute z-50 right-0 rounded-xl shadow-lg border border-line overflow-hidden" style={{ background: "#1e1e1e", top: "calc(100% + 4px)", minWidth: 200 }}>
+                        <div className="px-3 py-2 border-b border-line">
+                          <div className="text-[10px] uppercase font-bold tracking-widest" style={{ color: "#505050" }}>Assign Team</div>
+                        </div>
+                        <div className="py-1 max-h-48 overflow-y-auto">
+                          {staffList.map((staff) => {
+                            const isSelected = (s.team || []).includes(staff.name);
+                            return (
+                              <button
+                                key={staff.name}
+                                onClick={() => handleTeamToggle(s.id, staff.name, s.team || [])}
+                                className="w-full flex items-center gap-2.5 px-3 py-2 border-none cursor-pointer text-left hover:bg-raised transition-colors"
+                                style={{ background: isSelected ? "rgba(90,131,243,0.06)" : "transparent" }}
+                              >
+                                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0"
+                                  style={{ background: isSelected ? "rgba(90,131,243,0.15)" : "#252525", color: isSelected ? "#5A83F3" : "#717171" }}>
+                                  {staff.initials}
+                                </div>
+                                <span className="text-xs flex-1" style={{ color: isSelected ? "#ebebeb" : "#a0a0a0" }}>{staff.name}</span>
+                                {isSelected && <span style={{ color: "#5A83F3" }}>✓</span>}
+                              </button>
+                            );
+                          })}
+                          {staffList.length === 0 && (
+                            <div className="px-3 py-3 text-xs text-center" style={{ color: "#505050" }}>No staff accounts found</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+            {students.length === 0 && <div className="px-6 py-8 text-center text-sm text-sub">No students yet.</div>}
+            <div className="px-6 py-2.5 border-t border-line text-xs" style={{ background: "#252525", color: "#505050" }}>{students.length} student{students.length !== 1 ? "s" : ""}</div>
+          </Card>
+        )}
+
+        {/* ── CARD VIEW ── */}
+        {viewMode === "card" && (
+          <div className="grid grid-cols-2 gap-3.5">
         {sorted.map((s) => {
           const ov = s.dl.filter((d) => d.status === "overdue").length;
           return (
@@ -167,6 +307,8 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh, isA
             </Card>
           );
         })}
+          </div>
+        )}
       </div>
 
       {/* Add Student Modal */}

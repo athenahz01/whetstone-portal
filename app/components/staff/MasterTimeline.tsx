@@ -8,7 +8,7 @@ import { Button } from "../ui/Button";
 import { Tag } from "../ui/Tag";
 import { WeeklyCalendar } from "../ui/WeeklyCalendar";
 import { getCategoryColor, getStatusColor } from "../../lib/colors";
-import { addCounselorEvent, fetchCounselorEvents, deleteCounselorEvent } from "../../lib/queries";
+import { addCounselorEvent, fetchCounselorEvents, deleteCounselorEvent, addDeadline } from "../../lib/queries";
 import { pushToGoogleCalendar, pullFromGoogleCalendar } from "../../lib/calendar";
 import { useState, useEffect, useMemo, useRef } from "react";
 
@@ -17,6 +17,7 @@ interface MasterTimelineProps {
   onSelectStudent: (s: Student) => void;
   onNavigate: (view: string) => void;
   profileId?: string | null;
+  onRefresh?: () => void;
 }
 
 type SortField = "due" | "title" | "category" | "student" | "status" | "specialist";
@@ -202,9 +203,10 @@ function SortOnlyHeader({
   );
 }
 
-export function MasterTimeline({ students, onSelectStudent, onNavigate, profileId }: MasterTimelineProps) {
+export function MasterTimeline({ students, onSelectStudent, onNavigate, profileId, onRefresh }: MasterTimelineProps) {
   const [viewMode, setViewMode] = useState<"calendar" | "table">("calendar");
   const [showModal, setShowModal] = useState(false);
+  const [showDeadlineModal, setShowDeadlineModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [counselorEvents, setCounselorEvents] = useState<any[]>([]);
   const [googleEvents, setGoogleEvents] = useState<any[]>([]);
@@ -422,10 +424,11 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
   return (
     <div>
       <PageHeader
-        title="Master Timeline"
+        title="Timeline"
         sub="All deadlines at a glance."
         right={
           <div className="flex gap-2 items-center">
+            <Button onClick={() => setShowDeadlineModal(true)}>+ New Deadline</Button>
             <Button primary onClick={() => setShowModal(true)}>+ New Event</Button>
           </div>
         }
@@ -580,7 +583,13 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
 
                     <div className="flex items-center gap-2 min-w-0">
                       {isCE && <span className="text-[10px]">📅</span>}
+                      {(d as any).internalOnly && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded font-bold flex-shrink-0" style={{ background: "rgba(229,168,59,0.08)", color: "#e5a83b", border: "1px solid rgba(229,168,59,0.15)" }}>Internal</span>
+                      )}
                       <span className="text-sm font-medium text-heading truncate">{d.title}</span>
+                      {(d as any).responsible?.length > 0 && (
+                        <span className="text-[10px] flex-shrink-0" style={{ color: "#717171" }}>→ {(d as any).responsible.join(", ")}</span>
+                      )}
                     </div>
 
                     <div>
@@ -681,6 +690,77 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
             <div className="flex justify-end gap-2 mt-2">
               <Button onClick={() => setShowModal(false)}>Cancel</Button>
               <Button primary type="submit">{saving ? "Creating..." : "Create Event"}</Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Create Deadline Modal */}
+      {showDeadlineModal && (
+        <Modal title="Create Deadline" onClose={() => setShowDeadlineModal(false)}>
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            setSaving(true);
+            const f = new FormData(e.target as HTMLFormElement);
+            const studentId = Number(f.get("student"));
+            const due = f.get("due") as string;
+            const actualDeadline = f.get("actualDeadline") as string;
+            const internalOnly = f.get("internalOnly") === "on";
+            const responsibleRaw = f.get("responsible") as string;
+            const responsible = responsibleRaw ? responsibleRaw.split(",").map((r: string) => r.trim()).filter(Boolean) : [];
+            const dueDate = new Date(due + "T00:00:00");
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            const days = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+            await addDeadline(studentId, {
+              title: f.get("title") as string, due,
+              category: f.get("category") as string,
+              status: days < 0 ? "overdue" : "pending", days,
+              specialist: f.get("specialist") as string,
+              created_by: "strategist",
+              internal_only: internalOnly, responsible,
+              actual_deadline: actualDeadline || undefined,
+            });
+            if (onRefresh) await onRefresh();
+            setSaving(false); setShowDeadlineModal(false);
+          }}>
+            <FormField label="Title"><input required name="title" placeholder="e.g. Send Jing school tour links for Columbia" style={inputStyle} /></FormField>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Student">
+                <select required name="student" style={inputStyle}>
+                  {students.map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}
+                </select>
+              </FormField>
+              <FormField label="Category">
+                <select name="category" style={inputStyle}>
+                  <option value="planning">Planning</option><option value="essays">Essays</option>
+                  <option value="applications">Applications</option><option value="testing">Testing</option>
+                  <option value="extracurricular">Extracurricular</option><option value="Academics">Academics</option>
+                  <option value="research">Research</option>
+                </select>
+              </FormField>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Due Date (Internal)"><input required name="due" type="date" style={inputStyle} /></FormField>
+              <FormField label="Actual Deadline (optional)">
+                <input name="actualDeadline" type="date" style={inputStyle} />
+                <div className="text-[10px] mt-1" style={{ color: "#717171" }}>Set internal due 48h before this date</div>
+              </FormField>
+            </div>
+            <FormField label="Specialist (optional)"><input name="specialist" placeholder="e.g. Stephanie" style={inputStyle} /></FormField>
+            <FormField label="Responsible Team Members">
+              <input name="responsible" placeholder="e.g. Ren, Cole (comma separated)" style={inputStyle} />
+              <div className="text-[10px] mt-1" style={{ color: "#717171" }}>Who on the team owns this task</div>
+            </FormField>
+            <div className="flex items-center gap-3 mt-3 mb-3 p-3 rounded-lg" style={{ background: "rgba(229,168,59,0.06)", border: "1px solid rgba(229,168,59,0.15)" }}>
+              <input type="checkbox" name="internalOnly" id="dlInternal" className="w-4 h-4" style={{ accentColor: "#e5a83b" }} />
+              <label htmlFor="dlInternal" className="cursor-pointer">
+                <div className="text-sm font-semibold" style={{ color: "#e5a83b" }}>Internal Only</div>
+                <div className="text-xs" style={{ color: "#717171" }}>Hidden from the student — only visible to staff</div>
+              </label>
+            </div>
+            <div className="flex justify-end gap-2 mt-2">
+              <Button onClick={() => setShowDeadlineModal(false)}>Cancel</Button>
+              <Button primary type="submit">{saving ? "Creating..." : "Create Deadline"}</Button>
             </div>
           </form>
         </Modal>

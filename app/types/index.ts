@@ -19,7 +19,10 @@ export interface Deadline {
   createdBy?: "strategist" | "student";
   priority?: "high" | "medium" | "low";
   description?: string;
-  blockedBy?: string; // title of blocking task
+  blockedBy?: string;
+  internalOnly?: boolean;
+  responsible?: string[];
+  actualDeadline?: string;
 }
 
 export interface Task {
@@ -92,6 +95,7 @@ export interface Student {
   gpaUnweighted?: number | null;
   sat?: number | null;
   counselor: string;
+  team?: string[];
   status: "on-track" | "needs-attention";
   av: string;
   school: string;

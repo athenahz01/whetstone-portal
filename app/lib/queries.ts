@@ -42,6 +42,7 @@ export async function fetchAllStudents(): Promise<Student[]> {
         gpa: Number(s.gpa),
         sat: s.sat,
         counselor: s.counselor,
+        team: s.team || [],
         status: s.status as "on-track" | "needs-attention",
         av: s.avatar,
         school: s.school,
@@ -79,6 +80,9 @@ export async function fetchAllStudents(): Promise<Student[]> {
             priority: d.priority || undefined,
             description: d.description || undefined,
             blockedBy: d.blocked_by || undefined,
+            internalOnly: d.internal_only || false,
+            responsible: d.responsible || [],
+            actualDeadline: d.actual_deadline || "",
           };
         }),
         tasks: (tasksRes.data || []).map((t) => ({
@@ -181,6 +185,7 @@ export async function updateStudent(
     gradYear?: number;
     status?: string;
     engagement?: number;
+    team?: string[];
   }
 ): Promise<boolean> {
   const updateData: Record<string, unknown> = {};
@@ -192,6 +197,7 @@ export async function updateStudent(
   if (data.gradYear !== undefined) updateData.grad_year = data.gradYear;
   if (data.status !== undefined) updateData.status = data.status;
   if (data.engagement !== undefined) updateData.engagement = data.engagement;
+  if (data.team !== undefined) updateData.team = data.team;
 
   if (data.name) {
     updateData.avatar = data.name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
@@ -244,6 +250,9 @@ export async function addDeadline(
     priority?: string;
     google_doc_link?: string;
     created_by?: "strategist" | "student";
+    internal_only?: boolean;
+    responsible?: string[];
+    actual_deadline?: string;
   }
 ): Promise<boolean> {
   const insertData: any = {
@@ -258,6 +267,9 @@ export async function addDeadline(
     created_by: data.created_by || "strategist",
   };
   if (data.priority) insertData.priority = data.priority;
+  if (data.internal_only) insertData.internal_only = true;
+  if (data.responsible?.length) insertData.responsible = data.responsible;
+  if (data.actual_deadline) insertData.actual_deadline = data.actual_deadline;
   const { error } = await supabase.from("deadlines").insert(insertData);
   if (error) {
     console.error("Error adding deadline:", error);

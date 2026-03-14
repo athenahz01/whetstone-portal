@@ -377,6 +377,7 @@ export default function Home() {
           onRefresh={handleRefresh}
           counselorName={profile?.display_name || "Strategist"}
           refreshing={refreshing}
+          strategistEmail={userEmail || ""}
         />
       );
     }
@@ -387,6 +388,7 @@ export default function Home() {
           onSelectStudent={setSelectedStudent}
           onNavigate={setView}
           profileId={profileId}
+          onRefresh={handleRefresh}
         />
       );
     }

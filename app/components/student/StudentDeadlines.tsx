@@ -38,8 +38,9 @@ export function StudentDeadlines({ deadlines, studentId, onRefresh, readOnly = f
   const [deleting, setDeleting] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
 
-  const active = [...deadlines].filter((d) => d.status !== "completed").sort((a, b) => a.days - b.days);
-  const completedList = [...deadlines].filter((d) => d.status === "completed").sort((a, b) => a.days - b.days);
+  const visibleDeadlines = deadlines.filter((d) => !d.internalOnly);
+  const active = [...visibleDeadlines].filter((d) => d.status !== "completed").sort((a, b) => a.days - b.days);
+  const completedList = [...visibleDeadlines].filter((d) => d.status === "completed").sort((a, b) => a.days - b.days);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
