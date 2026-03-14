@@ -47,6 +47,7 @@ interface ReceptacleProps {
   profileId?: string | null;
   gcalConnected?: boolean;
   googleEvents?: any[];
+  readOnly?: boolean;
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -128,7 +129,7 @@ function minutesToHeight(min: number) {
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export function Receptacle({ studentId, profileId, gcalConnected, googleEvents = [] }: ReceptacleProps) {
+export function Receptacle({ studentId, profileId, gcalConnected, googleEvents = [], readOnly = false }: ReceptacleProps) {
   const [step, setStep] = useState<0 | 1 | 2 | 3>(1); // 0 = daily review
 
   // Step 1
