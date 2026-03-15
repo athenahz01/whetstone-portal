@@ -156,12 +156,16 @@ export default function Home() {
     }
   }, [allStudents, profile]);
 
-  // ── Auto-refresh every 60s so last_login stays live (strategists only) ──
+  // ── Update last_login periodically (lightweight, no full data reload) ──
   useEffect(() => {
-    if (!session || loading || !profile || profile.role !== "strategist") return;
-    const interval = setInterval(() => loadData(true), 60_000);
+    if (!session || !profileId) return;
+    const updateLogin = () => {
+      supabase.from("profiles").update({ last_sign_in: new Date().toISOString() }).eq("id", profileId).then(() => {});
+    };
+    updateLogin(); // Update on mount
+    const interval = setInterval(updateLogin, 120_000); // Every 2 min, just update timestamp
     return () => clearInterval(interval);
-  }, [session, loading, loadData, profile]);
+  }, [session, profileId]);
 
   // ── Auth state ──
   useEffect(() => {
@@ -173,11 +177,17 @@ export default function Home() {
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
+      // Only react to actual sign-in/sign-out, not token refreshes
+      if (event === "TOKEN_REFRESHED") return;
+      
       setSession(!!s);
       if (s) {
         setUserEmail(s.user.email || null);
-        loadProfile(s.user.id);
+        // Only load profile if we don't already have one (initial sign-in)
+        if (!profile) {
+          loadProfile(s.user.id);
+        }
       } else {
         setProfile(null);
         setUserEmail(null);
