@@ -59,7 +59,8 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh, isA
           .map((u: any) => ({
             name: u.name || u.email,
             initials: (u.name || "??").split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2),
-          }));
+          }))
+          .sort((a: any, b: any) => a.name.localeCompare(b.name));
         setStaffList(staff);
       })
       .catch(() => setStaffList([]));

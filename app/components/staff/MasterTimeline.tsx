@@ -65,8 +65,8 @@ function FilterDropdown({
   const isSorted = sortField === field;
 
   const toggleAll = () => {
-    if (selected.length === options.length) onChange([]);
-    else onChange([...options]);
+    if (selected.length === options.length) onChange([]); // Clear all — deselect all
+    else onChange([...options]); // Select all
   };
 
   const toggleOne = (val: string) => {
@@ -225,6 +225,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
   const [saving, setSaving] = useState(false);
   const [prefillStudent, setPrefillStudent] = useState<number | null>(null);
   const [prefillDate, setPrefillDate] = useState<string>("");
+  const [editTask, setEditTask] = useState<any>(null);
   const [counselorEvents, setCounselorEvents] = useState<any[]>([]);
   const [googleEvents, setGoogleEvents] = useState<any[]>([]);
   const [sortField, setSortField] = useState<SortField>("due");
@@ -522,13 +523,20 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
         </div>
 
         {viewMode === "calendar" ? (
-          <WeeklyCalendar rows={calendarRows} personalRow={personalRow} onCellClick={(studentId, date) => {
-            const sid = typeof studentId === "string" ? parseInt(studentId as string) : studentId as number;
-            if (isNaN(sid) || sid === 0) return;
-            setPrefillStudent(sid);
-            setPrefillDate(date);
-            setShowDeadlineModal(true);
-          }} />
+          <WeeklyCalendar rows={calendarRows} personalRow={personalRow}
+            onCellClick={(studentId, date) => {
+              const sid = typeof studentId === "string" ? parseInt(studentId as string) : studentId as number;
+              if (isNaN(sid) || sid === 0) return;
+              setPrefillStudent(sid);
+              setPrefillDate(date);
+              setShowDeadlineModal(true);
+            }}
+            onEventClick={(evt) => {
+              // Find the matching deadline to edit
+              const match = allDeadlines.find((d) => d.title === evt.title?.replace(/\s*\[Whetstone\]\s*/g, ""));
+              if (match && !(match as any).isCounselorEvent) setEditTask(match);
+            }}
+          />
         ) : (
           <div className="border border-line rounded-xl overflow-hidden" style={{ background: "#1e1e1e" }}>
             {/* Table Header with per-column filters */}
@@ -540,15 +548,15 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
               <SortOnlyHeader field="due" label="Due Date" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
 
               {/* Title — sort only */}
-              <SortOnlyHeader field="title" label="Project" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
+              <SortOnlyHeader field="title" label="Task" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
 
               {/* Category — filter + sort */}
               <FilterDropdown
                 label="Type"
                 field="category"
                 options={filterOptions.category}
-                selected={colFilters.category.length > 0 ? colFilters.category : filterOptions.category}
-                onChange={(v) => setFilter("category", v.length === filterOptions.category.length ? [] : v)}
+                selected={colFilters.category}
+                onChange={(v) => setFilter("category", v)}
                 sortField={sortField}
                 sortDir={sortDir}
                 onSort={toggleSort}
@@ -559,8 +567,8 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
                 label="Student"
                 field="student"
                 options={filterOptions.student}
-                selected={colFilters.student.length > 0 ? colFilters.student : filterOptions.student}
-                onChange={(v) => setFilter("student", v.length === filterOptions.student.length ? [] : v)}
+                selected={colFilters.student}
+                onChange={(v) => setFilter("student", v)}
                 sortField={sortField}
                 sortDir={sortDir}
                 onSort={toggleSort}
@@ -571,8 +579,8 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
                 label="Specialist"
                 field="specialist"
                 options={filterOptions.specialist}
-                selected={colFilters.specialist.length > 0 ? colFilters.specialist : filterOptions.specialist}
-                onChange={(v) => setFilter("specialist", v.length === filterOptions.specialist.length ? [] : v)}
+                selected={colFilters.specialist}
+                onChange={(v) => setFilter("specialist", v)}
                 sortField={sortField}
                 sortDir={sortDir}
                 onSort={toggleSort}
@@ -583,8 +591,8 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
                 label="Status"
                 field="status"
                 options={filterOptions.status}
-                selected={colFilters.status.length > 0 ? colFilters.status : filterOptions.status}
-                onChange={(v) => setFilter("status", v.length === filterOptions.status.length ? [] : v)}
+                selected={colFilters.status}
+                onChange={(v) => setFilter("status", v)}
                 sortField={sortField}
                 sortDir={sortDir}
                 onSort={toggleSort}
@@ -636,19 +644,15 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
                       )}
                     </div>
 
-                    {/* TASK/PROJECT — click to open student detail */}
+                    {/* TASK — click to open edit modal */}
                     <div className="flex items-center gap-2 min-w-0 cursor-pointer" onClick={() => {
-                      const student = students.find((s) => s.id === d.studentId);
-                      if (student) { onSelectStudent(student); onNavigate("detail"); }
+                      if (canEdit) setEditTask(d);
                     }}>
                       {isCE && <span className="text-[10px]">📅</span>}
                       {(d as any).internalOnly && (
                         <span className="text-[9px] px-1.5 py-0.5 rounded font-bold flex-shrink-0" style={{ background: "rgba(229,168,59,0.08)", color: "#e5a83b", border: "1px solid rgba(229,168,59,0.15)" }}>Internal</span>
                       )}
                       <span className="text-sm font-medium text-heading truncate hover:underline">{d.title}</span>
-                      {(d as any).responsible?.length > 0 && (
-                        <span className="text-[10px] flex-shrink-0" style={{ color: "#717171" }}>→ {(d as any).responsible.join(", ")}</span>
-                      )}
                     </div>
 
                     {/* TYPE — click to change via dropdown */}
@@ -659,7 +663,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
                           onBlur={() => setEditingCell(null)}
                           className="text-[10px] rounded px-1.5 py-1 border-none outline-none font-semibold"
                           style={{ background: "#333", color: "#ebebeb" }}>
-                          {["planning", "essays", "applications", "testing", "extracurricular", "Academics", "research"].map((c) => (
+                          {["planning", "essays", "applications", "testing", "extracurricular", "academics", "research"].map((c) => (
                             <option key={c} value={c}>{c}</option>
                           ))}
                         </select>
@@ -871,6 +875,63 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
             <div className="flex justify-end gap-2 mt-2">
               <Button onClick={() => setShowDeadlineModal(false)}>Cancel</Button>
               <Button primary type="submit">{saving ? "Creating..." : "Create Task"}</Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Edit Task Modal */}
+      {editTask && (
+        <Modal title="Edit Task" onClose={() => setEditTask(null)}>
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            setSaving(true);
+            const f = new FormData(e.target as HTMLFormElement);
+            await updateDeadline(editTask.id, {
+              title: f.get("title") as string,
+              due: f.get("due") as string,
+              category: f.get("category") as string,
+              status: f.get("status") as string,
+              specialist: f.get("specialist") as string,
+              description: f.get("description") as string,
+            });
+            if (onRefresh) await onRefresh();
+            setSaving(false); setEditTask(null);
+          }}>
+            <FormField label="Task Name"><input required name="title" defaultValue={editTask.title} style={inputStyle} /></FormField>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Due Date"><input required name="due" type="date" defaultValue={editTask.due} style={inputStyle} /></FormField>
+              <FormField label="Category">
+                <select name="category" defaultValue={editTask.cat} style={inputStyle}>
+                  {["planning", "essays", "applications", "testing", "extracurricular", "academics", "research"].map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </FormField>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Status">
+                <select name="status" defaultValue={editTask.status} style={inputStyle}>
+                  <option value="pending">Planned</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                  <option value="overdue">Overdue</option>
+                  <option value="blocked">Blocked</option>
+                </select>
+              </FormField>
+              <FormField label="Specialist">
+                <input name="specialist" defaultValue={editTask.specialist || ""} placeholder="Assigned to..." style={inputStyle} />
+              </FormField>
+            </div>
+            <FormField label="Description (optional)">
+              <textarea name="description" rows={3} defaultValue={editTask.description || ""} placeholder="Details about this task..." style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} />
+            </FormField>
+            <div className="flex items-center justify-between mt-3">
+              <div className="text-xs text-sub">Student: {editTask.studentName}</div>
+              <div className="flex gap-2">
+                <Button onClick={() => setEditTask(null)}>Cancel</Button>
+                <Button primary type="submit">{saving ? "Saving..." : "Save Changes"}</Button>
+              </div>
             </div>
           </form>
         </Modal>

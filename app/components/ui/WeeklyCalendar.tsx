@@ -33,9 +33,10 @@ interface WeeklyCalendarProps {
   personalRow?: CalendarRow | null;
   startDate?: Date;
   onCellClick?: (studentId: string | number, date: string, studentName: string) => void;
+  onEventClick?: (event: CalendarEvent) => void;
 }
 
-export function WeeklyCalendar({ rows, personalRow, startDate, onCellClick }: WeeklyCalendarProps) {
+export function WeeklyCalendar({ rows, personalRow, startDate, onCellClick, onEventClick }: WeeklyCalendarProps) {
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
@@ -120,7 +121,9 @@ export function WeeklyCalendar({ rows, personalRow, startDate, onCellClick }: We
                     title={evt.title}
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (evt.onClick) {
+                      if (onEventClick) {
+                        onEventClick(evt);
+                      } else if (evt.onClick) {
                         evt.onClick();
                       } else {
                         setSelectedEvent(evt);

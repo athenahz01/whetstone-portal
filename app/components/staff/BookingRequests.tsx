@@ -168,14 +168,21 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
                           {r.counter_note && <div className="text-xs text-sub mt-1">{r.counter_note}</div>}
                         </div>
                       )}
+                      {/* Inline notes preview */}
+                      {(r.agenda || r.session_notes) && (
+                        <div className="mt-3 pt-3 border-t border-line space-y-2">
+                          {r.agenda && (
+                            <div className="text-xs"><span className="font-semibold" style={{ color: "#717171" }}>Internal: </span><span className="text-sub">{r.agenda}</span></div>
+                          )}
+                          {r.session_notes && (
+                            <div className="text-xs"><span className="font-semibold" style={{ color: "#5A83F3" }}>Public: </span><span className="text-body">{r.session_notes}</span></div>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="flex flex-col items-end gap-3 ml-4">
-                      <div className="flex items-center gap-4">
-                        <span className="text-sm font-semibold cursor-pointer hover:underline" style={{ color: "#5A83F3" }}
-                          onClick={() => setDetailModal({ ...r, view: "agenda" })}>Agenda</span>
-                        <span className="text-sm font-semibold cursor-pointer hover:underline" style={{ color: r.session_notes ? "#5A83F3" : "#505050" }}
-                          onClick={() => setDetailModal({ ...r, view: "notes" })}>Notes</span>
-                      </div>
+                      <span className="text-sm font-semibold cursor-pointer hover:underline" style={{ color: "#5A83F3" }}
+                        onClick={() => setDetailModal({ ...r, view: "notes" })}>Add Notes</span>
                       <span className="text-xs font-semibold px-3 py-1 rounded-full"
                         style={{ background: "transparent", border: `1.5px solid ${sc.color}`, color: sc.color }}>
                         {r.status === "pending" ? `Pending (${r.student_name?.split(" ")[0]})` : r.status}
@@ -217,47 +224,27 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
         </Modal>
       )}
 
-      {/* Agenda/Notes Detail Modal */}
+      {/* Notes Modal — internal + public in one view */}
       {detailModal && (
-        <Modal title={detailModal.session_name || "Session Details"} onClose={() => { setDetailModal(null); loadRequests(); }}>
+        <Modal title="Session Notes" onClose={() => { setDetailModal(null); loadRequests(); }}>
           <div className="space-y-4">
             <div className="p-3 rounded-lg" style={{ background: "#252525", borderLeft: "3px solid #5A83F3" }}>
               <div className="text-sm font-semibold text-heading">{detailModal.session_name}</div>
-              <div className="text-xs text-sub mt-1">📅 {detailModal.date} {detailModal.start_time && `· 🕐 ${detailModal.start_time}`} · 📋 {detailModal.session_type || "session"}</div>
+              <div className="text-xs text-sub mt-1">📅 {detailModal.date} {detailModal.start_time && `· 🕐 ${detailModal.start_time}`} · {detailModal.student_name}</div>
             </div>
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ background: "#7c3aed", color: "#fff" }}>
-                {(detailModal.student_name || "?").split(" ").map((w: string) => w[0]).join("").substring(0, 2)}
-              </div>
-              <span className="text-sm text-heading">{detailModal.student_name}</span>
+            <div>
+              <div className="text-xs uppercase tracking-widest font-bold mb-2" style={{ color: "#e5a83b" }}>Internal Notes <span className="normal-case tracking-normal font-normal">(staff only)</span></div>
+              <textarea defaultValue={detailModal.agenda || ""} placeholder="Private notes — only visible to staff..." rows={4}
+                onBlur={async (e) => { const v = e.target.value; await fetch("/api/booking-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update_notes", requestId: detailModal.id, agenda: v }) }); setDetailModal({ ...detailModal, agenda: v }); }}
+                style={{ ...IS, resize: "vertical", lineHeight: 1.6, minHeight: 100 }} />
             </div>
-            <div className="flex gap-0.5 p-0.5 rounded-lg" style={{ background: "#252525", display: "inline-flex" }}>
-              {(["agenda", "notes"] as const).map((t) => (
-                <button key={t} onClick={() => setDetailModal({ ...detailModal, view: t })}
-                  className="px-4 py-1.5 rounded-md border-none cursor-pointer text-xs font-semibold capitalize"
-                  style={{ background: detailModal.view === t ? "#5A83F3" : "transparent", color: detailModal.view === t ? "#fff" : "#717171" }}>
-                  {t === "agenda" ? "Agenda" : "Notes"}
-                </button>
-              ))}
+            <div>
+              <div className="text-xs uppercase tracking-widest font-bold mb-2" style={{ color: "#5A83F3" }}>Public Notes <span className="normal-case tracking-normal font-normal">(visible to student & parent)</span></div>
+              <textarea defaultValue={detailModal.session_notes || ""} placeholder="Notes shared with student and parents..." rows={4}
+                onBlur={async (e) => { const v = e.target.value; await fetch("/api/booking-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update_notes", requestId: detailModal.id, session_notes: v }) }); setDetailModal({ ...detailModal, session_notes: v }); }}
+                style={{ ...IS, resize: "vertical", lineHeight: 1.6, minHeight: 100 }} />
             </div>
-            {detailModal.view === "agenda" && (
-              <div>
-                <div className="text-xs uppercase tracking-widest font-bold mb-2" style={{ color: "#505050" }}>Agenda</div>
-                <textarea defaultValue={detailModal.agenda || ""} placeholder="Add agenda items..." rows={5}
-                  onBlur={async (e) => { const v = e.target.value; await fetch("/api/booking-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update_notes", requestId: detailModal.id, agenda: v }) }); setDetailModal({ ...detailModal, agenda: v }); }}
-                  style={{ ...IS, resize: "vertical", lineHeight: 1.6, minHeight: 120 }} />
-                <div className="text-[10px] mt-1" style={{ color: "#505050" }}>Auto-saves when you click away</div>
-              </div>
-            )}
-            {detailModal.view === "notes" && (
-              <div>
-                <div className="text-xs uppercase tracking-widest font-bold mb-2" style={{ color: "#505050" }}>Session Notes</div>
-                <textarea defaultValue={detailModal.session_notes || ""} placeholder="Take notes during or after..." rows={5}
-                  onBlur={async (e) => { const v = e.target.value; await fetch("/api/booking-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update_notes", requestId: detailModal.id, session_notes: v }) }); setDetailModal({ ...detailModal, session_notes: v }); }}
-                  style={{ ...IS, resize: "vertical", lineHeight: 1.6, minHeight: 120 }} />
-                <div className="text-[10px] mt-1" style={{ color: "#505050" }}>Auto-saves when you click away</div>
-              </div>
-            )}
+            <div className="text-[10px]" style={{ color: "#505050" }}>Both fields auto-save when you click away</div>
           </div>
         </Modal>
       )}

@@ -57,23 +57,18 @@ export function StaffDashboard({
 
   const allDeadlines = students.flatMap((s) => s.dl.map((d) => ({ ...d, sn: s.name, sid: s.id })));
 
-  // Overdue: deadlines where status is "overdue" (past due date, not completed)
-  const overdue = allDeadlines.filter((d) => d.status === "overdue");
+  // Urgent: overdue + due today
+  const urgent = allDeadlines.filter((d) =>
+    d.status === "overdue" || (d.days === 0 && d.status !== "completed")
+  );
 
-  // Upcoming ≤48h: deadlines due within 0-2 days that aren't completed or overdue
-  const upcoming48h = allDeadlines.filter((d) =>
-    d.days >= 0 && d.days <= 2 && d.status !== "completed" && d.status !== "overdue"
+  // Next 3 days: due in 1-3 days, not completed/overdue
+  const next3Days = allDeadlines.filter((d) =>
+    d.days >= 1 && d.days <= 3 && d.status !== "completed" && d.status !== "overdue"
   );
 
   // At risk: last login ≥36 hours
   const atRiskStudents = useMemo(() => students.filter((s) => hoursSinceLogin(s.lastLogin) >= 36), [students]);
-
-  const timelineItems = useMemo(() => {
-    return allDeadlines
-      .filter((d) => d.status === "pending" || d.status === "in-progress")
-      .sort((a, b) => a.days - b.days)
-      .slice(0, 5);
-  }, [allDeadlines]);
 
   const upcomingSessions = useMemo(() => {
     const now = new Date();
@@ -123,8 +118,8 @@ export function StaffDashboard({
         {/* ── Top Row: 5 Stat Cards ── */}
         <div className="grid grid-cols-5 gap-3.5 mb-5">
           <StatCard label="Active Students" value={students.length} sub="Assigned & active" />
-          <StatCard label="Overdue" value={overdue.length} sub={overdue.length === 0 ? "All clear" : "Past due"} danger={overdue.length > 0} />
-          <StatCard label="Next 48h" value={upcoming48h.length} sub="Due soon" />
+          <StatCard label="Urgent" value={urgent.length} sub={urgent.length === 0 ? "All clear" : "Overdue + today"} danger={urgent.length > 0} />
+          <StatCard label="Next 3 Days" value={next3Days.length} sub="Due soon" />
           <StatCard label="Pending Sessions" value={pendingCount} sub={pendingCount === 0 ? "All confirmed" : "Not confirmed"} danger={pendingCount > 0} />
           <div
             onClick={() => atRiskStudents.length > 0 && setShowInactiveModal(true)}
@@ -137,15 +132,41 @@ export function StaffDashboard({
           </div>
         </div>
 
-        {/* ── Main Grid: Timeline + Upcoming Sessions ── */}
+        {/* ── Main Grid: Urgent + Next 3 Days ── */}
         <div className="grid grid-cols-2 gap-3.5 mb-5">
-          <Card>
+          {/* Urgent — overdue + due today */}
+          <Card style={urgent.length > 0 ? { borderTop: "3px solid #e55b5b" } : {}}>
             <div className="flex justify-between mb-3.5">
-              <h2 className="m-0 text-base font-bold text-heading">Timeline</h2>
+              <h2 className="m-0 text-base font-bold" style={{ color: urgent.length > 0 ? "#e55b5b" : "#ebebeb" }}>
+                Urgent {urgent.length > 0 && `(${urgent.length})`}
+              </h2>
               <button onClick={() => onNavigate("master")} className="bg-transparent border-none cursor-pointer text-xs font-semibold" style={{ color: "#7aabff" }}>View all →</button>
             </div>
-            {timelineItems.length === 0 && <p className="text-sm text-sub py-4 text-center">All caught up!</p>}
-            {timelineItems.map((d, i) => (
+            {urgent.length === 0 && <p className="text-sm text-sub py-4 text-center">All caught up!</p>}
+            {urgent.sort((a, b) => a.days - b.days).map((d, i) => (
+              <div key={`${d.id}-${i}`}
+                onClick={() => { const s = students.find((s) => s.id === d.sid); if (s) { onSelectStudent(s); onNavigate("detail"); } }}
+                className="flex items-center gap-2.5 py-2.5 border-b border-line cursor-pointer rounded px-2 -mx-2 hover:bg-mist">
+                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#e55b5b" }} />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-heading truncate">{d.title}</div>
+                  <div className="text-xs text-sub">{d.sn}</div>
+                </div>
+                <span className="text-xs font-bold flex-shrink-0" style={{ color: "#e55b5b" }}>
+                  {d.days < 0 ? `${Math.abs(d.days)}d late` : "Today"}
+                </span>
+              </div>
+            ))}
+          </Card>
+
+          {/* Next 3 Days */}
+          <Card>
+            <div className="flex justify-between mb-3.5">
+              <h2 className="m-0 text-base font-bold text-heading">Next 3 Days</h2>
+              <button onClick={() => onNavigate("master")} className="bg-transparent border-none cursor-pointer text-xs font-semibold" style={{ color: "#7aabff" }}>View all →</button>
+            </div>
+            {next3Days.length === 0 && <p className="text-sm text-sub py-4 text-center">Nothing due in the next 3 days</p>}
+            {next3Days.sort((a, b) => a.days - b.days).map((d, i) => (
               <div key={`${d.id}-${i}`}
                 onClick={() => { const s = students.find((s) => s.id === d.sid); if (s) { onSelectStudent(s); onNavigate("detail"); } }}
                 className="flex items-center gap-2.5 py-2.5 border-b border-line cursor-pointer rounded px-2 -mx-2 hover:bg-mist">
@@ -154,67 +175,59 @@ export function StaffDashboard({
                   <div className="text-sm font-medium text-heading truncate">{d.title}</div>
                   <div className="text-xs text-sub">{d.sn}</div>
                 </div>
-                <span className="text-xs font-medium flex-shrink-0" style={{ color: d.days <= 1 ? "#e55b5b" : d.days <= 3 ? "#e5a83b" : "#717171" }}>
-                  {d.days < 0 ? `${Math.abs(d.days)}d late` : d.days === 0 ? "Today" : `${d.days}d`}
+                <span className="text-xs font-medium flex-shrink-0" style={{ color: d.days <= 1 ? "#e5a83b" : "#717171" }}>
+                  {d.days}d
                 </span>
               </div>
             ))}
           </Card>
+        </div>
 
-          <Card>
-            <div className="flex justify-between mb-3.5">
-              <h2 className="m-0 text-base font-bold text-heading">Upcoming Sessions</h2>
-              <span className="text-xs" style={{ color: "#505050" }}>Next 3</span>
-            </div>
-            {upcomingSessions.length === 0 && <p className="text-sm text-sub py-4 text-center">No upcoming sessions</p>}
+        {/* ── Upcoming Sessions — Crimson style with bold dates ── */}
+        <Card>
+          <div className="flex justify-between mb-3.5">
+            <h2 className="m-0 text-base font-bold text-heading">Upcoming Sessions</h2>
+            <button onClick={() => onNavigate("booking-requests")} className="bg-transparent border-none cursor-pointer text-xs font-semibold" style={{ color: "#7aabff" }}>View all →</button>
+          </div>
+          {upcomingSessions.length === 0 && <p className="text-sm text-sub py-4 text-center">No upcoming sessions</p>}
+          <div className="space-y-3">
             {upcomingSessions.map((ss, i) => {
               const d = new Date(ss.date);
+              const dateLabel = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+              const timeLabel = ss.start_time || "";
+              const fmtTime = timeLabel ? (() => {
+                const [h, m] = timeLabel.split(":");
+                const hr = parseInt(h);
+                const ampm = hr >= 12 ? "pm" : "am";
+                const hr12 = hr % 12 || 12;
+                return `${hr12}:${m} ${ampm}`;
+              })() : "";
               return (
                 <div key={ss.id || i}
                   onClick={() => { const s = students.find((st) => st.id === ss.studentId); if (s) { onSelectStudent(s); onNavigate("detail"); } }}
-                  className="p-3 rounded-lg mb-2 cursor-pointer hover:opacity-90 transition-opacity border border-line" style={{ background: "#252525" }}>
-                  <div className="text-xs mb-1" style={{ color: "#505050" }}>
-                    {d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                  className="flex items-start gap-4 py-3 border-b border-line cursor-pointer hover:bg-mist rounded px-2 -mx-2">
+                  <div className="flex-shrink-0 text-right" style={{ minWidth: 90 }}>
+                    <div className="text-sm font-bold text-heading">{dateLabel}</div>
+                    {fmtTime && <div className="text-xs" style={{ color: "#717171" }}>{fmtTime}</div>}
                   </div>
-                  <div className="text-sm font-semibold text-heading mb-1.5">
-                    {ss.notes ? ss.notes.split("\n")[0] : `Session with ${ss.studentName}`}
-                  </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0 border-l border-line pl-4">
+                    <div className="text-sm font-semibold text-heading mb-1">
+                      {ss.notes ? ss.notes.split("\n")[0] : `Session with ${ss.studentName}`}
+                    </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ background: "rgba(90,131,243,0.1)", color: "#5A83F3" }}>{ss.studentAv}</div>
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold" style={{ background: "#7c3aed", color: "#fff" }}>{ss.studentAv}</div>
                       <span className="text-xs text-body">{ss.studentName}</span>
                     </div>
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: ss.action ? "rgba(74,186,106,0.08)" : "rgba(229,168,59,0.08)", color: ss.action ? "#4aba6a" : "#e5a83b" }}>
-                      {ss.action ? "Confirmed" : "Pending"}
-                    </span>
                   </div>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: ss.action ? "rgba(74,186,106,0.08)" : "rgba(229,168,59,0.08)", color: ss.action ? "#4aba6a" : "#e5a83b" }}>
+                    {ss.action ? "Confirmed" : "Pending"}
+                  </span>
                 </div>
               );
             })}
-          </Card>
-        </div>
-
-        {/* ── Bottom: Recent Activity ── */}
-        <Card>
-          <div className="flex justify-between mb-3.5">
-            <h2 className="m-0 text-base font-bold text-heading">Recent Activity</h2>
-            <span className="text-xs" style={{ color: "#505050" }}>All students</span>
-          </div>
-          {recentActivity.length === 0 && <p className="text-sm text-sub py-4 text-center">No recent activity</p>}
-          <div className="grid grid-cols-2 gap-2">
-            {recentActivity.map((item, i) => (
-              <div key={i} className="flex items-center gap-2.5 py-2 px-3 rounded-lg" style={{ background: item.type === "overdue" ? "rgba(229,91,91,0.06)" : "rgba(74,186,106,0.06)" }}>
-                <span className="text-sm flex-shrink-0">{item.type === "overdue" ? "⚠️" : "✅"}</span>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-heading truncate">{item.title}</div>
-                  <div className="text-xs text-sub">{item.student} · {item.date}</div>
-                </div>
-              </div>
-            ))}
           </div>
         </Card>
       </div>
-
       {/* ── At Risk Modal ── */}
       {showInactiveModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.6)" }} onClick={(e) => { if (e.target === e.currentTarget) setShowInactiveModal(false); }}>
