@@ -132,9 +132,9 @@ export function StaffDashboard({
           </div>
         </div>
 
-        {/* ── Main Grid: Urgent + Next 3 Days ── */}
+        {/* ── Main Grid: Urgent (left) + Upcoming Sessions (right) ── */}
         <div className="grid grid-cols-2 gap-3.5 mb-5">
-          {/* Urgent — overdue + due today */}
+          {/* Urgent — overdue + due today, capped at 6 */}
           <Card style={urgent.length > 0 ? { borderTop: "3px solid #e55b5b" } : {}}>
             <div className="flex justify-between mb-3.5">
               <h2 className="m-0 text-base font-bold" style={{ color: urgent.length > 0 ? "#e55b5b" : "#ebebeb" }}>
@@ -143,7 +143,7 @@ export function StaffDashboard({
               <button onClick={() => onNavigate("master")} className="bg-transparent border-none cursor-pointer text-xs font-semibold" style={{ color: "#7aabff" }}>View all →</button>
             </div>
             {urgent.length === 0 && <p className="text-sm text-sub py-4 text-center">All caught up!</p>}
-            {urgent.sort((a, b) => a.days - b.days).map((d, i) => (
+            {urgent.sort((a, b) => a.days - b.days).slice(0, 6).map((d, i) => (
               <div key={`${d.id}-${i}`}
                 onClick={() => { const s = students.find((s) => s.id === d.sid); if (s) { onSelectStudent(s); onNavigate("detail"); } }}
                 className="flex items-center gap-2.5 py-2.5 border-b border-line cursor-pointer rounded px-2 -mx-2 hover:bg-mist">
@@ -157,74 +157,88 @@ export function StaffDashboard({
                 </span>
               </div>
             ))}
+            {urgent.length > 6 && <div className="text-xs text-sub text-center pt-2">+{urgent.length - 6} more</div>}
           </Card>
 
-          {/* Next 3 Days */}
+          {/* Upcoming Sessions — next 3, Crimson style */}
           <Card>
             <div className="flex justify-between mb-3.5">
-              <h2 className="m-0 text-base font-bold text-heading">Next 3 Days</h2>
-              <button onClick={() => onNavigate("master")} className="bg-transparent border-none cursor-pointer text-xs font-semibold" style={{ color: "#7aabff" }}>View all →</button>
+              <h2 className="m-0 text-base font-bold text-heading">Upcoming Sessions</h2>
+              <button onClick={() => onNavigate("booking-requests")} className="bg-transparent border-none cursor-pointer text-xs font-semibold" style={{ color: "#7aabff" }}>View all →</button>
             </div>
-            {next3Days.length === 0 && <p className="text-sm text-sub py-4 text-center">Nothing due in the next 3 days</p>}
-            {next3Days.sort((a, b) => a.days - b.days).map((d, i) => (
-              <div key={`${d.id}-${i}`}
-                onClick={() => { const s = students.find((s) => s.id === d.sid); if (s) { onSelectStudent(s); onNavigate("detail"); } }}
-                className="flex items-center gap-2.5 py-2.5 border-b border-line cursor-pointer rounded px-2 -mx-2 hover:bg-mist">
-                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: getCategoryColor(d.cat) }} />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-heading truncate">{d.title}</div>
-                  <div className="text-xs text-sub">{d.sn}</div>
-                </div>
-                <span className="text-xs font-medium flex-shrink-0" style={{ color: d.days <= 1 ? "#e5a83b" : "#717171" }}>
-                  {d.days}d
-                </span>
-              </div>
-            ))}
+            {upcomingSessions.length === 0 && <p className="text-sm text-sub py-4 text-center">No upcoming sessions</p>}
+            <div className="space-y-3">
+              {upcomingSessions.map((ss, i) => {
+                const d = new Date(ss.date);
+                const dateLabel = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                const timeLabel = ss.start_time || "";
+                const fmtTime = timeLabel ? (() => {
+                  const [h, m] = timeLabel.split(":");
+                  const hr = parseInt(h);
+                  const ampm = hr >= 12 ? "pm" : "am";
+                  const hr12 = hr % 12 || 12;
+                  return `${hr12}:${m} ${ampm}`;
+                })() : "";
+                return (
+                  <div key={ss.id || i}
+                    onClick={() => { const s = students.find((st) => st.id === ss.studentId); if (s) { onSelectStudent(s); onNavigate("detail"); } }}
+                    className="flex items-start gap-4 py-3 border-b border-line cursor-pointer hover:bg-mist rounded px-2 -mx-2">
+                    <div className="flex-shrink-0 text-right" style={{ minWidth: 90 }}>
+                      <div className="text-sm font-bold text-heading">{dateLabel}</div>
+                      {fmtTime && <div className="text-xs" style={{ color: "#717171" }}>{fmtTime}</div>}
+                    </div>
+                    <div className="flex-1 min-w-0 border-l border-line pl-4">
+                      <div className="text-sm font-semibold text-heading mb-1">
+                        {ss.notes ? ss.notes.split("\n")[0] : `Session with ${ss.studentName}`}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold" style={{ background: "#7c3aed", color: "#fff" }}>{ss.studentAv}</div>
+                        <span className="text-xs text-body">{ss.studentName}</span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: ss.action ? "rgba(74,186,106,0.08)" : "rgba(229,168,59,0.08)", color: ss.action ? "#4aba6a" : "#e5a83b" }}>
+                      {ss.action ? "Confirmed" : "Pending"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </Card>
         </div>
 
-        {/* ── Upcoming Sessions — Crimson style with bold dates ── */}
+        {/* ── Bottom: Recent Activity — student-style format across all students ── */}
         <Card>
           <div className="flex justify-between mb-3.5">
-            <h2 className="m-0 text-base font-bold text-heading">Upcoming Sessions</h2>
-            <button onClick={() => onNavigate("booking-requests")} className="bg-transparent border-none cursor-pointer text-xs font-semibold" style={{ color: "#7aabff" }}>View all →</button>
+            <h2 className="m-0 text-base font-bold text-heading">Recent Activity</h2>
+            <span className="text-xs" style={{ color: "#505050" }}>All students</span>
           </div>
-          {upcomingSessions.length === 0 && <p className="text-sm text-sub py-4 text-center">No upcoming sessions</p>}
-          <div className="space-y-3">
-            {upcomingSessions.map((ss, i) => {
-              const d = new Date(ss.date);
-              const dateLabel = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-              const timeLabel = ss.start_time || "";
-              const fmtTime = timeLabel ? (() => {
-                const [h, m] = timeLabel.split(":");
-                const hr = parseInt(h);
-                const ampm = hr >= 12 ? "pm" : "am";
-                const hr12 = hr % 12 || 12;
-                return `${hr12}:${m} ${ampm}`;
-              })() : "";
-              return (
-                <div key={ss.id || i}
-                  onClick={() => { const s = students.find((st) => st.id === ss.studentId); if (s) { onSelectStudent(s); onNavigate("detail"); } }}
-                  className="flex items-start gap-4 py-3 border-b border-line cursor-pointer hover:bg-mist rounded px-2 -mx-2">
-                  <div className="flex-shrink-0 text-right" style={{ minWidth: 90 }}>
-                    <div className="text-sm font-bold text-heading">{dateLabel}</div>
-                    {fmtTime && <div className="text-xs" style={{ color: "#717171" }}>{fmtTime}</div>}
-                  </div>
-                  <div className="flex-1 min-w-0 border-l border-line pl-4">
-                    <div className="text-sm font-semibold text-heading mb-1">
-                      {ss.notes ? ss.notes.split("\n")[0] : `Session with ${ss.studentName}`}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold" style={{ background: "#7c3aed", color: "#fff" }}>{ss.studentAv}</div>
-                      <span className="text-xs text-body">{ss.studentName}</span>
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: ss.action ? "rgba(74,186,106,0.08)" : "rgba(229,168,59,0.08)", color: ss.action ? "#4aba6a" : "#e5a83b" }}>
-                    {ss.action ? "Confirmed" : "Pending"}
+          <div className="flex flex-col gap-1.5">
+            {(() => {
+              const items: { type: "completed" | "overdue"; title: string; student: string; cat: string; due: string; days: number; specialist?: string }[] = [];
+              students.forEach((s) => {
+                s.dl.forEach((d) => {
+                  if (d.status === "completed") items.push({ type: "completed", title: d.title, student: s.name, cat: d.cat, due: d.due, days: d.days, specialist: d.specialist });
+                  if (d.status === "overdue") items.push({ type: "overdue", title: d.title, student: s.name, cat: d.cat, due: d.due, days: d.days });
+                });
+              });
+              if (items.length === 0) return <p className="text-xs text-faint text-center py-3 m-0">No recent activity yet</p>;
+              return items.slice(0, 8).map((item, i) => (
+                <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-lg" style={{ background: "#1e1e1e" }}>
+                  <span className="text-sm" style={{ color: item.type === "completed" ? "#4aba6a" : "#e55b5b" }}>
+                    {item.type === "completed" ? "✓" : "!"}
                   </span>
+                  <div className="flex-1">
+                    <div className="text-sm text-body">
+                      {item.type === "completed"
+                        ? <>{item.specialist || item.student.split(" ")[0]} marked <span className="font-semibold text-heading">&quot;{item.title}&quot;</span> as <span style={{ color: "#4aba6a" }}>Complete</span></>
+                        : <><span className="font-semibold text-heading">&quot;{item.title}&quot;</span> is <span style={{ color: "#e55b5b" }}>overdue</span> by {Math.abs(item.days)} days</>
+                      }
+                    </div>
+                    <div className="text-[10px] text-faint mt-0.5">{item.student} · {item.cat} · {item.due}</div>
+                  </div>
                 </div>
-              );
-            })}
+              ));
+            })()}
           </div>
         </Card>
       </div>
