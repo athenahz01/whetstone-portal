@@ -156,12 +156,12 @@ export default function Home() {
     }
   }, [allStudents, profile]);
 
-  // ── Auto-refresh every 60s so last_login stays live ──
+  // ── Auto-refresh every 60s so last_login stays live (strategists only) ──
   useEffect(() => {
-    if (!session || loading) return;
+    if (!session || loading || !profile || profile.role !== "strategist") return;
     const interval = setInterval(() => loadData(true), 60_000);
     return () => clearInterval(interval);
-  }, [session, loading, loadData]);
+  }, [session, loading, loadData, profile]);
 
   // ── Auth state ──
   useEffect(() => {
@@ -230,7 +230,12 @@ export default function Home() {
           .catch(() => {});
       }
 
-      loadData();
+      // Only fetch all students for strategists — students/parents use /api/student-data exclusively
+      if (data.role === "strategist") {
+        loadData();
+      } else {
+        setLoading(false);
+      }
 
       const { data: tokenData } = await supabase
         .from("google_tokens")
@@ -251,7 +256,11 @@ export default function Home() {
         if (retryData) {
           setProfile(retryData as Profile);
           setProfileId(userId);
-          loadData();
+          if ((retryData as any).role === "strategist") {
+            loadData();
+          } else {
+            setLoading(false);
+          }
         } else {
           // Still no profile — show a fallback
           setProfile({ role: "student", display_name: "Student", student_id: null, timezone: "America/New_York" });
@@ -314,11 +323,11 @@ export default function Home() {
   const isStudentOrParent = role === "student" || role === "parent";
   const visibleStudents = (role === "strategist" && caseloadFilter) ? allStudents.filter(s => caseloadFilter.includes(s.id)) : allStudents;
 
-  // For students & parents, find THEIR linked student record
-  // For strategists, me is not used the same way
-  const me = isStudentOrParent && profile.student_id
-    ? allStudents.find((s) => s.id === profile.student_id) || null
-    : visibleStudents[0] || null;
+  // For students & parents, find THEIR linked student record ONLY by profile.student_id
+  // For strategists, me is the first visible student (for detail view context)
+  const me = isStudentOrParent
+    ? (profile.student_id ? allStudents.find((s) => s.id === profile.student_id) || null : null)
+    : (visibleStudents[0] || null);
 
   const renderMain = () => {
     // Unlinked student or parent
