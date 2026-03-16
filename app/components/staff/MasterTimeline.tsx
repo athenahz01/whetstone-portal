@@ -226,6 +226,18 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
   const [prefillStudent, setPrefillStudent] = useState<number | null>(null);
   const [prefillDate, setPrefillDate] = useState<string>("");
   const [editTask, setEditTask] = useState<any>(null);
+  const [staffList, setStaffList] = useState<string[]>([]);
+
+  // Fetch staff names for specialist dropdown
+  useEffect(() => {
+    fetch("/api/admin/users").then(r => r.json()).then(data => {
+      const names = (data.users || [])
+        .filter((u: any) => u.role === "strategist" && u.name && u.name !== "—")
+        .map((u: any) => u.name)
+        .sort();
+      setStaffList(names);
+    }).catch(() => {});
+  }, []);
   const [counselorEvents, setCounselorEvents] = useState<any[]>([]);
   const [googleEvents, setGoogleEvents] = useState<any[]>([]);
   const [sortField, setSortField] = useState<SortField>("due");
@@ -686,15 +698,17 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
                       <span className="text-sm text-body truncate hover:underline">{d.studentName}</span>
                     </div>
 
-                    {/* SPECIALIST — click to change */}
+                    {/* SPECIALIST — click to change via dropdown */}
                     <div className="relative" onClick={(e) => e.stopPropagation()}>
                       {editingCell?.id === deadlineId && editingCell?.field === "specialist" ? (
-                        <input type="text" autoFocus defaultValue={d.specialist}
-                          placeholder="Name..."
-                          onBlur={(e) => handleInlineUpdate(deadlineId, "specialist", e.target.value)}
-                          onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); if (e.key === "Escape") setEditingCell(null); }}
-                          className="text-sm rounded px-1 py-0.5 border-none outline-none w-full"
-                          style={{ background: "#333", color: "#ebebeb" }} />
+                        <select autoFocus defaultValue={d.specialist || ""}
+                          onChange={(e) => handleInlineUpdate(deadlineId, "specialist", e.target.value)}
+                          onBlur={() => setEditingCell(null)}
+                          className="text-sm rounded px-1 py-0.5 border-none outline-none"
+                          style={{ background: "#333", color: "#ebebeb" }}>
+                          <option value="">—</option>
+                          {staffList.map((name) => (<option key={name} value={name}>{name}</option>))}
+                        </select>
                       ) : (
                         <div onClick={() => canEdit && setEditingCell({ id: deadlineId, field: "specialist" })}
                           className="text-sm text-sub truncate cursor-pointer hover:underline">{d.specialist || "—"}</div>
@@ -860,10 +874,11 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
                 <div className="text-[10px] mt-1" style={{ color: "#717171" }}>Set internal due 48h before this date</div>
               </FormField>
             </div>
-            <FormField label="Specialist (optional)"><input name="specialist" placeholder="e.g. Stephanie" style={inputStyle} /></FormField>
-            <FormField label="Responsible Team Members">
-              <input name="responsible" placeholder="e.g. Ren, Cole (comma separated)" style={inputStyle} />
-              <div className="text-[10px] mt-1" style={{ color: "#717171" }}>Who on the team owns this task</div>
+            <FormField label="Specialist">
+              <select required name="specialist" style={inputStyle}>
+                <option value="">Select specialist...</option>
+                {staffList.map((name) => (<option key={name} value={name}>{name}</option>))}
+              </select>
             </FormField>
             <div className="flex items-center gap-3 mt-3 mb-3 p-3 rounded-lg" style={{ background: "rgba(229,168,59,0.06)", border: "1px solid rgba(229,168,59,0.15)" }}>
               <input type="checkbox" name="internalOnly" id="dlInternal" className="w-4 h-4" style={{ accentColor: "#e5a83b" }} />
@@ -920,7 +935,10 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
                 </select>
               </FormField>
               <FormField label="Specialist">
-                <input name="specialist" defaultValue={editTask.specialist || ""} placeholder="Assigned to..." style={inputStyle} />
+                <select required name="specialist" defaultValue={editTask.specialist || ""} style={inputStyle}>
+                  <option value="">Select specialist...</option>
+                  {staffList.map((name) => (<option key={name} value={name}>{name}</option>))}
+                </select>
               </FormField>
             </div>
             <FormField label="Description (optional)">

@@ -548,15 +548,15 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
     <div>
       <PageHeader
         title="Planning"
-        sub="The 3-timer daily planning algorithm. Capture, prioritize, and schedule your work."
+        sub="The 3-step daily planning algorithm. Capture, prioritize, and schedule your work."
       />
 
       <div className="px-8 pb-8">
         {/* Step tabs — hidden during daily review */}
         {step !== 0 && (
-        <div className="flex mb-6 bg-white border border-line rounded-xl overflow-hidden">
+        <div className="flex mb-6 border border-line rounded-xl overflow-hidden">
           {([
-            [1, "① Brain Dump"],
+            [1, "🧠 Receptacle"],
             [2, "② Eisenhower Matrix"],
             [3, "③ Calendar Sync"],
           ] as const).map(([n, label]) => {
@@ -653,7 +653,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                   className="px-5 py-2.5 rounded-full border-none cursor-pointer text-sm font-semibold"
                   style={{ background: "#5A83F3", color: "#fff" }}
                 >
-                  Continue to Brain Dump →
+                  Continue to Receptacle →
                 </button>
               </div>
             </div>
@@ -738,7 +738,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                 onClick={() => { if (tasks.length > 0) { setSelectedTask(tasks[0].id); setStep(2); } }}
                 disabled={tasks.length === 0}
                 style={{ padding: "12px 24px", borderRadius: 12, border: "none", cursor: tasks.length === 0 ? "not-allowed" : "pointer", background: tasks.length === 0 ? "#333" : "#ebebeb", color: tasks.length === 0 ? "#505050" : "#111", fontWeight: 600, fontSize: 13 }}
-              >Next: Timer 2 →</button>
+              >Next: Eisenhower Matrix →</button>
             </div>
           </div>
         )}
@@ -750,7 +750,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
               <div className="flex gap-4 mb-5">
                 <div className="text-3xl">⬛</div>
                 <div>
-                  <h2 className="text-xl font-bold text-heading m-0">Timer 2: Eisenhower Matrix</h2>
+                  <h2 className="text-xl font-bold text-heading m-0">Eisenhower Matrix</h2>
                   <p className="text-sm text-sub mt-1 m-0">Select a task on the left, then click a quadrant to assign it.</p>
                 </div>
               </div>
@@ -818,7 +818,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
               <div className="flex items-center gap-4">
                 <div className="text-2xl">📅</div>
                 <div className="flex-1">
-                  <h2 className="text-lg font-bold text-heading m-0">Timer 3: Calendar Sync</h2>
+                  <h2 className="text-lg font-bold text-heading m-0">Calendar Sync</h2>
                   <p className="text-xs text-sub m-0 mt-0.5">Drag tasks from the right panel onto the calendar. <strong>&lt;2min tasks</strong> — check off as you go.</p>
                 </div>
                 {gcalConnected && (

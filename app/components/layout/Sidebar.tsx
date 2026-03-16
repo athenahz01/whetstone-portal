@@ -67,12 +67,12 @@ export function Sidebar({
       : [
           ["dashboard", "Dashboard"],
           ["profile", "Profile"],
-          ["tasks", "Tasks"],
+          ["tasks", "Projects & Tasks"],
           ["academics", "Academics"],
           ["testing", "Testing"],
           ["activities", "Activities"],
           ["honors", "Honors"],
-          ["receptacle", "Planning"],
+          ["receptacle", "Receptacle"],
           ["schools", "Schools"],
           ...((role === "student" || role === "parent") ? [["prep", "Sessions"]] : []),
         ];

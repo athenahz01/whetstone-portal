@@ -62,8 +62,27 @@ export function SessionPrep({ student, onRefresh, readOnly = false }: SessionPre
       Promise.all([
         fetchCounselorEventsForStudent(student.id),
         fetchStudentSessions(student.id),
-      ]).then(([counselorEvs, bookedSessions]) => {
-        setEvents([...counselorEvs, ...bookedSessions]);
+        fetch(`/api/booking-requests?studentId=${student.id}`).then(r => r.json()).then(d => d.requests || []).catch(() => []),
+      ]).then(([counselorEvs, bookedSessions, brs]) => {
+        // Merge session_notes from booking requests into matching events
+        const brMap = new Map<string, any>();
+        brs.forEach((br: any) => { if (br.session_name) brMap.set(br.session_name, br); });
+        const enriched = bookedSessions.map((s: any) => {
+          const match = brMap.get(s.title) || brMap.get(s.session_name);
+          return match ? { ...s, session_notes: match.session_notes || "", agenda: match.agenda || "" } : s;
+        });
+        // Also add confirmed booking requests that don't exist as sessions yet
+        const sessionTitles = new Set(bookedSessions.map((s: any) => s.title || s.session_name));
+        const brEvents = brs
+          .filter((br: any) => (br.status === "approved" || br.status === "confirmed") && !sessionTitles.has(br.session_name))
+          .map((br: any) => ({
+            id: `br-${br.id}`, title: br.session_name, date: br.date,
+            start_time: br.start_time, end_time: br.end_time,
+            specialist: br.specialist, category: br.session_type,
+            notes: br.notes, session_notes: br.session_notes || "",
+            status: br.status, isBooked: true,
+          }));
+        setEvents([...counselorEvs, ...enriched, ...brEvents]);
       });
       loadCommits();
       loadBookingRequests();
@@ -333,6 +352,13 @@ export function SessionPrep({ student, onRefresh, readOnly = false }: SessionPre
                                   </>
                                 )}
                               </div>
+                              {/* Public notes from mentor */}
+                              {ev.session_notes && (
+                                <div className="mt-3 pt-2.5 border-t border-line">
+                                  <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "#5A83F3" }}>Notes from mentor</div>
+                                  <div className="text-xs text-body leading-relaxed">{ev.session_notes}</div>
+                                </div>
+                              )}
                             </div>
                             <div className="flex flex-col items-end gap-3" onClick={(e) => e.stopPropagation()}>
                               <div className="flex items-center gap-4">

@@ -172,7 +172,7 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
                       {(r.agenda || r.session_notes) && (
                         <div className="mt-3 pt-3 border-t border-line space-y-2">
                           {r.agenda && (
-                            <div className="text-xs"><span className="font-semibold" style={{ color: "#717171" }}>Internal: </span><span className="text-sub">{r.agenda}</span></div>
+                            <div className="text-xs"><span className="font-semibold" style={{ color: "#e55b5b" }}>Internal: </span><span className="text-sub">{r.agenda}</span></div>
                           )}
                           {r.session_notes && (
                             <div className="text-xs"><span className="font-semibold" style={{ color: "#5A83F3" }}>Public: </span><span className="text-body">{r.session_notes}</span></div>
@@ -233,7 +233,7 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
               <div className="text-xs text-sub mt-1">📅 {detailModal.date} {detailModal.start_time && `· 🕐 ${detailModal.start_time}`} · {detailModal.student_name}</div>
             </div>
             <div>
-              <div className="text-xs uppercase tracking-widest font-bold mb-2" style={{ color: "#e5a83b" }}>Internal Notes <span className="normal-case tracking-normal font-normal">(staff only)</span></div>
+              <div className="text-xs uppercase tracking-widest font-bold mb-2" style={{ color: "#e55b5b" }}>Internal Notes <span className="normal-case tracking-normal font-normal">(staff only)</span></div>
               <textarea defaultValue={detailModal.agenda || ""} placeholder="Private notes — only visible to staff..." rows={4}
                 onBlur={async (e) => { const v = e.target.value; await fetch("/api/booking-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update_notes", requestId: detailModal.id, agenda: v }) }); setDetailModal({ ...detailModal, agenda: v }); }}
                 style={{ ...IS, resize: "vertical", lineHeight: 1.6, minHeight: 100 }} />
