@@ -168,14 +168,17 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
                           {r.counter_note && <div className="text-xs text-sub mt-1">{r.counter_note}</div>}
                         </div>
                       )}
-                      {/* Inline notes preview */}
-                      {(r.agenda || r.session_notes) && (
+                      {/* Inline notes preview — all 3 types */}
+                      {(r.agenda || r.session_notes || r.student_notes) && (
                         <div className="mt-3 pt-3 border-t border-line space-y-2">
                           {r.agenda && (
                             <div className="text-xs"><span className="font-semibold" style={{ color: "#e55b5b" }}>Internal: </span><span className="text-sub">{r.agenda}</span></div>
                           )}
                           {r.session_notes && (
-                            <div className="text-xs"><span className="font-semibold" style={{ color: "#5A83F3" }}>Public: </span><span className="text-body">{r.session_notes}</span></div>
+                            <div className="text-xs"><span className="font-semibold" style={{ color: "#5A83F3" }}>Mentor (public): </span><span className="text-body">{r.session_notes}</span></div>
+                          )}
+                          {r.student_notes && (
+                            <div className="text-xs"><span className="font-semibold" style={{ color: "#4aba6a" }}>Student: </span><span className="text-body">{r.student_notes}</span></div>
                           )}
                         </div>
                       )}
@@ -239,12 +242,18 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
                 style={{ ...IS, resize: "vertical", lineHeight: 1.6, minHeight: 100 }} />
             </div>
             <div>
-              <div className="text-xs uppercase tracking-widest font-bold mb-2" style={{ color: "#5A83F3" }}>Public Notes <span className="normal-case tracking-normal font-normal">(visible to student & parent)</span></div>
+              <div className="text-xs uppercase tracking-widest font-bold mb-2" style={{ color: "#5A83F3" }}>Mentor Notes <span className="normal-case tracking-normal font-normal">(visible to student & parent)</span></div>
               <textarea defaultValue={detailModal.session_notes || ""} placeholder="Notes shared with student and parents..." rows={4}
                 onBlur={async (e) => { const v = e.target.value; await fetch("/api/booking-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update_notes", requestId: detailModal.id, session_notes: v }) }); setDetailModal({ ...detailModal, session_notes: v }); }}
                 style={{ ...IS, resize: "vertical", lineHeight: 1.6, minHeight: 100 }} />
             </div>
-            <div className="text-[10px]" style={{ color: "#505050" }}>Both fields auto-save when you click away</div>
+            <div>
+              <div className="text-xs uppercase tracking-widest font-bold mb-2" style={{ color: "#4aba6a" }}>Student Notes <span className="normal-case tracking-normal font-normal">(written by student)</span></div>
+              <div className="p-3 rounded-lg text-sm" style={{ ...IS, minHeight: 60, background: "#252525", color: detailModal.student_notes ? "#ebebeb" : "#505050" }}>
+                {detailModal.student_notes || "No student notes yet"}
+              </div>
+            </div>
+            <div className="text-[10px]" style={{ color: "#505050" }}>Internal & Mentor notes auto-save when you click away</div>
           </div>
         </Modal>
       )}

@@ -547,7 +547,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
   return (
     <div>
       <PageHeader
-        title="Planning"
+        title="Receptacle"
         sub="The 3-step daily planning algorithm. Capture, prioritize, and schedule your work."
       />
 
@@ -668,7 +668,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                 <div className="text-3xl">🧠</div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-bold text-heading m-0">Planning</h2>
+                    <h2 className="text-xl font-bold text-heading m-0">Receptacle</h2>
                     <button onClick={() => setShowHelp(!showHelp)}
                       className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold cursor-pointer border-none"
                       style={{ background: "rgba(82,139,255,0.1)", color: "#5A83F3" }}>?</button>
@@ -748,7 +748,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
           <div>
             <div style={card}>
               <div className="flex gap-4 mb-5">
-                <div className="text-3xl">⬛</div>
+                <div className="text-3xl">⚖️</div>
                 <div>
                   <h2 className="text-xl font-bold text-heading m-0">Eisenhower Matrix</h2>
                   <p className="text-sm text-sub mt-1 m-0">Select a task on the left, then click a quadrant to assign it.</p>

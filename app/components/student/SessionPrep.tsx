@@ -69,17 +69,18 @@ export function SessionPrep({ student, onRefresh, readOnly = false }: SessionPre
         brs.forEach((br: any) => { if (br.session_name) brMap.set(br.session_name, br); });
         const enriched = bookedSessions.map((s: any) => {
           const match = brMap.get(s.title) || brMap.get(s.session_name);
-          return match ? { ...s, session_notes: match.session_notes || "", agenda: match.agenda || "" } : s;
+          return match ? { ...s, session_notes: match.session_notes || "", student_notes: match.student_notes || "", bookingRequestId: match.id } : s;
         });
         // Also add confirmed booking requests that don't exist as sessions yet
         const sessionTitles = new Set(bookedSessions.map((s: any) => s.title || s.session_name));
         const brEvents = brs
           .filter((br: any) => (br.status === "approved" || br.status === "confirmed") && !sessionTitles.has(br.session_name))
           .map((br: any) => ({
-            id: `br-${br.id}`, title: br.session_name, date: br.date,
+            id: `br-${br.id}`, brId: br.id, title: br.session_name, date: br.date,
             start_time: br.start_time, end_time: br.end_time,
             specialist: br.specialist, category: br.session_type,
             notes: br.notes, session_notes: br.session_notes || "",
+            student_notes: br.student_notes || "", bookingRequestId: br.id,
             status: br.status, isBooked: true,
           }));
         setEvents([...counselorEvs, ...enriched, ...brEvents]);
@@ -326,8 +327,7 @@ export function SessionPrep({ student, onRefresh, readOnly = false }: SessionPre
 
                     return (
                       <div key={ev.id}>
-                        <div className="p-5 rounded-xl group cursor-pointer border"
-                          onClick={() => setSelectedSession(selectedSession?.id === ev.id ? null : ev)}
+                        <div className="p-5 rounded-xl group border"
                           style={{ background: "#1e1e1e", border: "1px solid #2a2a2a" }}>
                           <div className="flex items-start justify-between">
                             <div className="flex-1 min-w-0">
@@ -352,66 +352,59 @@ export function SessionPrep({ student, onRefresh, readOnly = false }: SessionPre
                                   </>
                                 )}
                               </div>
-                              {/* Public notes from mentor */}
-                              {ev.session_notes && (
-                                <div className="mt-3 pt-2.5 border-t border-line">
-                                  <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "#5A83F3" }}>Notes from mentor</div>
-                                  <div className="text-xs text-body leading-relaxed">{ev.session_notes}</div>
-                                </div>
-                              )}
                             </div>
                             <div className="flex flex-col items-end gap-3" onClick={(e) => e.stopPropagation()}>
-                              <div className="flex items-center gap-4">
-                                <span className="text-sm font-semibold cursor-pointer hover:underline"
-                                  style={{ color: "#5A83F3" }}
-                                  onClick={() => setSelectedSession(selectedSession?.id === ev.id ? null : ev)}>
-                                  Agenda
-                                </span>
-                                <span className="text-sm font-semibold cursor-pointer hover:underline"
-                                  style={{ color: ev.notes ? "#5A83F3" : "#505050" }}
-                                  onClick={() => setSelectedSession(selectedSession?.id === ev.id ? null : ev)}>
-                                  Notes
-                                </span>
+                              <span className="text-xs font-semibold px-3 py-1 rounded-full"
+                                style={{
+                                  background: "transparent",
+                                  border: isCompleted ? "1.5px solid #4aba6a" : "1.5px solid #e5a83b",
+                                  color: isCompleted ? "#4aba6a" : "#e5a83b",
+                                }}>
+                                {isCompleted ? "Confirmed" : "Upcoming"}
+                              </span>
+                              {isBooked && (
+                                <button onClick={deleteSession}
+                                  className="w-6 h-6 rounded-full hidden group-hover:flex items-center justify-center border-none cursor-pointer"
+                                  style={{ background: "rgba(229,91,91,0.1)", color: "#e55b5b", fontSize: 11 }}>✕</button>
+                              )}
+                            </div>
+                          </div>
+                          {/* Inline notes fields — always visible */}
+                          <div className="mt-3 pt-3 border-t border-line space-y-2">
+                            {/* Mentor notes (public, read-only for student) */}
+                            {ev.session_notes && (
+                              <div>
+                                <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "#5A83F3" }}>Mentor Notes</div>
+                                <div className="text-xs text-body leading-relaxed p-2 rounded-lg" style={{ background: "#252525" }}>{ev.session_notes}</div>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <button onClick={isBooked ? toggleStatus : undefined}
-                                  className="text-xs font-semibold px-3 py-1 rounded-full"
-                                  style={{
-                                    background: "transparent",
-                                    border: isCompleted ? "1.5px solid #4aba6a" : "1.5px solid #e5a83b",
-                                    color: isCompleted ? "#4aba6a" : "#e5a83b",
-                                    cursor: isBooked ? "pointer" : "default",
-                                  }}>
-                                  {isCompleted ? "Confirmed" : "Pending"}
-                                </button>
-                                {isBooked && (
-                                  <button onClick={deleteSession}
-                                    className="w-6 h-6 rounded-full hidden group-hover:flex items-center justify-center border-none cursor-pointer"
-                                    style={{ background: "rgba(229,91,91,0.1)", color: "#e55b5b", fontSize: 11 }}>✕</button>
-                                )}
-                              </div>
+                            )}
+                            {/* Student notes (editable) */}
+                            <div>
+                              <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "#4aba6a" }}>Your Notes</div>
+                              {!readOnly ? (
+                                <textarea
+                                  defaultValue={ev.student_notes || ""}
+                                  placeholder="Add your notes for this session..."
+                                  rows={2}
+                                  onClick={(e) => e.stopPropagation()}
+                                  onBlur={async (e) => {
+                                    const val = e.target.value;
+                                    if (ev.bookingRequestId || ev.brId) {
+                                      await fetch("/api/booking-requests", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ action: "update_notes", requestId: ev.bookingRequestId || ev.brId, student_notes: val }),
+                                      });
+                                    }
+                                  }}
+                                  style={{ width: "100%", padding: "8px 10px", background: "#252525", border: "1px solid #333", borderRadius: 8, color: "#ebebeb", fontSize: 12, outline: "none", boxSizing: "border-box", resize: "vertical", lineHeight: 1.5 }}
+                                />
+                              ) : (
+                                <div className="text-xs text-body p-2 rounded-lg" style={{ background: "#252525" }}>{ev.student_notes || "—"}</div>
+                              )}
                             </div>
                           </div>
                         </div>
-                        {/* Expanded detail panel */}
-                        {selectedSession?.id === ev.id && (
-                          <div className="ml-3 p-4 rounded-b-xl" style={{ background: "#1e1e1e", borderLeft: "3px solid #333", marginTop: -4 }}>
-                            {ev.notes ? (
-                              <div className="mb-3">
-                                <div className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: "#717171" }}>📝 Session Notes</div>
-                                <div className="text-sm leading-relaxed p-3 rounded-lg" style={{ background: "#252525", color: "#d0d0d0" }}>{ev.notes}</div>
-                              </div>
-                            ) : (
-                              <div className="text-xs text-faint py-2">No notes for this session.</div>
-                            )}
-                            <div className="flex items-center gap-4 mt-2 text-xs text-sub">
-                              {ev.category && <span>Category: {ev.category}</span>}
-                              {ev.specialist && <span>Mentor: {ev.specialist}</span>}
-                              <span>Date: {ev.date}</span>
-                              {isBooked && <button onClick={() => { setViewMode("commit" as any); }} className="bg-transparent border-none cursor-pointer text-xs font-semibold" style={{ color: "#528bff" }}>Write Close & Commit →</button>}
-                            </div>
-                          </div>
-                        )}
                       </div>
                     );
                   })}

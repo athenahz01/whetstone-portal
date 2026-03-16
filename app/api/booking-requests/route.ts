@@ -136,10 +136,11 @@ export async function POST(request: NextRequest) {
 
     // Update agenda or session notes
     case "update_notes": {
-      const { requestId, agenda, session_notes } = body;
+      const { requestId, agenda, session_notes, student_notes } = body;
       const updateData: any = {};
       if (agenda !== undefined) updateData.agenda = agenda;
       if (session_notes !== undefined) updateData.session_notes = session_notes;
+      if (student_notes !== undefined) updateData.student_notes = student_notes;
       const { error } = await supabase.from("booking_requests").update(updateData).eq("id", requestId);
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
       return NextResponse.json({ success: true });
