@@ -535,13 +535,17 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
                 {actions.length > 0 && (
                   <div>
                     <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "#717171" }}>Action Items</div>
-                    {actions.map((a: any, i: number) => (
-                      <div key={i} className="flex items-center gap-2 text-xs text-body ml-1">
-                        <span className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold flex-shrink-0" style={{ background: "#5A83F3", color: "#fff" }}>{i + 1}</span>
-                        <span>{a.text || a}</span>
-                        {a.due && <span className="text-faint">· Due: {a.due}</span>}
-                      </div>
-                    ))}
+                    {actions.map((a: any, i: number) => {
+                      const label = typeof a === "string" ? a : (a.text || a.title || a.name || JSON.stringify(a));
+                      const due = typeof a === "object" ? (a.due || a.dueDate || "") : "";
+                      return (
+                        <div key={i} className="flex items-center gap-2 text-xs text-body ml-1">
+                          <span className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold flex-shrink-0" style={{ background: "#5A83F3", color: "#fff" }}>{i + 1}</span>
+                          <span>{label}</span>
+                          {due && <span className="text-faint">· Due: {due}</span>}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
