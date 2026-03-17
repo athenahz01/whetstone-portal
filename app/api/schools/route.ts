@@ -96,11 +96,42 @@ export async function GET(request: NextRequest) {
     } catch {}
   }
 
+  // Common school name aliases
+  const ALIASES: Record<string, string> = {
+    "unc": "University of North Carolina at Chapel Hill",
+    "unc chapel hill": "University of North Carolina at Chapel Hill",
+    "mit": "Massachusetts Institute of Technology",
+    "caltech": "California Institute of Technology",
+    "usc": "University of Southern California",
+    "ucla": "University of California-Los Angeles",
+    "ucb": "University of California-Berkeley",
+    "uc berkeley": "University of California-Berkeley",
+    "nyu": "New York University",
+    "uva": "University of Virginia",
+    "umich": "University of Michigan",
+    "upenn": "University of Pennsylvania",
+    "gatech": "Georgia Institute of Technology",
+    "georgia tech": "Georgia Institute of Technology",
+    "uiuc": "University of Illinois Urbana-Champaign",
+    "cmu": "Carnegie Mellon University",
+    "bu": "Boston University",
+    "bc": "Boston College",
+    "uw": "University of Washington-Seattle Campus",
+    "ut austin": "University of Texas at Austin",
+    "washu": "Washington University in St Louis",
+  };
+
+  let searchQuery = q;
+  if (q) {
+    const lower = q.toLowerCase().trim();
+    if (ALIASES[lower]) searchQuery = ALIASES[lower];
+  }
+
   let url: string;
   if (id) {
     url = `${BASE}?api_key=${API_KEY}&id=${id}&fields=${FIELDS}`;
-  } else if (q) {
-    url = `${BASE}?api_key=${API_KEY}&school.name=${encodeURIComponent(q)}&fields=${FIELDS}&per_page=15&school.operating=1&school.degrees_awarded.predominant=3`;
+  } else if (searchQuery) {
+    url = `${BASE}?api_key=${API_KEY}&school.name=${encodeURIComponent(searchQuery)}&fields=${FIELDS}&per_page=15&school.operating=1&school.degrees_awarded.predominant=3`;
   } else {
     return NextResponse.json({ error: "Missing q or id param" }, { status: 400 });
   }

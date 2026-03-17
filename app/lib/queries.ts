@@ -156,7 +156,7 @@ export async function addStudent(data: {
       grade: data.grade,
       gpa: data.gpa,
       sat: null,
-      counselor: "Sarah Mitchell",
+      counselor: "",
       status: "on-track",
       avatar: data.name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2),
       school: data.school,

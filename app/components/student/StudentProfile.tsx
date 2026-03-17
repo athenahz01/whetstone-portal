@@ -109,7 +109,9 @@ export function StudentProfile({ student, readOnly = false }: StudentProfileProp
                 )}
               </div>
               <div className="flex items-center gap-4 mt-1">
-                <span className="text-xs" style={{ color: "#717171" }}>Mentor: {student.counselor}</span>
+                {((student.team && student.team.length > 0) || student.counselor) && (
+                  <span className="text-xs" style={{ color: "#717171" }}>Mentor: {student.team && student.team.length > 0 ? student.team.join(", ") : student.counselor}</span>
+                )}
                 {student.email && <span className="text-xs" style={{ color: "#717171" }}>{student.email}</span>}
               </div>
             </div>
