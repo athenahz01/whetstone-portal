@@ -182,9 +182,12 @@ export default function Home() {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
-      // Only react to actual sign-in/sign-out, skip token refreshes and re-auth
-      if (event === "TOKEN_REFRESHED" || event === "SIGNED_IN") {
-        // Update session state but don't reload
+      // Skip token refreshes entirely
+      if (event === "TOKEN_REFRESHED") return;
+      
+      // For SIGNED_IN: only reload if we don't have a profile yet (fresh login)
+      // Skip if profile already loaded (tab switch / re-auth)
+      if (event === "SIGNED_IN" && profile) {
         if (s) setSession(true);
         return;
       }
@@ -192,9 +195,7 @@ export default function Home() {
       setSession(!!s);
       if (s) {
         setUserEmail(s.user.email || null);
-        if (!profile) {
-          loadProfile(s.user.id);
-        }
+        loadProfile(s.user.id);
       } else {
         setProfile(null);
         setUserEmail(null);

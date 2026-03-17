@@ -226,6 +226,22 @@ export function Sidebar({
               📅 Connect Google Calendar
             </button>
           )}
+
+          {/* Apple Calendar Subscribe */}
+          <button
+            onClick={() => {
+              const feedUrl = `${window.location.origin}/api/ical-feed?token=${profileId}`;
+              const webcalUrl = feedUrl.replace("https://", "webcal://").replace("http://", "webcal://");
+              window.open(webcalUrl, "_self");
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer text-xs font-semibold border-none mt-1.5"
+            style={{
+              background: "rgba(255,255,255,0.04)",
+              color: "#cbd5e1",
+            }}
+          >
+            🍎 Subscribe via AppleCal
+          </button>
         </div>
       )}
 
