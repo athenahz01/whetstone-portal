@@ -466,7 +466,7 @@ export default function Home() {
       );
     }
     if (role === "strategist" && view === "booking-requests") {
-      return <BookingRequestsView strategistEmail={userEmail || ""} />;
+      return <BookingRequestsView strategistEmail={userEmail || ""} profileId={profileId} />;
     }
     if (role === "strategist" && view === "analytics") {
       return (
