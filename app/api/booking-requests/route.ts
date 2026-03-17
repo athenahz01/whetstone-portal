@@ -86,6 +86,38 @@ export async function POST(request: NextRequest) {
       // Update request status
       await supabase.from("booking_requests").update({ status: "approved" }).eq("id", requestId);
 
+      // Push to GCal for both participants (fire-and-forget)
+      try {
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://whetstone-portal.com";
+        // Find student's profile
+        const { data: studentProfile } = await supabase.from("profiles").select("id").eq("student_id", req.student_id).single();
+        // Find specialist's profile by matching email
+        const { data: allProfiles } = await supabase.from("profiles").select("id, email").eq("role", "strategist");
+        const specialistProfile = (allProfiles || []).find((p: any) =>
+          p.email && req.specialist && (p.email.toLowerCase().includes(req.specialist.split(" ")[0].toLowerCase()))
+        );
+
+        const title = `${req.session_name} [Whetstone]`;
+        const startMinutes = req.start_time ? parseInt(req.start_time.split(":")[0]) * 60 + parseInt(req.start_time.split(":")[1]) : undefined;
+
+        // Push to student's GCal
+        if (studentProfile?.id) {
+          fetch(`${siteUrl}/api/calendar/sync`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ profileId: studentProfile.id, title, date: req.date, description: `${req.session_type} with ${req.specialist}`, startMinutes, durationMinutes: 60 }),
+          }).catch(() => {});
+        }
+        // Push to specialist's GCal
+        if (specialistProfile?.id) {
+          fetch(`${siteUrl}/api/calendar/sync`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ profileId: specialistProfile.id, title, date: req.date, description: `${req.session_type} with ${req.student_name}`, startMinutes, durationMinutes: 60 }),
+          }).catch(() => {});
+        }
+      } catch (e) { console.error("[booking-requests] GCal push error:", e); }
+
       return NextResponse.json({ success: true });
     }
 

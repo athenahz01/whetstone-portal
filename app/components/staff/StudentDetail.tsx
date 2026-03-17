@@ -10,7 +10,7 @@ import { Modal } from "../ui/Modal";
 import { FormField } from "../ui/FormField";
 import { getCategoryColor, getStatusColor } from "../../lib/colors";
 import { updateDeadline, addDeadline, deleteDeadline, updateStudent, deleteStudent, addSchool, updateSchool, deleteSchool, addSession, updateSession, deleteSession } from "../../lib/queries";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface StudentDetailProps {
   student: Student;
@@ -102,6 +102,18 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
   const [addingSession, setAddingSession] = useState(false);
   const [editingSession, setEditingSession] = useState<Session | null>(null);
   const [confirmDeleteSessionId, setConfirmDeleteSessionId] = useState<number | null>(null);
+  const [commits, setCommits] = useState<any[]>([]);
+  const [editingCommit, setEditingCommit] = useState<any>(null);
+
+  // Load Close & Commit data
+  useEffect(() => {
+    if (s.id) {
+      fetch(`/api/closing-commits?studentId=${s.id}`)
+        .then(r => r.json())
+        .then(d => setCommits(d.commits || []))
+        .catch(() => setCommits([]));
+    }
+  }, [s.id]);
 
   const loginDays = daysSinceLogin(s.lastLogin);
   const loginLabel = formatLastLogin(s.lastLogin);
@@ -484,7 +496,116 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
             </div>
           ))}
         </Card>
+
+        {/* Close & Commit */}
+        <Card className="mt-3.5">
+          <div className="flex justify-between items-center mb-3.5">
+            <h3 className="m-0 text-lg font-bold text-heading">Close & Commit</h3>
+            <span className="text-xs text-sub">{commits.length} entries</span>
+          </div>
+          {commits.length === 0 && (
+            <p className="text-sm text-sub py-4 text-center">No close & commit entries yet</p>
+          )}
+          {commits.map((c: any) => {
+            const actions = typeof c.actions === "string" ? JSON.parse(c.actions || "[]") : (c.actions || []);
+            return (
+              <div key={c.id}
+                onClick={() => setEditingCommit(c)}
+                className="p-3 px-4 rounded-lg mb-1.5 cursor-pointer hover:opacity-80 transition-opacity"
+                style={{ background: "#252525", borderLeft: "3px solid #a480f2" }}>
+                <div className="flex justify-between mb-1">
+                  <div className="text-sm font-bold text-heading">
+                    {new Date(c.created_at).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                    <span className="text-xs text-sub font-normal ml-2">
+                      {new Date(c.created_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {c.session_type && <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: "rgba(229,168,59,0.08)", color: "#e5a83b" }}>{c.session_type === "in-person" ? "🤝 In-Person" : "💻 Virtual"}</span>}
+                    <span className="text-[10px] text-sub">✏️</span>
+                  </div>
+                </div>
+                {c.specialist && <div className="text-xs text-sub mb-2">with {c.specialist}</div>}
+                {c.active_recall && (
+                  <div className="mb-2">
+                    <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "#717171" }}>Active Recall</div>
+                    <div className="text-xs text-body">{c.active_recall}</div>
+                  </div>
+                )}
+                {actions.length > 0 && (
+                  <div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "#717171" }}>Action Items</div>
+                    {actions.map((a: any, i: number) => (
+                      <div key={i} className="flex items-center gap-2 text-xs text-body ml-1">
+                        <span className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold flex-shrink-0" style={{ background: "#5A83F3", color: "#fff" }}>{i + 1}</span>
+                        <span>{a.text || a}</span>
+                        {a.due && <span className="text-faint">· Due: {a.due}</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </Card>
       </div>
+
+      {/* ── Edit Close & Commit Modal ── */}
+      {editingCommit && (
+        <Modal title="Edit Close & Commit" onClose={() => setEditingCommit(null)}>
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            setSaving(true);
+            const f = new FormData(e.target as HTMLFormElement);
+            const actionsRaw = f.get("actions") as string;
+            const actions = actionsRaw.split("\n").filter(Boolean).map((t, i) => ({ text: t.trim(), due: "" }));
+            await fetch("/api/closing-commits", {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                id: editingCommit.id,
+                activeRecall: f.get("activeRecall") as string,
+                actions,
+                sessionType: f.get("sessionType") as string,
+                specialist: f.get("specialist") as string,
+              }),
+            });
+            // Reload commits
+            const res = await fetch(`/api/closing-commits?studentId=${s.id}`);
+            const data = await res.json();
+            setCommits(data.commits || []);
+            setSaving(false); setEditingCommit(null);
+          }}>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <FormField label="Session Type">
+                <select name="sessionType" defaultValue={editingCommit.session_type || "virtual"} style={inputStyle}>
+                  <option value="in-person">In-Person</option>
+                  <option value="virtual">Virtual</option>
+                </select>
+              </FormField>
+              <FormField label="Specialist">
+                <input name="specialist" defaultValue={editingCommit.specialist || ""} style={inputStyle} />
+              </FormField>
+            </div>
+            <FormField label="Active Recall">
+              <textarea name="activeRecall" rows={3} defaultValue={editingCommit.active_recall || ""} placeholder="What did the student remember?" style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} />
+            </FormField>
+            <FormField label="Action Items (one per line)">
+              <textarea name="actions" rows={4}
+                defaultValue={(() => {
+                  const acts = typeof editingCommit.actions === "string" ? JSON.parse(editingCommit.actions || "[]") : (editingCommit.actions || []);
+                  return acts.map((a: any) => a.text || a).join("\n");
+                })()}
+                placeholder="Action item 1&#10;Action item 2&#10;Action item 3"
+                style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} />
+            </FormField>
+            <div className="flex justify-end gap-2 mt-3">
+              <Button onClick={() => setEditingCommit(null)}>Cancel</Button>
+              <Button primary type="submit">{saving ? "Saving..." : "Save Changes"}</Button>
+            </div>
+          </form>
+        </Modal>
+      )}
 
       {/* ── Add Deadline Modal (strategist) ──────────────────────────────── */}
       {addingDeadline && (

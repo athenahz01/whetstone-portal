@@ -8,9 +8,10 @@ import { PageHeader } from "../ui/PageHeader";
 
 interface BookingRequestsProps {
   strategistEmail: string;
+  profileId?: string | null;
 }
 
-export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
+export function BookingRequests({ strategistEmail, profileId }: BookingRequestsProps) {
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [counterModal, setCounterModal] = useState<any>(null);
@@ -47,6 +48,17 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
   }, []);
 
   useEffect(() => { loadRequests(); }, [strategistEmail]);
+
+  // Sync GCal meetings into sessions (fire-and-forget on mount)
+  useEffect(() => {
+    if (profileId) {
+      fetch("/api/gcal-session-sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profileId }),
+      }).then(() => loadRequests()).catch(() => {});
+    }
+  }, [profileId]);
 
   const handleApprove = async (id: number) => {
     setProcessing(true);
@@ -186,10 +198,13 @@ export function BookingRequests({ strategistEmail }: BookingRequestsProps) {
                     <div className="flex flex-col items-end gap-3 ml-4">
                       <span className="text-sm font-semibold cursor-pointer hover:underline" style={{ color: "#5A83F3" }}
                         onClick={() => setDetailModal({ ...r, view: "notes" })}>Add Notes</span>
-                      <span className="text-xs font-semibold px-3 py-1 rounded-full"
-                        style={{ background: "transparent", border: `1.5px solid ${sc.color}`, color: sc.color }}>
-                        {r.status === "pending" ? `Pending (${r.student_name?.split(" ")[0]})` : r.status}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {r.gcal_synced && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(56,189,180,0.08)", color: "#38bdb4", border: "1px solid rgba(56,189,180,0.2)" }}>📅 GCal</span>}
+                        <span className="text-xs font-semibold px-3 py-1 rounded-full"
+                          style={{ background: "transparent", border: `1.5px solid ${sc.color}`, color: sc.color }}>
+                          {r.status === "pending" ? `Pending (${r.student_name?.split(" ")[0]})` : r.status}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
