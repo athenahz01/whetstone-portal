@@ -36,7 +36,12 @@ interface InviteResult {
   loginUrl: string;
 }
 
-export function Caseload({ students, onSelectStudent, onNavigate, onRefresh, isAdmin }: CaseloadProps) {
+export function Caseload({ students: studentsProp, onSelectStudent, onNavigate, onRefresh, isAdmin }: CaseloadProps) {
+  const [localStudents, setLocalStudents] = useState<Student[]>(studentsProp);
+  // Sync from props when they change (after real refresh)
+  useEffect(() => { setLocalStudents(studentsProp); }, [studentsProp]);
+  const students = localStudents;
+
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
   const [sort, setSort] = useState("urgency");
   const [showModal, setShowModal] = useState(false);
@@ -81,9 +86,9 @@ export function Caseload({ students, onSelectStudent, onNavigate, onRefresh, isA
     const newTeam = currentTeam.includes(memberName)
       ? currentTeam.filter((t) => t !== memberName)
       : [...currentTeam, memberName];
-    await updateStudent(studentId, { team: newTeam });
-    // Silent refresh in background — don't navigate or scroll
-    onRefresh();
+    // Optimistic local update — no page refresh
+    setLocalStudents(prev => prev.map(s => s.id === studentId ? { ...s, team: newTeam } : s));
+    updateStudent(studentId, { team: newTeam });
   };
 
   const sorted = [...students].sort((a, b) =>

@@ -851,7 +851,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
             if (onRefresh) await onRefresh();
             setSaving(false); setShowDeadlineModal(false); setPrefillStudent(null); setPrefillDate("");
           }}>
-            <FormField label="Title"><input required name="title" placeholder="e.g. Send Jing school tour links for Columbia" style={inputStyle} /></FormField>
+            <FormField label="Task Name"><input required name="title" placeholder="e.g. Finish Stanford draft v1" style={inputStyle} /></FormField>
             <div className="grid grid-cols-2 gap-3">
               <FormField label="Student">
                 <select required name="student" defaultValue={prefillStudent || ""} style={inputStyle}>
@@ -862,18 +862,15 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
                 <select name="category" style={inputStyle}>
                   <option value="planning">Planning</option><option value="essays">Essays</option>
                   <option value="applications">Applications</option><option value="testing">Testing</option>
-                  <option value="extracurricular">Extracurricular</option><option value="Academics">Academics</option>
+                  <option value="extracurricular">Extracurricular</option><option value="academics">Academics</option>
                   <option value="research">Research</option>
                 </select>
               </FormField>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <FormField label="Due Date (Internal)"><input required name="due" type="date" defaultValue={prefillDate || ""} style={inputStyle} /></FormField>
-              <FormField label="Actual Deadline (optional)">
-                <input name="actualDeadline" type="date" style={inputStyle} />
-                <div className="text-[10px] mt-1" style={{ color: "#717171" }}>Set internal due 48h before this date</div>
-              </FormField>
-            </div>
+            <FormField label="Due Date">
+              <input required name="due" type="date" defaultValue={prefillDate || ""} style={inputStyle} />
+              <div className="text-[10px] mt-1" style={{ color: "#717171" }}>For essays and submissions, set this 48h before the actual school deadline</div>
+            </FormField>
             <FormField label="Specialist">
               <select required name="specialist" style={inputStyle}>
                 <option value="">Select specialist...</option>

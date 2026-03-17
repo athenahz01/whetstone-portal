@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
 const API_KEY = process.env.SCORECARD_API_KEY || "DEMO_KEY";
 const BASE = "https://api.data.gov/ed/collegescorecard/v1/schools.json";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 const FIELDS = [
   "id",
@@ -65,6 +71,31 @@ export async function GET(request: NextRequest) {
   // Search international schools by name
   const intlResults = q ? INTL_SCHOOLS.filter(s => s.name.toLowerCase().includes(q.toLowerCase())) : [];
 
+  // ── Check Supabase cache first ──
+  if (q) {
+    try {
+      const { data: cached } = await supabase
+        .from("school_stats_cache")
+        .select("data")
+        .ilike("name", `%${q}%`)
+        .limit(15);
+      if (cached && cached.length > 0) {
+        const cachedSchools = cached.map((c: any) => c.data);
+        return NextResponse.json({ schools: [...intlResults, ...cachedSchools], total: cachedSchools.length + intlResults.length, cached: true });
+      }
+    } catch {} // Table may not exist yet — fall through to API
+  }
+  if (id) {
+    try {
+      const { data: cached } = await supabase
+        .from("school_stats_cache")
+        .select("data")
+        .eq("scorecard_id", parseInt(id as string))
+        .single();
+      if (cached?.data) return NextResponse.json({ schools: [cached.data], total: 1, cached: true });
+    } catch {}
+  }
+
   let url: string;
   if (id) {
     url = `${BASE}?api_key=${API_KEY}&id=${id}&fields=${FIELDS}`;
@@ -79,7 +110,7 @@ export async function GET(request: NextRequest) {
     const data = await res.json();
 
     if (!data.results) {
-      return NextResponse.json({ schools: [], total: 0 });
+      return NextResponse.json({ schools: intlResults, total: intlResults.length });
     }
 
     const schools = data.results.map((r: any) => ({
@@ -88,7 +119,7 @@ export async function GET(request: NextRequest) {
       city: r["school.city"],
       state: r["school.state"],
       url: r["school.school_url"],
-      ownership: r["school.ownership"], // 1=Public, 2=Private nonprofit, 3=Private for-profit
+      ownership: r["school.ownership"],
       locale: r["school.locale"],
       admissionRate: r["latest.admissions.admission_rate.overall"],
       satAvg: r["latest.admissions.sat_scores.average.overall"],
@@ -114,16 +145,25 @@ export async function GET(request: NextRequest) {
         asian: r["latest.student.demographics.race_ethnicity.asian"],
       },
       programs: (r["latest.programs.cip_4_digit"] || [])
-        .filter((p: any) => p.credential?.level === 3) // Bachelor's
+        .filter((p: any) => p.credential?.level === 3)
         .sort((a: any, b: any) => (b.counts?.ipeds_awards2 || 0) - (a.counts?.ipeds_awards2 || 0))
         .slice(0, 10)
         .map((p: any) => ({ title: p.title, count: p.counts?.ipeds_awards2 || 0 })),
     }));
 
+    // ── Save to Supabase cache (fire-and-forget) ──
+    for (const school of schools) {
+      supabase.from("school_stats_cache").upsert({
+        scorecard_id: school.id,
+        name: school.name,
+        data: school,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "scorecard_id" }).then(() => {});
+    }
+
     return NextResponse.json({ schools: [...intlResults, ...schools], total: (data.metadata?.total || schools.length) + intlResults.length });
   } catch (err) {
     console.error("[schools API] Error:", err);
-    // If US API fails, still return international results
     if (intlResults.length > 0) return NextResponse.json({ schools: intlResults, total: intlResults.length });
     return NextResponse.json({ error: "Failed to fetch" }, { status: 500 });
   }

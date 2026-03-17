@@ -178,13 +178,16 @@ export default function Home() {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
-      // Only react to actual sign-in/sign-out, not token refreshes
-      if (event === "TOKEN_REFRESHED") return;
+      // Only react to actual sign-in/sign-out, skip token refreshes and re-auth
+      if (event === "TOKEN_REFRESHED" || event === "SIGNED_IN") {
+        // Update session state but don't reload
+        if (s) setSession(true);
+        return;
+      }
       
       setSession(!!s);
       if (s) {
         setUserEmail(s.user.email || null);
-        // Only load profile if we don't already have one (initial sign-in)
         if (!profile) {
           loadProfile(s.user.id);
         }
