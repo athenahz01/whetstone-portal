@@ -160,10 +160,14 @@ export default function Home() {
   useEffect(() => {
     if (!session || !profileId) return;
     const updateLogin = () => {
-      supabase.from("profiles").update({ last_sign_in: new Date().toISOString() }).eq("id", profileId).then(() => {});
+      fetch("/api/update-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profileId }),
+      }).catch(() => {});
     };
-    updateLogin(); // Update on mount
-    const interval = setInterval(updateLogin, 120_000); // Every 2 min, just update timestamp
+    updateLogin();
+    const interval = setInterval(updateLogin, 120_000);
     return () => clearInterval(interval);
   }, [session, profileId]);
 
