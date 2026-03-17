@@ -66,15 +66,15 @@ export function Sidebar({
         ]
       : [
           ["dashboard", "Dashboard"],
-          ["profile", "Profile"],
+          ["receptacle", "Receptacle"],
+          ...((role === "student" || role === "parent") ? [["prep", "Sessions"]] : []),
           ["tasks", "Projects & Tasks"],
+          ["profile", "Profile"],
           ["academics", "Academics"],
           ["testing", "Testing"],
           ["activities", "Activities"],
           ["honors", "Honors"],
-          ["receptacle", "Receptacle"],
           ["schools", "Schools"],
-          ...((role === "student" || role === "parent") ? [["prep", "Sessions"]] : []),
         ];
 
   const name = studentName || "User";
@@ -240,7 +240,7 @@ export function Sidebar({
               color: "#cbd5e1",
             }}
           >
-            🍎 Subscribe via AppleCal
+            🍎 Subscribe via Apple Calendar
           </button>
         </div>
       )}
