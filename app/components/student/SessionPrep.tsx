@@ -81,7 +81,7 @@ export function SessionPrep({ student, onRefresh, readOnly = false }: SessionPre
             specialist: br.specialist, category: br.session_type,
             notes: br.notes, session_notes: br.session_notes || "",
             student_notes: br.student_notes || "", bookingRequestId: br.id,
-            status: br.status, isBooked: true,
+            status: br.status, isBooked: true, gcal_synced: br.gcal_synced || false,
           }));
         setEvents([...counselorEvs, ...enriched, ...brEvents]);
       });
@@ -354,14 +354,17 @@ export function SessionPrep({ student, onRefresh, readOnly = false }: SessionPre
                               </div>
                             </div>
                             <div className="flex flex-col items-end gap-3" onClick={(e) => e.stopPropagation()}>
-                              <span className="text-xs font-semibold px-3 py-1 rounded-full"
-                                style={{
-                                  background: "transparent",
-                                  border: isCompleted ? "1.5px solid #4aba6a" : "1.5px solid #e5a83b",
-                                  color: isCompleted ? "#4aba6a" : "#e5a83b",
-                                }}>
-                                {isCompleted ? "Confirmed" : "Upcoming"}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                {ev.gcal_synced && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(56,189,180,0.08)", color: "#38bdb4", border: "1px solid rgba(56,189,180,0.2)" }}>📅 GCal</span>}
+                                <span className="text-xs font-semibold px-3 py-1 rounded-full"
+                                  style={{
+                                    background: "transparent",
+                                    border: isCompleted ? "1.5px solid #4aba6a" : "1.5px solid #e5a83b",
+                                    color: isCompleted ? "#4aba6a" : "#e5a83b",
+                                  }}>
+                                  {isCompleted ? "Confirmed" : "Upcoming"}
+                                </span>
+                              </div>
                               {isBooked && (
                                 <button onClick={deleteSession}
                                   className="w-6 h-6 rounded-full hidden group-hover:flex items-center justify-center border-none cursor-pointer"

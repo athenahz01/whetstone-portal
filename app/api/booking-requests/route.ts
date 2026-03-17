@@ -28,7 +28,14 @@ export async function GET(request: NextRequest) {
     query = query.eq("student_id", parseInt(studentId));
   }
   if (strategistEmail) {
-    query = query.eq("strategist_email", strategistEmail);
+    // Match by strategist_email column OR by specialist name (for older records / GCal sync)
+    const { data: profile } = await supabase.from("profiles").select("display_name").eq("email", strategistEmail).single();
+    const displayName = profile?.display_name;
+    if (displayName) {
+      query = query.or(`strategist_email.eq.${strategistEmail},specialist.eq.${displayName}`);
+    } else {
+      query = query.eq("strategist_email", strategistEmail);
+    }
   }
 
   const { data, error } = await query;

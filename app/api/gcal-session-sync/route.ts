@@ -62,6 +62,7 @@ export async function POST(request: NextRequest) {
         student_id: studentData.id,
         student_name: studentData.name,
         specialist: staffProfile.display_name || staffProfile.email,
+        strategist_email: staffProfile.email,
         date: evt.date,
         start_time: evt.startMinutes != null ? `${String(Math.floor(evt.startMinutes / 60)).padStart(2, "0")}:${String(evt.startMinutes % 60).padStart(2, "0")}` : null,
         session_name: sessionName,
