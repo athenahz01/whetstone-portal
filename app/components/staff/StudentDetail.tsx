@@ -598,7 +598,7 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
               <textarea name="actions" rows={4}
                 defaultValue={(() => {
                   const acts = typeof editingCommit.actions === "string" ? JSON.parse(editingCommit.actions || "[]") : (editingCommit.actions || []);
-                  return acts.map((a: any) => a.text || a).join("\n");
+                  return acts.map((a: any) => typeof a === "string" ? a : (a.text || a.title || a.name || JSON.stringify(a))).join("\n");
                 })()}
                 placeholder="Action item 1&#10;Action item 2&#10;Action item 3"
                 style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} />

@@ -36,10 +36,21 @@ export function StudentDashboard({
 
   useEffect(() => {
     if (student.id) {
-      fetchCounselorEventsForStudent(student.id).then((evs) => {
-        fetchStudentSessions(student.id).then((sess) => {
-          setCounselorEvents([...evs, ...sess]);
-        });
+      Promise.all([
+        fetchCounselorEventsForStudent(student.id),
+        fetchStudentSessions(student.id),
+        fetch(`/api/booking-requests?studentId=${student.id}`).then(r => r.json()).then(d => d.requests || []).catch(() => []),
+      ]).then(([evs, sess, brs]) => {
+        // Add confirmed booking requests as session events
+        const sessionTitles = new Set([...evs, ...sess].map((s: any) => s.title || s.session_name));
+        const brEvents = brs
+          .filter((br: any) => (br.status === "approved" || br.status === "confirmed") && !sessionTitles.has(br.session_name))
+          .map((br: any) => ({
+            id: `br-${br.id}`, title: br.session_name || `Session with ${br.specialist}`,
+            date: br.date, start_time: br.start_time, specialist: br.specialist,
+            status: br.status, isBooked: true,
+          }));
+        setCounselorEvents([...evs, ...sess, ...brEvents]);
       });
       // Fetch latest closing commit
       fetch(`/api/closing-commits?studentId=${student.id}`)
@@ -49,7 +60,8 @@ export function StudentDashboard({
     }
   }, [student.id]);
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const upcomingSessions = counselorEvents.filter((ce) => ce.date >= todayStr).sort((a: any, b: any) => a.date.localeCompare(b.date));
   const pastSessions = counselorEvents.filter((ce) => ce.date < todayStr).sort((a: any, b: any) => b.date.localeCompare(a.date));
   const displaySessions = sessionTab === "upcoming" ? upcomingSessions : pastSessions;
