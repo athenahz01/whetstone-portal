@@ -12,6 +12,20 @@ export async function fetchAllStudents(): Promise<Student[]> {
     return [];
   }
 
+  // Fetch caseload assignments to build team map (student_id → strategist names)
+  const { data: caseloadData } = await supabase.from("caseload_assignments").select("student_id, strategist_email");
+  const { data: profilesData } = await supabase.from("profiles").select("email, display_name").eq("role", "strategist");
+  const emailToName = new Map<string, string>();
+  (profilesData || []).forEach((p: any) => { if (p.email && p.display_name) emailToName.set(p.email.toLowerCase(), p.display_name); });
+  const teamMap = new Map<number, string[]>();
+  (caseloadData || []).forEach((ca: any) => {
+    const name = emailToName.get((ca.strategist_email || "").toLowerCase());
+    if (name && ca.student_id) {
+      if (!teamMap.has(ca.student_id)) teamMap.set(ca.student_id, []);
+      teamMap.get(ca.student_id)!.push(name);
+    }
+  });
+
   const students: Student[] = await Promise.all(
     studentsRaw.map(async (s) => {
       const [schoolsRes, dlRes, tasksRes, coursesRes, testsRes, actsRes, goalsRes, sessRes] =
@@ -42,7 +56,7 @@ export async function fetchAllStudents(): Promise<Student[]> {
         gpa: Number(s.gpa),
         sat: s.sat,
         counselor: s.counselor,
-        team: s.team || [],
+        team: teamMap.get(s.id) || [],
         status: s.status as "on-track" | "needs-attention",
         av: s.avatar,
         school: s.school,
