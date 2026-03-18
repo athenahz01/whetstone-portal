@@ -68,7 +68,7 @@ export function Sidebar({
           ["dashboard", "Dashboard"],
           ["receptacle", "Receptacle"],
           ...((role === "student" || role === "parent") ? [["prep", "Sessions"]] : []),
-          ["tasks", "Projects & Tasks"],
+          ["tasks", "Tasks"],
           ["profile", "Profile"],
           ["academics", "Academics"],
           ["testing", "Testing"],
