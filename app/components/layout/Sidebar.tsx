@@ -240,7 +240,7 @@ export function Sidebar({
               color: "#cbd5e1",
             }}
           >
-            🍎 Subscribe via Apple Calendar
+            🍎 Apple Calendar Sync
           </button>
         </div>
       )}

@@ -96,7 +96,12 @@ const HOUR_HEIGHT = 60; // px per hour for calendar
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function fmt(d: Date) { return d.toISOString().split("T")[0]; }
+function fmt(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
+}
 
 function fmtHour(h: number) {
   if (h === 0) return "12 AM";

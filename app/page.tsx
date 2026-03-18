@@ -506,7 +506,7 @@ export default function Home() {
 
   return (
     <div
-      className="flex h-screen text-sm"
+      className="flex h-screen text-sm overflow-hidden"
       style={{
         fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
         color: "#a0a0a0",
@@ -537,8 +537,7 @@ export default function Home() {
         }}
         onSyncCalendar={async () => {
           if (!profileId) return;
-          alert("Syncing to Google Calendar...");
-          await syncAllDeadlinesToGoogle(profileId, allStudents);
+          alert("Syncing sessions to Google Calendar...");
           const events = await fetchCounselorEvents();
           await syncAllCounselorEventsToGoogle(profileId, events, allStudents);
           alert("Sync complete! Check your Google Calendar.");

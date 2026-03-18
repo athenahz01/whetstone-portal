@@ -100,8 +100,7 @@ export function StudentDashboard({
               ) : (
                 <div className="flex flex-col gap-2">
                   {activeTasks.map((d) => (
-                    <div key={d.id} className="flex items-center gap-3 p-3 rounded-lg" style={{ background: "#252525" }}>
-                      {!readOnly && <input type="checkbox" checked={false} onChange={() => quickComplete(d)} className="flex-shrink-0 cursor-pointer" style={{ accentColor: "#4aba6a", width: 16, height: 16 }} />}
+                    <div key={d.id} onClick={() => onNavigate("tasks")} className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:opacity-80 transition-opacity" style={{ background: "#252525" }}>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium text-heading truncate">{d.title}</div>
                         <div className="text-xs text-sub mt-0.5">{d.due}</div>
