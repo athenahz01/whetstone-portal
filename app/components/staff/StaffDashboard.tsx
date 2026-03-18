@@ -77,18 +77,31 @@ export function StaffDashboard({
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     // From sessions table
     const fromSessions = students
-      .flatMap((s) => s.sess.map((ss) => ({ ...ss, studentName: s.name, studentAv: s.av, studentId: s.id })))
+      .flatMap((s) => s.sess.map((ss) => ({ ...ss, studentName: s.name, studentAv: s.av, studentId: s.id, source: "session" as const })))
       .filter((ss) => ss.date >= todayStr);
     // From booking requests
-    const sessionTitles = new Set(fromSessions.map((s: any) => `${s.notes || s.session_name}|${s.date}`));
     const fromBRs = brSessions
-      .filter((br: any) => br.date >= todayStr && !sessionTitles.has(`${br.session_name}|${br.date}`))
+      .filter((br: any) => br.date >= todayStr)
       .map((br: any) => ({
         id: `br-${br.id}`, date: br.date, notes: br.session_name,
         start_time: br.start_time, action: br.status,
-        studentName: br.student_name || "Student", studentAv: (br.student_name || "S").split(" ").map((n: string) => n[0]).join("").substring(0, 2),
+        studentName: br.student_name || "Student",
+        studentAv: (br.student_name || "S").split(" ").map((n: string) => n[0]).join("").substring(0, 2),
+        studentId: br.student_id, source: "br" as const,
       }));
-    return [...fromSessions, ...fromBRs]
+    // Merge and dedup by date + studentId — prefer confirmed/approved over pending
+    const all = [...fromSessions, ...fromBRs];
+    const seen = new Map<string, any>();
+    for (const s of all) {
+      const key = `${s.date}|${(s as any).studentId || 0}`;
+      const existing = seen.get(key);
+      if (!existing) { seen.set(key, s); continue; }
+      // Prefer confirmed over pending
+      const existingStatus = (existing.action || existing.status || "").toLowerCase();
+      const newStatus = ((s as any).action || (s as any).status || "").toLowerCase();
+      if (newStatus === "confirmed" || newStatus === "approved") seen.set(key, s);
+    }
+    return Array.from(seen.values())
       .sort((a, b) => a.date.localeCompare(b.date) || (a.start_time || "").localeCompare(b.start_time || ""))
       .slice(0, 5);
   }, [students, brSessions]);
@@ -187,11 +200,16 @@ export function StaffDashboard({
                 const dateLabel = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
                 const timeLabel = ss.start_time || "";
                 const fmtTime = timeLabel ? (() => {
-                  const [h, m] = timeLabel.split(":");
-                  const hr = parseInt(h);
+                  // If already formatted (contains am/pm), use as-is
+                  if (/[ap]m/i.test(timeLabel)) return timeLabel.replace(/\s*(am|pm)/i, (m: string) => m.toLowerCase().trim()).replace(/(\d+:\d+)\s*(am|pm)/i, "$1 $2");
+                  const parts = timeLabel.split(":");
+                  if (parts.length < 2) return timeLabel;
+                  const hr = parseInt(parts[0]);
+                  const min = parts[1].substring(0, 2);
+                  if (isNaN(hr)) return timeLabel;
                   const ampm = hr >= 12 ? "pm" : "am";
                   const hr12 = hr % 12 || 12;
-                  return `${hr12}:${m} ${ampm}`;
+                  return `${hr12}:${min} ${ampm}`;
                 })() : "";
                 return (
                   <div key={ss.id || i}
