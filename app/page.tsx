@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "./lib/supabase";
 import { fetchAllStudents, fetchCounselorEvents, fetchHonors } from "./lib/queries";
 import { LoginPage } from "./components/layout/LoginPage";
@@ -39,6 +39,7 @@ const ADMIN_EMAILS = ["athena@whetstoneadmissions.com", "ren@whetstoneadmissions
 export default function Home() {
   const [session, setSession] = useState<boolean | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const profileLoadedRef = useRef(false);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [gcalConnected, setGcalConnected] = useState(false);
@@ -185,9 +186,8 @@ export default function Home() {
       // Skip token refreshes entirely
       if (event === "TOKEN_REFRESHED") return;
       
-      // For SIGNED_IN: only reload if we don't have a profile yet (fresh login)
-      // Skip if profile already loaded (tab switch / re-auth)
-      if (event === "SIGNED_IN" && profile) {
+      // For SIGNED_IN: skip if profile already loaded (tab switch / re-auth)
+      if (event === "SIGNED_IN" && profileLoadedRef.current) {
         if (s) setSession(true);
         return;
       }
@@ -201,6 +201,7 @@ export default function Home() {
         setUserEmail(null);
         setAllStudents([]);
         setLoading(false);
+        profileLoadedRef.current = false;
       }
     });
 
@@ -226,6 +227,7 @@ export default function Home() {
     if (data) {
       setProfile(data as Profile);
       setProfileId(userId);
+      profileLoadedRef.current = true;
 
       // Update last_login timestamp via API (bypasses RLS)
       fetch("/api/update-login", {
