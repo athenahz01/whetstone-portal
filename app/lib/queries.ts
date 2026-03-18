@@ -81,6 +81,7 @@ export async function fetchAllStudents(): Promise<Student[]> {
             description: d.description || undefined,
             blockedBy: d.blocked_by || undefined,
             internalOnly: d.internal_only || false,
+            studentOnly: d.student_only || false,
             responsible: d.responsible || [],
             actualDeadline: d.actual_deadline || "",
           };
@@ -251,6 +252,7 @@ export async function addDeadline(
     google_doc_link?: string;
     created_by?: "strategist" | "student";
     internal_only?: boolean;
+    student_only?: boolean;
     responsible?: string[];
     actual_deadline?: string;
   }
@@ -268,6 +270,7 @@ export async function addDeadline(
   };
   if (data.priority) insertData.priority = data.priority;
   if (data.internal_only) insertData.internal_only = true;
+  if (data.student_only) insertData.student_only = true;
   if (data.responsible?.length) insertData.responsible = data.responsible;
   if (data.actual_deadline) insertData.actual_deadline = data.actual_deadline;
   const { error } = await supabase.from("deadlines").insert(insertData);
@@ -290,6 +293,8 @@ export async function updateDeadline(
     blocked_by?: string;
     priority?: string;
     description?: string;
+    student_only?: boolean;
+    internal_only?: boolean;
   }
 ): Promise<boolean> {
   try {

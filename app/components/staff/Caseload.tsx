@@ -205,72 +205,39 @@ export function Caseload({ students: studentsProp, onSelectStudent, onNavigate, 
             <div className="px-6 py-4 border-b border-line">
               <h2 className="m-0 text-base font-bold text-heading">Student Overview</h2>
             </div>
-            <div className="grid px-6 py-2.5 border-b border-line text-[10px] uppercase tracking-widest font-semibold" style={{ gridTemplateColumns: "2fr 0.8fr 0.8fr 1fr 1.2fr 1.2fr", background: "#252525", color: "#505050" }}>
-              <div>Student</div><div>Grade</div><div>GPA</div><div>Overdue</div><div>Last Login</div><div>Team</div>
+            <div className="grid px-6 py-2.5 border-b border-line text-[10px] uppercase tracking-widest font-semibold" style={{ gridTemplateColumns: "2fr 0.6fr 0.6fr 0.6fr 0.8fr 1fr 1.2fr", background: "#252525", color: "#505050" }}>
+              <div>Student</div><div>Grade</div><div>GPA</div><div>Schools</div><div>Overdue</div><div>Last Login</div><div>Team</div>
             </div>
             {sorted.map((s) => {
               const overdue = s.dl.filter((d) => d.status === "overdue").length;
               const loginDays = daysSinceLogin(s.lastLogin);
               const loginLabel = loginDays === Infinity ? "Never" : loginDays === 0 ? "Today" : loginDays === 1 ? "Yesterday" : `${loginDays}d ago`;
               const loginColor = loginDays === Infinity ? "#505050" : loginDays >= 3 ? "#e55b5b" : loginDays >= 1 ? "#e5a83b" : "#4aba6a";
+              const schoolCount = s.schools?.length || 0;
               return (
                 <div key={s.id} onClick={() => { onSelectStudent(s); onNavigate("detail"); }}
                   className="grid px-6 py-3 border-b border-line items-center cursor-pointer hover:bg-mist transition-colors"
-                  style={{ gridTemplateColumns: "2fr 0.8fr 0.8fr 1fr 1.2fr 1.2fr" }}>
+                  style={{ gridTemplateColumns: "2fr 0.6fr 0.6fr 0.6fr 0.8fr 1fr 1.2fr" }}>
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: "rgba(90,131,243,0.1)", color: "#5A83F3" }}>{s.av}</div>
                     <div><span className="text-sm font-medium text-heading">{s.name}</span><div className="text-xs text-sub">{s.school}</div></div>
                   </div>
-                  <div className="text-sm text-body">{s.grade}</div>
+                  <div className="text-sm text-body">{s.grade === 13 ? "PG" : s.grade}</div>
                   <div className="text-sm text-body">{s.gpa ?? "—"}</div>
+                  <div>{schoolCount > 0 ? <span className="text-xs font-semibold" style={{ color: "#5A83F3" }}>{schoolCount}</span> : <span className="text-xs text-sub">0</span>}</div>
                   <div>{overdue > 0 ? <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(229,91,91,0.08)", color: "#e55b5b" }}>{overdue}</span> : <span className="text-xs text-sub">0</span>}</div>
                   <div className="text-xs font-semibold" style={{ color: loginColor }}>{loginLabel}</div>
-                  <div className="relative" onClick={(e) => e.stopPropagation()}>
-                    <div
-                      onClick={() => setTeamDropdownId(teamDropdownId === s.id ? null : s.id)}
-                      className="flex items-center gap-1 cursor-pointer rounded-lg px-2 py-1 hover:bg-raised transition-colors min-h-[28px]"
-                    >
-                      {(s.team && s.team.length > 0) ? (
-                        <div className="flex items-center gap-1 flex-wrap">
-                          {s.team.map((name) => (
-                            <span key={name} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(90,131,243,0.1)", color: "#5A83F3" }}>
-                              {name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-xs" style={{ color: "#505050" }}>+ Assign</span>
-                      )}
-                    </div>
-                    {teamDropdownId === s.id && (
-                      <div ref={teamDropdownRef} className="absolute z-50 right-0 rounded-xl shadow-lg border border-line overflow-hidden" style={{ background: "#1e1e1e", bottom: "calc(100% + 4px)", minWidth: 200 }}>
-                        <div className="px-3 py-2 border-b border-line">
-                          <div className="text-[10px] uppercase font-bold tracking-widest" style={{ color: "#505050" }}>Assign Team</div>
-                        </div>
-                        <div className="py-1 max-h-48 overflow-y-auto">
-                          {staffList.map((staff) => {
-                            const isSelected = (s.team || []).includes(staff.name);
-                            return (
-                              <button
-                                key={staff.name}
-                                onClick={() => handleTeamToggle(s.id, staff.name, s.team || [])}
-                                className="w-full flex items-center gap-2.5 px-3 py-2 border-none cursor-pointer text-left hover:bg-raised transition-colors"
-                                style={{ background: isSelected ? "rgba(90,131,243,0.06)" : "transparent" }}
-                              >
-                                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0"
-                                  style={{ background: isSelected ? "rgba(90,131,243,0.15)" : "#252525", color: isSelected ? "#5A83F3" : "#717171" }}>
-                                  {staff.initials}
-                                </div>
-                                <span className="text-xs flex-1" style={{ color: isSelected ? "#ebebeb" : "#a0a0a0" }}>{staff.name}</span>
-                                {isSelected && <span style={{ color: "#5A83F3" }}>✓</span>}
-                              </button>
-                            );
-                          })}
-                          {staffList.length === 0 && (
-                            <div className="px-3 py-3 text-xs text-center" style={{ color: "#505050" }}>No staff accounts found</div>
-                          )}
-                        </div>
+                  <div>
+                    {(s.team && s.team.length > 0) ? (
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {s.team.map((name) => (
+                          <span key={name} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(90,131,243,0.1)", color: "#5A83F3" }}>
+                            {name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)}
+                          </span>
+                        ))}
                       </div>
+                    ) : (
+                      <span className="text-xs" style={{ color: "#505050" }}>—</span>
                     )}
                   </div>
                 </div>
@@ -297,7 +264,7 @@ export function Caseload({ students: studentsProp, onSelectStudent, onNavigate, 
                   <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}>{s.av}</div>
                   <div>
                     <div className="text-base font-bold text-heading">{s.name}</div>
-                    <div className="text-xs text-sub">Gr. {s.grade} · {s.school}</div>
+                    <div className="text-xs text-sub">Gr. {s.grade === 13 ? "PG" : s.grade} · {s.school}</div>
                   </div>
                 </div>
                 <Tag color={s.status === "needs-attention" ? "#e55b5b" : "#4aba6a"}>
@@ -337,7 +304,13 @@ export function Caseload({ students: studentsProp, onSelectStudent, onNavigate, 
             </FormField>
             <div className="grid grid-cols-2 gap-3">
               <FormField label="Grade">
-                <input required name="grade" type="number" min="9" max="12" placeholder="12" style={inputStyle} />
+                <select required name="grade" style={inputStyle}>
+                  <option value="9">9th</option>
+                  <option value="10">10th</option>
+                  <option value="11">11th</option>
+                  <option value="12">12th</option>
+                  <option value="13">Post Grad</option>
+                </select>
               </FormField>
               <FormField label="Graduation Year">
                 <input required name="gradYear" type="number" placeholder="2026" style={inputStyle} />

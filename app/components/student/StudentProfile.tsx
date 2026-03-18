@@ -134,6 +134,7 @@ export function StudentProfile({ student, readOnly = false }: StudentProfileProp
                 {Array.from({ length: 8 }, (_, i) => currentYear + i).map((y) => (
                   <option key={y} value={y}>Class of {y}</option>
                 ))}
+                <option value="postgrad">Post Grad</option>
               </select>
               <p className="m-0 mt-2 text-xs" style={{ color: "#505050" }}>
                 Used instead of grade — no need to update each year.

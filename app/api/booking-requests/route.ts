@@ -185,6 +185,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
+    // Delete a session/booking request
+    case "delete": {
+      const { requestId } = body;
+      await supabase.from("booking_requests").delete().eq("id", requestId);
+      return NextResponse.json({ success: true });
+    }
+
     default:
       return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   }

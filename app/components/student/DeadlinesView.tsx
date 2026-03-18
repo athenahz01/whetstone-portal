@@ -90,6 +90,8 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
 
   // Filter
   let filtered = [...deadlines];
+  // Hide internal-only tasks (staff-only, not visible to students/parents)
+  filtered = filtered.filter((d: any) => !d.internalOnly);
   if (activeFilters.size > 0) {
     filtered = filtered.filter((d) => activeFilters.has(d.status));
   }
@@ -136,6 +138,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
     const f = new FormData(e.target as HTMLFormElement);
     const due = f.get("due") as string;
     const days = calcDaysFromToday(due);
+    const studentOnly = f.get("studentOnly") === "on";
     await addDeadline(studentId, {
       title: f.get("title") as string,
       due,
@@ -145,6 +148,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
       created_by: "student",
       specialist: f.get("specialist") as string || undefined,
       priority: f.get("priority") as string || undefined,
+      student_only: studentOnly || undefined,
     });
     if (onRefresh) await onRefresh();
     setSaving(false);
@@ -170,6 +174,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
     if (description !== undefined) (updates as any).description = description;
     const blockedBy = f.get("blocked_by") as string;
     if (updates.status === "blocked") (updates as any).blocked_by = blockedBy || "";
+    (updates as any).student_only = f.get("studentOnly") === "on";
 
     await updateDeadline(editingDeadline.id, updates);
     if (onRefresh) await onRefresh();
@@ -191,11 +196,12 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
     if (onRefresh) await onRefresh();
   };
 
-  // Stats
-  const todoCount = deadlines.filter((d) => d.status === "pending" || d.status === "in-progress").length;
-  const overdueCount = deadlines.filter((d) => d.status === "overdue").length;
-  const doneCount = deadlines.filter((d) => d.status === "completed").length;
-  const blockedCount = deadlines.filter((d) => d.status === "blocked").length;
+  // Stats (exclude internal-only)
+  const visibleDeadlines = deadlines.filter((d: any) => !d.internalOnly);
+  const todoCount = visibleDeadlines.filter((d) => d.status === "pending" || d.status === "in-progress").length;
+  const overdueCount = visibleDeadlines.filter((d) => d.status === "overdue").length;
+  const doneCount = visibleDeadlines.filter((d) => d.status === "completed").length;
+  const blockedCount = visibleDeadlines.filter((d) => d.status === "blocked").length;
 
   // Render a single task row (used in both grouped and flat views)
   const renderTaskRow = (d: Deadline) => {
@@ -228,7 +234,8 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
               <div className="text-sm font-medium truncate flex items-center gap-1.5"
                 style={{ color: isCompleted ? "#505050" : "#ebebeb", textDecoration: isCompleted ? "line-through" : "none" }}>
                 {d.title}
-                {!isOwn && <span className="text-[9px] text-faint">🔒</span>}
+                {(d as any).studentOnly && <span className="text-[9px]" style={{ color: "#a480f2" }}>🔒 private</span>}
+                {!isOwn && !((d as any).studentOnly) && <span className="text-[9px] text-faint">👤</span>}
                 {d.googleDocLink && <span className="text-[9px] cursor-pointer" onClick={(e) => { e.stopPropagation(); window.open(d.googleDocLink, "_blank"); }}>📄</span>}
               </div>
               {d.description && <div className="text-[11px] text-sub truncate mt-0.5">{d.description}</div>}
@@ -585,6 +592,13 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
                 </select>
               </FormField>
             </div>
+            <div className="flex items-center gap-3 mt-3 mb-3 p-3 rounded-lg" style={{ background: "rgba(90,131,243,0.06)", border: "1px solid rgba(90,131,243,0.15)" }}>
+              <input type="checkbox" name="studentOnly" id="studentOnly" className="w-4 h-4" style={{ accentColor: "#5A83F3" }} />
+              <label htmlFor="studentOnly" className="cursor-pointer">
+                <div className="text-sm font-semibold" style={{ color: "#5A83F3" }}>Private</div>
+                <div className="text-xs" style={{ color: "#717171" }}>Only visible to you — hidden from mentors</div>
+              </label>
+            </div>
             <div className="flex gap-2 justify-end mt-3">
               <Button onClick={() => setAddingDeadline(false)}>Cancel</Button>
               <Button primary type="submit">{saving ? "Adding..." : "Add Task"}</Button>
@@ -645,6 +659,13 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
             <FormField label="Blocked by (task name)">
               <input name="blocked_by" defaultValue={editingDeadline.blockedBy || ""} placeholder="Leave blank if not blocked" style={inputStyle} />
             </FormField>
+            <div className="flex items-center gap-3 mt-3 mb-3 p-3 rounded-lg" style={{ background: "rgba(164,128,242,0.06)", border: "1px solid rgba(164,128,242,0.15)" }}>
+              <input type="checkbox" name="studentOnly" id="dlStudentOnly" defaultChecked={(editingDeadline as any).studentOnly || false} className="w-4 h-4" style={{ accentColor: "#a480f2" }} />
+              <label htmlFor="dlStudentOnly" className="cursor-pointer">
+                <div className="text-sm font-semibold" style={{ color: "#a480f2" }}>Private</div>
+                <div className="text-xs" style={{ color: "#717171" }}>Hidden from mentors — only visible to you</div>
+              </label>
+            </div>
             <div className="flex justify-between mt-3">
               {editingDeadline.createdBy === "student" || !readOnly ? (
                 <button type="button" onClick={() => setConfirmDeleteId(editingDeadline.id)}

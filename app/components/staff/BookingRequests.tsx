@@ -70,6 +70,11 @@ export function BookingRequests({ strategistEmail, profileId }: BookingRequestsP
     await fetch("/api/booking-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "decline", requestId: id }) });
     loadRequests();
   };
+  const handleDeleteSession = async (id: number) => {
+    if (!confirm("Delete this session?")) return;
+    await fetch("/api/booking-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "delete", requestId: id }) });
+    loadRequests();
+  };
   const handleCounter = async () => {
     if (!counterModal || !counterDate) return;
     setProcessing(true);
@@ -102,10 +107,11 @@ export function BookingRequests({ strategistEmail, profileId }: BookingRequestsP
     setProcessing(false); setShowCreateModal(false);
   };
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const pending = requests.filter(r => r.status === "pending" || r.status === "countered");
-  const upcoming = requests.filter(r => (r.status === "approved" || r.status === "confirmed") && r.date >= todayStr);
-  const past = requests.filter(r => (r.status === "approved" || r.status === "confirmed") && r.date < todayStr);
+  const upcoming = requests.filter(r => (r.status === "approved" || r.status === "confirmed") && r.date >= todayStr).sort((a, b) => a.date.localeCompare(b.date));
+  const past = requests.filter(r => (r.status === "approved" || r.status === "confirmed") && r.date < todayStr).sort((a, b) => b.date.localeCompare(a.date));
   const display = tab === "pending" ? pending : tab === "upcoming" ? upcoming : past;
 
   const statusColor = (s: string) => {
@@ -204,6 +210,11 @@ export function BookingRequests({ strategistEmail, profileId }: BookingRequestsP
                           style={{ background: "transparent", border: `1.5px solid ${sc.color}`, color: sc.color }}>
                           {r.status === "pending" ? `Pending (${r.student_name?.split(" ")[0]})` : r.status}
                         </span>
+                        {r.date < todayStr && (
+                          <button onClick={(e) => { e.stopPropagation(); handleDeleteSession(r.id); }}
+                            className="w-6 h-6 rounded-full flex items-center justify-center border-none cursor-pointer text-[10px]"
+                            style={{ background: "rgba(229,91,91,0.08)", color: "#e55b5b" }}>✕</button>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -42,20 +42,22 @@ export function StaffDashboard({
 }: StaffDashboardProps) {
   const [showInactiveModal, setShowInactiveModal] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [brSessions, setBrSessions] = useState<any[]>([]);
 
-  // Fetch actual pending booking requests from API
+  // Fetch actual booking requests from API — for pending count + upcoming sessions
   useEffect(() => {
     if (!strategistEmail) return;
     fetch(`/api/booking-requests?strategistEmail=${encodeURIComponent(strategistEmail)}`)
       .then((r) => r.json())
       .then((d) => {
-        const pending = (d.requests || []).filter((r: any) => r.status === "pending" || r.status === "countered");
-        setPendingCount(pending.length);
+        const reqs = d.requests || [];
+        setPendingCount(reqs.filter((r: any) => r.status === "pending" || r.status === "countered").length);
+        setBrSessions(reqs.filter((r: any) => r.status === "approved" || r.status === "confirmed"));
       })
-      .catch(() => setPendingCount(0));
+      .catch(() => { setPendingCount(0); setBrSessions([]); });
   }, [strategistEmail]);
 
-  const allDeadlines = students.flatMap((s) => s.dl.map((d) => ({ ...d, sn: s.name, sid: s.id })));
+  const allDeadlines = students.flatMap((s) => s.dl.filter((d: any) => !d.studentOnly).map((d) => ({ ...d, sn: s.name, sid: s.id })));
 
   // Urgent: overdue (days < 0 or status overdue) + due today, exclude completed
   const urgent = allDeadlines.filter((d) =>
@@ -72,12 +74,24 @@ export function StaffDashboard({
 
   const upcomingSessions = useMemo(() => {
     const now = new Date();
-    return students
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    // From sessions table
+    const fromSessions = students
       .flatMap((s) => s.sess.map((ss) => ({ ...ss, studentName: s.name, studentAv: s.av, studentId: s.id })))
-      .filter((ss) => new Date(ss.date) >= now)
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .slice(0, 3);
-  }, [students]);
+      .filter((ss) => ss.date >= todayStr);
+    // From booking requests
+    const sessionTitles = new Set(fromSessions.map((s: any) => `${s.notes || s.session_name}|${s.date}`));
+    const fromBRs = brSessions
+      .filter((br: any) => br.date >= todayStr && !sessionTitles.has(`${br.session_name}|${br.date}`))
+      .map((br: any) => ({
+        id: `br-${br.id}`, date: br.date, notes: br.session_name,
+        start_time: br.start_time, action: br.status,
+        studentName: br.student_name || "Student", studentAv: (br.student_name || "S").split(" ").map((n: string) => n[0]).join("").substring(0, 2),
+      }));
+    return [...fromSessions, ...fromBRs]
+      .sort((a, b) => a.date.localeCompare(b.date) || (a.start_time || "").localeCompare(b.start_time || ""))
+      .slice(0, 5);
+  }, [students, brSessions]);
 
   const recentActivity = useMemo(() => {
     const items: { type: "overdue" | "completed"; title: string; student: string; date: string }[] = [];
@@ -181,7 +195,7 @@ export function StaffDashboard({
                 })() : "";
                 return (
                   <div key={ss.id || i}
-                    onClick={() => { const s = students.find((st) => st.id === ss.studentId); if (s) { onSelectStudent(s); onNavigate("detail"); } }}
+                    onClick={() => { const sid = (ss as any).studentId; const s = sid ? students.find((st) => st.id === sid) : null; if (s) { onSelectStudent(s); onNavigate("detail"); } }}
                     className="flex items-start gap-4 py-3 border-b border-line cursor-pointer hover:bg-mist rounded px-2 -mx-2">
                     <div className="flex-shrink-0 text-right" style={{ minWidth: 90 }}>
                       <div className="text-sm font-bold text-heading">{dateLabel}</div>
