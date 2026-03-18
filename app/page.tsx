@@ -543,7 +543,7 @@ export default function Home() {
           alert("Sync complete! Check your Google Calendar.");
         }}
       />
-      <main className="flex-1 overflow-auto bg-bg">{renderMain()}</main>
+      <main className="flex-1 min-w-0 overflow-auto bg-bg">{renderMain()}</main>
     </div>
   );
 }

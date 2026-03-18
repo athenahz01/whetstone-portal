@@ -29,7 +29,7 @@ export function Analytics({ students, onSelectStudent, onNavigate }: AnalyticsPr
   return (
     <div>
       <PageHeader title="Analytics" sub="Caseload performance." />
-      <div className="p-6 px-8">
+      <div className="p-5 px-6">
 
         {/* ── Student Overview Table ────────────────────────────────────── */}
         <Card noPadding style={{ overflow: "hidden" }}>

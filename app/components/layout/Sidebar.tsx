@@ -234,7 +234,7 @@ export function Sidebar({
               const webcalUrl = feedUrl.replace("https://", "webcal://").replace("http://", "webcal://");
               window.open(webcalUrl, "_self");
             }}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer text-xs font-semibold border-none mt-1.5"
+            className="w-full flex items-center gap-1.5 px-3 py-2 rounded-lg cursor-pointer text-[11px] font-semibold border-none mt-1.5 whitespace-nowrap"
             style={{
               background: "rgba(255,255,255,0.04)",
               color: "#cbd5e1",

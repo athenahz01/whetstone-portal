@@ -85,7 +85,7 @@ export function StudentDashboard({
         sub={new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric", timeZone: timezone })}
         right={readOnly ? <span className="text-xs px-3 py-1.5 rounded-full font-semibold" style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}>View Only</span> : null}
       />
-      <div className="p-6 px-8">
+      <div className="p-5 px-6">
         {/* 2-column layout */}
         <div className="flex gap-5">
           {/* ── Left column: Tasks + Recent Activity ── */}

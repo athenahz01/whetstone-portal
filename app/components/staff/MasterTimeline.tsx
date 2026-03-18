@@ -467,7 +467,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
         }
       />
 
-      <div className="p-4 px-8">
+      <div className="p-4 px-6">
         {/* View Toggle */}
         <div className="flex items-center justify-between mb-4">
           <div className="inline-flex gap-0.5 border border-line rounded-lg p-1" style={{ background: "#252525" }}>

@@ -125,7 +125,7 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
     <div>
       <PageHeader title="User Management" sub={`${stats.total} users · ${stats.active} active`}
         right={<Button primary onClick={() => { setShowCreate(true); setCreateResult(null); setError(null); setSelectedRole("student"); }}>+ Add New User</Button>} />
-      <div className="p-6 px-8">
+      <div className="p-5 px-6">
         <div className="grid grid-cols-5 gap-3 mb-5">
           {[{l:"Total",c:stats.total,cl:"#ebebeb"},{l:"Mentors",c:stats.mentors,cl:"#a480f2"},{l:"Specialists",c:stats.specialists,cl:"#4aba6a"},{l:"Students",c:stats.students,cl:"#5A83F3"},{l:"Parents",c:stats.parents,cl:"#e5a83b"}].map(s=>(
             <Card key={s.l} style={{padding:14}}><div className="text-center"><div className="text-2xl font-bold" style={{color:s.cl}}>{s.c}</div><div className="text-xs text-sub mt-0.5">{s.l}</div></div></Card>

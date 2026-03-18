@@ -161,7 +161,7 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
           )
         }
       />
-      <div className="p-6 px-8">
+      <div className="p-5 px-6">
         {/* GPA Metrics — editable */}
         <div className="grid grid-cols-2 gap-3.5 mb-5">
           <GpaInput

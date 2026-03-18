@@ -176,7 +176,7 @@ export function Activities({ activities, setActivities, readOnly = false, studen
         }
       />
 
-      <div className="p-6 px-8">
+      <div className="p-5 px-6">
         <div className="rounded-xl overflow-hidden border border-line bg-white">
           {slots.map((act, i) => {
             const isOpen = openSlot === i;

@@ -146,7 +146,7 @@ export function Testing({ tests, setTests, readOnly = false, studentId }: Testin
           )
         }
       />
-      <div className="p-6 px-8">
+      <div className="p-5 px-6">
         {/* SAT Superscore */}
         {superscore && (
           <Card style={{ marginBottom: 14, borderTop: "3px solid #7c3aed" }}>

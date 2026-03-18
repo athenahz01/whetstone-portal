@@ -131,7 +131,7 @@ export function BookingRequests({ strategistEmail, profileId }: BookingRequestsP
           </button>
         }
       />
-      <div className="p-6 px-8">
+      <div className="p-5 px-6">
         {/* Tabs */}
         <div className="flex gap-0.5 mb-5 p-0.5 rounded-full" style={{ background: "#1e1e1e", display: "inline-flex" }}>
           {([

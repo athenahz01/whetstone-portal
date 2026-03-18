@@ -252,7 +252,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
             )}
             {/* Multi-select dropdown */}
             {quickAssign === d.id && (
-              <div className="absolute top-7 left-0 z-50 rounded-lg shadow-lg py-1.5" style={{ background: "#252525", border: "1px solid #333", width: 180 }}>
+              <div className="absolute bottom-7 left-0 z-50 rounded-lg shadow-lg py-1.5" style={{ background: "#252525", border: "1px solid #333", width: 180 }}>
                 <div className="px-3 py-1 text-[10px] font-bold text-sub uppercase tracking-wider">Select mentors</div>
                 {SPECIALISTS.map((s) => {
                   const isSelected = mentors.includes(s);
@@ -297,7 +297,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
               <Tag color={getStatusColor(d.status)}>{STATUS_LABELS[d.status] || d.status}</Tag>
             )}
             {quickStatus === d.id && (
-              <div className="absolute top-7 left-0 z-50 rounded-lg shadow-lg py-1.5" style={{ background: "#252525", border: "1px solid #333", width: 140 }}>
+              <div className="absolute bottom-7 left-0 z-50 rounded-lg shadow-lg py-1.5" style={{ background: "#252525", border: "1px solid #333", width: 140 }}>
                 {(["pending", "in-progress", "completed", "blocked"] as const).map((s) => (
                   <button key={s} onClick={async (e) => {
                     e.stopPropagation();
@@ -390,9 +390,9 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
         }
       />
 
-      <div className="p-6 px-8">
+      <div className="p-5 px-6">
         {/* Heading */}
-        <h2 className="text-lg font-bold text-heading m-0 mb-4">Missions &amp; Tasks</h2>
+        <h2 className="text-lg font-bold text-heading m-0 mb-4">Projects &amp; Tasks</h2>
 
         {/* Filters bar */}
         <div className="flex items-center gap-3 mb-4 flex-wrap">
@@ -500,7 +500,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
         </div>
 
         {/* Rows */}
-        <div className="rounded-b-lg overflow-hidden" style={{ border: "1px solid #333", borderTop: "none" }}>
+        <div className="rounded-b-lg overflow-visible" style={{ border: "1px solid #333", borderTop: "none" }}>
           {filtered.length === 0 && (
             <div className="text-sm text-sub text-center py-8">No tasks match your filters</div>
           )}
@@ -508,14 +508,9 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
           {groupByCategory ? (
             // ── Grouped by Category ──
             (() => {
-              const categories = [...new Set(filtered.map((d) => d.cat))].sort();
-              const CATEGORY_COLORS: Record<string, string> = {
-                essays: "#a480f2", applications: "#4aba6a", testing: "#e5a83b",
-                planning: "#5A83F3", extracurricular: "#ec70a0", Academics: "#4aba6a",
-                Testing: "#e5a83b", Extracurriculars: "#a480f2",
-              };
+              const categories = [...new Set(filtered.map((d) => d.cat.toLowerCase()))].sort();
               return categories.map((cat) => {
-                const catTasks = filtered.filter((d) => d.cat === cat);
+                const catTasks = filtered.filter((d) => d.cat.toLowerCase() === cat);
                 const isCollapsed = collapsedGroups.has(cat);
                 const overdueCount = catTasks.filter((d) => d.status === "overdue").length;
                 return (
@@ -526,10 +521,10 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
                       style={{ background: "rgba(255,255,255,0.02)" }}>
                       <span className="text-xs" style={{ color: "#717171" }}>{isCollapsed ? "▶" : "▼"}</span>
                       <span className="text-xs font-bold px-2.5 py-1 rounded-md"
-                        style={{ background: `${CATEGORY_COLORS[cat] || "#5A83F3"}15`, color: CATEGORY_COLORS[cat] || "#5A83F3" }}>
+                        style={{ background: `${getCategoryColor(cat)}15`, color: getCategoryColor(cat) }}>
                         {cat}
                       </span>
-                      <span className="text-xs text-sub">({catTasks.length} {catTasks.length === 1 ? "mission" : "missions"})</span>
+                      <span className="text-xs text-sub">({catTasks.length} {catTasks.length === 1 ? "task" : "tasks"})</span>
                       {overdueCount > 0 && (
                         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(229,91,91,0.1)", color: "#e55b5b" }}>
                           {overdueCount} overdue

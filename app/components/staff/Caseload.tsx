@@ -198,7 +198,7 @@ export function Caseload({ students: studentsProp, onSelectStudent, onNavigate, 
         }
       />
 
-      <div className="p-6 px-8">
+      <div className="p-5 px-6">
         {/* ── TABLE VIEW ── */}
         {viewMode === "table" && (
           <Card noPadding style={{ overflow: "visible" }}>
@@ -243,7 +243,7 @@ export function Caseload({ students: studentsProp, onSelectStudent, onNavigate, 
                       )}
                     </div>
                     {teamDropdownId === s.id && (
-                      <div ref={teamDropdownRef} className="absolute z-50 right-0 rounded-xl shadow-lg border border-line overflow-hidden" style={{ background: "#1e1e1e", top: "calc(100% + 4px)", minWidth: 200 }}>
+                      <div ref={teamDropdownRef} className="absolute z-50 right-0 rounded-xl shadow-lg border border-line overflow-hidden" style={{ background: "#1e1e1e", bottom: "calc(100% + 4px)", minWidth: 200 }}>
                         <div className="px-3 py-2 border-b border-line">
                           <div className="text-[10px] uppercase font-bold tracking-widest" style={{ color: "#505050" }}>Assign Team</div>
                         </div>

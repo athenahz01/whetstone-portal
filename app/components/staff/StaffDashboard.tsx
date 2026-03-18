@@ -57,9 +57,9 @@ export function StaffDashboard({
 
   const allDeadlines = students.flatMap((s) => s.dl.map((d) => ({ ...d, sn: s.name, sid: s.id })));
 
-  // Urgent: overdue + due today
+  // Urgent: overdue (days < 0 or status overdue) + due today, exclude completed
   const urgent = allDeadlines.filter((d) =>
-    d.status === "overdue" || (d.days === 0 && d.status !== "completed")
+    d.status !== "completed" && (d.status === "overdue" || d.days < 0 || d.days === 0)
   );
 
   // Next 3 days: due in 1-3 days, not completed/overdue
@@ -114,7 +114,7 @@ export function StaffDashboard({
         }
       />
 
-      <div className="p-6 px-8">
+      <div className="p-5 px-6">
         {/* ── Top Row: 5 Stat Cards ── */}
         <div className="grid grid-cols-5 gap-3.5 mb-5">
           <StatCard label="Active Students" value={students.length} sub="Assigned & active" />
@@ -218,8 +218,13 @@ export function StaffDashboard({
               students.forEach((s) => {
                 s.dl.forEach((d) => {
                   if (d.status === "completed") items.push({ type: "completed", title: d.title, student: s.name, cat: d.cat, due: d.due, days: d.days, specialist: d.specialist });
-                  if (d.status === "overdue") items.push({ type: "overdue", title: d.title, student: s.name, cat: d.cat, due: d.due, days: d.days });
+                  if (d.status === "overdue" || (d.days < 0 && d.status !== "completed")) items.push({ type: "overdue", title: d.title, student: s.name, cat: d.cat, due: d.due, days: d.days });
                 });
+              });
+              // Sort: completed first (by date desc), then overdue
+              items.sort((a, b) => {
+                if (a.type !== b.type) return a.type === "completed" ? -1 : 1;
+                return b.due.localeCompare(a.due);
               });
               if (items.length === 0) return <p className="text-xs text-faint text-center py-3 m-0">No recent activity yet</p>;
               return items.slice(0, 8).map((item, i) => (

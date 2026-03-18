@@ -556,7 +556,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
         sub="The 3-step daily planning algorithm. Capture, prioritize, and schedule your work."
       />
 
-      <div className="px-8 pb-8">
+      <div className="px-6 pb-6">
         {/* Step tabs — hidden during daily review */}
         {step !== 0 && (
         <div className="flex mb-6 border border-line rounded-xl overflow-hidden">
