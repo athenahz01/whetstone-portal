@@ -45,10 +45,11 @@ export default function Home() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [gcalConnected, setGcalConnected] = useState(false);
   // Persist view in URL hash so refresh stays on the same page
+  const validViews = new Set(["dashboard", "master", "caseload", "booking-requests", "admin", "detail", "receptacle", "prep", "tasks", "essays", "profile", "academics", "testing", "activities", "honors", "schools"]);
   const [view, setView] = useState(() => {
     if (typeof window !== "undefined") {
       const hash = window.location.hash.replace("#", "");
-      return hash || "dashboard";
+      return validViews.has(hash) ? hash : "dashboard";
     }
     return "dashboard";
   });
@@ -563,7 +564,7 @@ export default function Home() {
     }
 
     return (
-      <div className="p-8">
+      <div className="p-6">
         <h1 className="text-2xl font-bold text-heading mb-2">
           {view.charAt(0).toUpperCase() + view.slice(1)}
         </h1>
