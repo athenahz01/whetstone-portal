@@ -113,9 +113,10 @@ export function Caseload({ students: studentsProp, onSelectStudent, onNavigate, 
     const grade = Number(f.get("grade"));
     const school = f.get("school") as string;
     const gradYear = Number(f.get("gradYear"));
+    const studentType = f.get("studentType") as string || "undergraduate";
 
     // Step 1: Add student record to database
-    const studentId = await addStudent({ name, email, grade, gpa: null, school, gradYear });
+    const studentId = await addStudent({ name, email, grade, gpa: null, school, gradYear, studentType });
 
     if (!studentId) {
       setSaving(false);
@@ -316,6 +317,12 @@ export function Caseload({ students: studentsProp, onSelectStudent, onNavigate, 
                 <input required name="gradYear" type="number" placeholder="2026" style={inputStyle} />
               </FormField>
             </div>
+            <FormField label="Student Type">
+              <select name="studentType" style={inputStyle}>
+                <option value="undergraduate">Undergraduate</option>
+                <option value="graduate">Graduate</option>
+              </select>
+            </FormField>
             <div className="flex justify-end gap-2 mt-2">
               <Button onClick={() => setShowModal(false)}>Cancel</Button>
               <button

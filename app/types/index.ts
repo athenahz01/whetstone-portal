@@ -21,6 +21,8 @@ export interface Deadline {
   description?: string;
   blockedBy?: string;
   internalOnly?: boolean;
+  studentOnly?: boolean;
+  schoolName?: string;
   responsible?: string[];
   actualDeadline?: string;
 }
@@ -102,6 +104,7 @@ export interface Student {
   gradYear: number;
   lastLogin: string | null;
   engagement: number;
+  studentType?: "undergraduate" | "graduate";
   applicationYear?: number | null;
   intendedMajors?: string | null;
   hookStatement?: string | null;

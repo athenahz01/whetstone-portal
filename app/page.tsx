@@ -9,6 +9,7 @@ import { StudentDashboard } from "./components/student/StudentDashboard";
 import { StudentProfile } from "./components/student/StudentProfile";
 import { Roadmap } from "./components/student/Roadmap";
 import { Academics } from "./components/student/Academics";
+import { EssayLab } from "./components/student/EssayLab";
 import { Testing } from "./components/student/Testing";
 import { Activities } from "./components/student/Activities";
 import { Schools } from "./components/student/Schools";
@@ -389,8 +390,11 @@ export default function Home() {
           googleEvents={studentGoogleEvents}
         />
       );
+    if (isStudentOrParent && view === "essays" && me) {
+      return <EssayLab student={me} readOnly={isParent} onRefresh={handleRefresh} />;
+    }
     if (isStudentOrParent && view === "academics" && me) {
-      return <Academics student={me} courses={courses} setCourses={setCourses} readOnly={isParent} />;
+      return <Academics student={me} courses={courses} setCourses={setCourses} readOnly={isParent} gradStudentMode={me.studentType === "graduate"} />;
     }
     if (isStudentOrParent && view === "testing") {
       return <Testing tests={tests} setTests={setTests} readOnly={isParent} studentId={me?.id} />;
@@ -530,6 +534,7 @@ export default function Home() {
         }
         profileId={profileId}
         gcalConnected={gcalConnected}
+        studentType={me?.studentType || "undergraduate"}
         timezone={profile?.timezone || "America/New_York"}
         onTimezoneChange={async (tz: string) => {
           if (profileId) {

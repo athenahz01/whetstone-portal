@@ -71,6 +71,7 @@ interface AcademicsProps {
   courses: Course[];
   setCourses: (c: Course[]) => void;
   readOnly?: boolean;
+  gradStudentMode?: boolean;
 }
 
 interface TranscriptFile {
@@ -79,7 +80,7 @@ interface TranscriptFile {
   uploaded_at: string;
 }
 
-export function Academics({ student, courses, setCourses, readOnly = false }: AcademicsProps) {
+export function Academics({ student, courses, setCourses, readOnly = false, gradStudentMode = false }: AcademicsProps) {
   const [showModal, setShowModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [transcripts, setTranscripts] = useState<TranscriptFile[]>([]);
@@ -150,10 +151,10 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
     <div>
       <PageHeader
         title="Academics"
-        sub="Coursework and academic progress."
+        sub={gradStudentMode ? "Upload your transcripts." : "Coursework and academic progress."}
         right={
-          readOnly ? (
-            <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}>View Only</span>
+          readOnly || gradStudentMode ? (
+            readOnly ? <span className="text-xs px-3 py-1.5 rounded-md font-semibold" style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}>View Only</span> : null
           ) : (
             <div className="flex gap-2">
               <Button primary onClick={() => setShowModal(true)}>+ Add Course</Button>
@@ -162,6 +163,8 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
         }
       />
       <div className="p-5 px-6">
+        {!gradStudentMode && (
+          <>
         {/* GPA Metrics — editable */}
         <div className="grid grid-cols-2 gap-3.5 mb-5">
           <GpaInput
@@ -214,6 +217,8 @@ export function Academics({ student, courses, setCourses, readOnly = false }: Ac
             </table>
           )}
         </Card>
+        </>
+        )}
 
         {/* Transcript Upload Section */}
         {!readOnly && (

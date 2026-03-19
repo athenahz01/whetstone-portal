@@ -63,6 +63,7 @@ export async function fetchAllStudents(): Promise<Student[]> {
         gradYear: s.grad_year,
         lastLogin: (!s.last_login || s.last_login === "Never") ? null : s.last_login,
         engagement: s.engagement,
+        studentType: s.student_type || "undergraduate",
         applicationYear: s.application_year || s.grad_year,
         intendedMajors: s.intended_majors || null,
         hookStatement: s.hook_statement || null,
@@ -104,6 +105,7 @@ export async function fetchAllStudents(): Promise<Student[]> {
             blockedBy: d.blocked_by || undefined,
             internalOnly: d.internal_only || false,
             studentOnly: d.student_only || false,
+            schoolName: d.school_name || undefined,
             responsible: d.responsible || [],
             actualDeadline: d.actual_deadline || "",
           };
@@ -170,6 +172,7 @@ export async function addStudent(data: {
   gpa: number | null;
   school: string;
   gradYear: number;
+  studentType?: string;
 }): Promise<number | null> {
   const { data: result, error } = await supabase
     .from("students")
@@ -184,6 +187,7 @@ export async function addStudent(data: {
       avatar: data.name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2),
       school: data.school,
       grad_year: data.gradYear,
+      student_type: data.studentType || "undergraduate",
       last_login: null,
       engagement: 0,
     })
@@ -277,6 +281,7 @@ export async function addDeadline(
     student_only?: boolean;
     responsible?: string[];
     actual_deadline?: string;
+    school_name?: string;
   }
 ): Promise<boolean> {
   const insertData: any = {
@@ -293,6 +298,7 @@ export async function addDeadline(
   if (data.priority) insertData.priority = data.priority;
   if (data.internal_only) insertData.internal_only = true;
   if (data.student_only) insertData.student_only = true;
+  if (data.school_name) insertData.school_name = data.school_name;
   if (data.responsible?.length) insertData.responsible = data.responsible;
   if (data.actual_deadline) insertData.actual_deadline = data.actual_deadline;
   const { error } = await supabase.from("deadlines").insert(insertData);
@@ -317,6 +323,7 @@ export async function updateDeadline(
     description?: string;
     student_only?: boolean;
     internal_only?: boolean;
+    school_name?: string;
   }
 ): Promise<boolean> {
   try {

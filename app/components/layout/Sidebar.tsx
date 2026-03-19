@@ -34,6 +34,7 @@ interface SidebarProps {
   timezone?: string;
   onTimezoneChange?: (tz: string) => void;
   onSyncCalendar?: () => Promise<void>;
+  studentType?: "undergraduate" | "graduate";
 }
 
 export function Sidebar({
@@ -51,6 +52,7 @@ export function Sidebar({
   timezone,
   onTimezoneChange,
   onSyncCalendar,
+  studentType = "undergraduate",
 }: SidebarProps) {
   const [showTz, setShowTz] = useState(false);
 
@@ -63,18 +65,28 @@ export function Sidebar({
           ["booking-requests", "Sessions"],
           ...(isAdmin ? [["admin", "Admin"]] : []),
         ]
-      : [
-          ["dashboard", "Dashboard"],
-          ["receptacle", "Receptacle"],
-          ...((role === "student" || role === "parent") ? [["prep", "Sessions"]] : []),
-          ["tasks", "Tasks"],
-          ["profile", "Profile"],
-          ["academics", "Academics"],
-          ["testing", "Testing"],
-          ["activities", "Activities"],
-          ["honors", "Honors"],
-          ["schools", "Schools"],
-        ];
+      : studentType === "graduate"
+        ? [
+            ["dashboard", "Dashboard"],
+            ["receptacle", "Receptacle"],
+            ...((role === "student" || role === "parent") ? [["prep", "Sessions"]] : []),
+            ["tasks", "Tasks"],
+            ["essays", "Essay Lab"],
+            ["academics", "Academics"],
+          ]
+        : [
+            ["dashboard", "Dashboard"],
+            ["receptacle", "Receptacle"],
+            ...((role === "student" || role === "parent") ? [["prep", "Sessions"]] : []),
+            ["tasks", "Tasks"],
+            ["essays", "Essay Lab"],
+            ["profile", "Profile"],
+            ["academics", "Academics"],
+            ["testing", "Testing"],
+            ["activities", "Activities"],
+            ["honors", "Honors"],
+            ["schools", "Schools"],
+          ];
 
   const name = studentName || "User";
   const initials = name
