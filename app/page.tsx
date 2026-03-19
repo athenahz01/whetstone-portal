@@ -323,7 +323,69 @@ export default function Home() {
   }
 
   if (!session) {
-    return <LoginPage onLogin={handleLogin} />;
+    // Check if user clicked "Sign In" — show login form
+    if (typeof window !== "undefined" && window.location.hash === "#login") {
+      return <LoginPage onLogin={handleLogin} />;
+    }
+    // Otherwise show public landing page
+    return (
+      <div style={{ background: "#181820", minHeight: "100vh", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
+        {/* Nav */}
+        <nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 40px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: "#fff", letterSpacing: -0.5 }}>Whetstone</div>
+          <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+            <a href="/privacy" style={{ color: "#717171", fontSize: 13, textDecoration: "none" }}>Privacy</a>
+            <a href="/terms" style={{ color: "#717171", fontSize: 13, textDecoration: "none" }}>Terms</a>
+            <button onClick={() => { window.location.hash = "login"; window.location.reload(); }}
+              style={{ padding: "8px 24px", borderRadius: 8, border: "none", background: "#5A83F3", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+              Sign In
+            </button>
+          </div>
+        </nav>
+
+        {/* Hero */}
+        <div style={{ maxWidth: 800, margin: "0 auto", padding: "80px 24px", textAlign: "center" }}>
+          <div style={{ width: 64, height: 64, borderRadius: 16, background: "#ebebeb", color: "#111", fontSize: 28, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px" }}>W</div>
+          <h1 style={{ fontSize: 42, fontWeight: 800, color: "#fff", marginBottom: 16, lineHeight: 1.2 }}>
+            Whetstone Admissions Portal
+          </h1>
+          <p style={{ fontSize: 18, color: "#a0a0a0", lineHeight: 1.6, maxWidth: 600, margin: "0 auto 40px" }}>
+            A comprehensive college admissions coaching platform for students, parents, and mentors. Plan your day, track tasks, manage sessions, organize essays, and stay on top of your application journey.
+          </p>
+          <button onClick={() => { window.location.hash = "login"; window.location.reload(); }}
+            style={{ padding: "14px 40px", borderRadius: 12, border: "none", background: "#5A83F3", color: "#fff", fontSize: 16, fontWeight: 600, cursor: "pointer" }}>
+            Sign In to Your Account
+          </button>
+        </div>
+
+        {/* Features */}
+        <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px 60px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
+          {[
+            { icon: "📋", title: "Task Management", desc: "Track deadlines, essays, and application milestones with automatic status updates." },
+            { icon: "📅", title: "Session Scheduling", desc: "Book and manage mentoring sessions with Google Calendar and Apple Calendar sync." },
+            { icon: "🧠", title: "Receptacle Planner", desc: "Daily planning with brain dump, Eisenhower Matrix prioritization, and calendar scheduling." },
+            { icon: "📝", title: "Essay Lab", desc: "Organize essays by school with Google Docs integration and mentor feedback tracking." },
+            { icon: "🎓", title: "School Research", desc: "Search and compare schools with admissions stats, SAT/ACT ranges, and program data." },
+            { icon: "📊", title: "Progress Tracking", desc: "Monitor academic progress, test scores, activities, and engagement across the application cycle." },
+          ].map((f) => (
+            <div key={f.title} style={{ background: "#1e1e1e", borderRadius: 12, padding: 24, border: "1px solid #2a2a2a" }}>
+              <div style={{ fontSize: 28, marginBottom: 12 }}>{f.icon}</div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: "#fff", marginBottom: 8 }}>{f.title}</div>
+              <div style={{ fontSize: 13, color: "#717171", lineHeight: 1.5 }}>{f.desc}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "24px 40px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontSize: 12, color: "#505050" }}>© 2026 Whetstone Admissions. All rights reserved.</span>
+          <div style={{ display: "flex", gap: 16 }}>
+            <a href="/privacy" style={{ color: "#505050", fontSize: 12, textDecoration: "none" }}>Privacy Policy</a>
+            <a href="/terms" style={{ color: "#505050", fontSize: 12, textDecoration: "none" }}>Terms of Service</a>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (loading || !profile || !studentDataLoaded) {
