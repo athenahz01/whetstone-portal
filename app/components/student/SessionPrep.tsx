@@ -90,7 +90,10 @@ export function SessionPrep({ student, onRefresh, readOnly = false }: SessionPre
     }
   }, [student.id]);
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  const _now = new Date();
+  const todayStr = `${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, "0")}-${String(_now.getDate()).padStart(2, "0")}`;
+  const _2w = new Date(_now.getTime() + 14 * 24 * 60 * 60 * 1000);
+  const twoWeeksStr = `${_2w.getFullYear()}-${String(_2w.getMonth() + 1).padStart(2, "0")}-${String(_2w.getDate()).padStart(2, "0")}`;
 
   const reloadEvents = () => {
     Promise.all([
@@ -101,7 +104,7 @@ export function SessionPrep({ student, onRefresh, readOnly = false }: SessionPre
     });
   };
 
-  const upcoming = events.filter((e) => e.date >= todayStr).sort((a: any, b: any) => a.date.localeCompare(b.date));
+  const upcoming = events.filter((e) => e.date >= todayStr && e.date <= twoWeeksStr).sort((a: any, b: any) => a.date.localeCompare(b.date));
   const past = events.filter((e) => e.date < todayStr).sort((a: any, b: any) => b.date.localeCompare(a.date));
   const displayEvents = sessionTab === "upcoming" ? upcoming : past;
 
@@ -209,7 +212,7 @@ export function SessionPrep({ student, onRefresh, readOnly = false }: SessionPre
         }
       />
 
-      <div className="p-6 px-8" style={{ maxWidth: 860 }}>
+      <div className="p-5 px-6" style={{ maxWidth: 860 }}>
         {/* Unified tab row: Upcoming | Past | Close & Commit */}
         <div className="flex gap-0.5 mb-5 p-0.5 rounded-full" style={{ background: "#1e1e1e", display: "inline-flex" }}>
           {([

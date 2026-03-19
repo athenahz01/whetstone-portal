@@ -75,13 +75,15 @@ export function StaffDashboard({
   const upcomingSessions = useMemo(() => {
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const _2w = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+    const twoWeeksStr = `${_2w.getFullYear()}-${String(_2w.getMonth() + 1).padStart(2, "0")}-${String(_2w.getDate()).padStart(2, "0")}`;
     // From sessions table
     const fromSessions = students
       .flatMap((s) => s.sess.map((ss) => ({ ...ss, studentName: s.name, studentAv: s.av, studentId: s.id, source: "session" as const })))
-      .filter((ss) => ss.date >= todayStr);
+      .filter((ss) => ss.date >= todayStr && ss.date <= twoWeeksStr);
     // From booking requests
     const fromBRs = brSessions
-      .filter((br: any) => br.date >= todayStr)
+      .filter((br: any) => br.date >= todayStr && br.date <= twoWeeksStr)
       .map((br: any) => ({
         id: `br-${br.id}`, date: br.date, notes: br.session_name,
         start_time: br.start_time, action: br.status,

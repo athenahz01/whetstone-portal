@@ -62,12 +62,14 @@ export function StudentDashboard({
 
   const now = new Date();
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  const upcomingSessions = counselorEvents.filter((ce) => ce.date >= todayStr).sort((a: any, b: any) => a.date.localeCompare(b.date));
+  const twoWeeksOut = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+  const twoWeeksStr = `${twoWeeksOut.getFullYear()}-${String(twoWeeksOut.getMonth() + 1).padStart(2, "0")}-${String(twoWeeksOut.getDate()).padStart(2, "0")}`;
+  const upcomingSessions = counselorEvents.filter((ce) => ce.date >= todayStr && ce.date <= twoWeeksStr).sort((a: any, b: any) => a.date.localeCompare(b.date));
   const pastSessions = counselorEvents.filter((ce) => ce.date < todayStr).sort((a: any, b: any) => b.date.localeCompare(a.date));
   const displaySessions = sessionTab === "upcoming" ? upcomingSessions : pastSessions;
 
   const activeTasks = student.dl
-    .filter((d) => d.status !== "completed")
+    .filter((d: any) => d.status !== "completed" && !d.internalOnly)
     .sort((a, b) => a.days - b.days)
     .slice(0, 5);
 

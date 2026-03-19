@@ -109,8 +109,10 @@ export function BookingRequests({ strategistEmail, profileId }: BookingRequestsP
 
   const now = new Date();
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const _2w = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+  const twoWeeksStr = `${_2w.getFullYear()}-${String(_2w.getMonth() + 1).padStart(2, "0")}-${String(_2w.getDate()).padStart(2, "0")}`;
   const pending = requests.filter(r => r.status === "pending" || r.status === "countered");
-  const upcoming = requests.filter(r => (r.status === "approved" || r.status === "confirmed") && r.date >= todayStr).sort((a, b) => a.date.localeCompare(b.date));
+  const upcoming = requests.filter(r => (r.status === "approved" || r.status === "confirmed") && r.date >= todayStr && r.date <= twoWeeksStr).sort((a, b) => a.date.localeCompare(b.date));
   const past = requests.filter(r => (r.status === "approved" || r.status === "confirmed") && r.date < todayStr).sort((a, b) => b.date.localeCompare(a.date));
   const display = tab === "pending" ? pending : tab === "upcoming" ? upcoming : past;
 

@@ -183,62 +183,26 @@ export function Sidebar({
       {!collapsed && profileId && (
         <div className="px-3 mb-2">
           {gcalConnected ? (
-            <div className="flex flex-col gap-1.5">
-              <div
-                className="flex items-center gap-2 px-2 py-2 rounded-lg"
-                style={{
-                  background: "rgba(74,186,106,0.10)",
-                  border: "1px solid rgba(74,186,106,0.18)",
-                }}
-              >
-                <span className="text-xs">📅</span>
-                <span className="text-xs font-medium" style={{ color: "#4ade80" }}>
-                  Calendar synced
-                </span>
-              </div>
-              <button
-                onClick={async () => {
-                  if (onSyncCalendar) {
-                    await onSyncCalendar();
-                  }
-                }}
-                className="w-full px-2 py-1.5 rounded-lg cursor-pointer text-[10px] font-semibold border-none"
-                style={{
-                  background: "rgba(255,255,255,0.04)",
-                  color: "#cbd5e1",
-                }}
-              >
-                🔄 Sync Now
-              </button>
+            <div className="flex items-center justify-between px-2 py-1.5 rounded-lg mb-1" style={{ background: "rgba(74,186,106,0.08)", border: "1px solid rgba(74,186,106,0.15)" }}>
+              <span className="text-[11px] font-medium" style={{ color: "#4aba6a" }}>📅 Calendar synced</span>
+              <button onClick={async () => { if (onSyncCalendar) await onSyncCalendar(); }}
+                className="text-[10px] font-semibold bg-transparent border-none cursor-pointer px-1.5 py-0.5 rounded"
+                style={{ color: "#717171" }}>🔄</button>
             </div>
           ) : (
-            <button
-              onClick={() => {
-                window.location.href = getGoogleAuthUrl(profileId);
-              }}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer text-xs font-semibold border-none"
-              style={{
-                background: "rgba(255,255,255,0.04)",
-                color: "#cbd5e1",
-              }}
-            >
+            <button onClick={() => { window.location.href = getGoogleAuthUrl(profileId); }}
+              className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg cursor-pointer text-[11px] font-medium border-none mb-1"
+              style={{ background: "rgba(255,255,255,0.04)", color: "#94a3b8" }}>
               📅 Connect Google Calendar
             </button>
           )}
-
-          {/* Apple Calendar Subscribe */}
-          <button
-            onClick={() => {
+          <button onClick={() => {
               const feedUrl = `${window.location.origin}/api/ical-feed?token=${profileId}`;
               const webcalUrl = feedUrl.replace("https://", "webcal://").replace("http://", "webcal://");
               window.open(webcalUrl, "_self");
             }}
-            className="w-full flex items-center gap-1.5 px-3 py-2 rounded-lg cursor-pointer text-[11px] font-semibold border-none mt-1.5 whitespace-nowrap"
-            style={{
-              background: "rgba(255,255,255,0.04)",
-              color: "#cbd5e1",
-            }}
-          >
+            className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg cursor-pointer text-[11px] font-medium border-none whitespace-nowrap"
+            style={{ background: "rgba(255,255,255,0.04)", color: "#94a3b8" }}>
             🍎 Apple Calendar Sync
           </button>
         </div>
