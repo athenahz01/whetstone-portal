@@ -223,7 +223,7 @@ export function Caseload({ students: studentsProp, onSelectStudent, onNavigate, 
                     <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: "rgba(90,131,243,0.1)", color: "#5A83F3" }}>{s.av}</div>
                     <div><span className="text-sm font-medium text-heading">{s.name}</span><div className="text-xs text-sub">{s.school}</div></div>
                   </div>
-                  <div className="text-sm text-body">{s.grade === 13 ? "PG" : s.grade}</div>
+                  <div className="text-sm text-body">{(s as any).studentType === "graduate" ? <span style={{ color: "#a480f2" }}>Grad</span> : s.grade === 13 ? "PG" : s.grade}</div>
                   <div className="text-sm text-body">{s.gpa ?? "—"}</div>
                   <div>{schoolCount > 0 ? <span className="text-xs font-semibold" style={{ color: "#5A83F3" }}>{schoolCount}</span> : <span className="text-xs text-sub">0</span>}</div>
                   <div>{overdue > 0 ? <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(229,91,91,0.08)", color: "#e55b5b" }}>{overdue}</span> : <span className="text-xs text-sub">0</span>}</div>
@@ -265,7 +265,7 @@ export function Caseload({ students: studentsProp, onSelectStudent, onNavigate, 
                   <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}>{s.av}</div>
                   <div>
                     <div className="text-base font-bold text-heading">{s.name}</div>
-                    <div className="text-xs text-sub">Gr. {s.grade === 13 ? "PG" : s.grade} · {s.school}</div>
+                    <div className="text-xs text-sub">{(s as any).studentType === "graduate" ? "Graduate" : `Gr. ${s.grade === 13 ? "PG" : s.grade}`} · {s.school}</div>
                   </div>
                 </div>
                 <Tag color={s.status === "needs-attention" ? "#e55b5b" : "#4aba6a"}>
