@@ -104,7 +104,7 @@ export function StudentDashboard({
         <div className="flex gap-5">
           {/* ── Left column: Tasks + Recent Activity ── */}
           <div className="flex flex-col gap-5" style={{ flex: "3" }}>
-            <Card style={{ minHeight: 380 }}>
+            <Card>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="m-0 text-base font-bold text-heading">Tasks</h3>
                 <button onClick={() => onNavigate("tasks")} className="text-xs font-semibold bg-transparent border-none cursor-pointer" style={{ color: "#5A83F3" }}>View all →</button>
@@ -131,7 +131,7 @@ export function StudentDashboard({
               })()}
             </Card>
 
-            <Card style={{ minHeight: 200 }}>
+            <Card>
               <h3 className="m-0 text-sm font-bold text-heading mb-3">Recent Activity</h3>
               <div className="flex flex-col gap-1.5">
                 {student.dl.filter(d => d.status === "completed").slice(0, 5).map((d) => (
@@ -161,7 +161,7 @@ export function StudentDashboard({
 
           {/* ── Right column: Sessions + Plan/Close ── */}
           <div className="flex flex-col gap-5" style={{ flex: "2" }}>
-            <Card style={{ minHeight: 340 }}>
+            <Card>
               <div className="flex items-center justify-between mb-3"><h3 className="m-0 text-sm font-bold text-heading">Sessions</h3><button onClick={() => onNavigate("prep")} className="text-xs font-semibold bg-transparent border-none cursor-pointer" style={{ color: "#5A83F3" }}>View all →</button></div>
               <div className="flex gap-0.5 mb-3 p-0.5 rounded-full" style={{ background: "#1e1e1e", display: "inline-flex" }}>
                 {(["upcoming", "past"] as const).map((tab) => (<button key={tab} onClick={() => setSessionTab(tab)} className="px-3.5 py-1.5 rounded-full border-none cursor-pointer text-[11px] font-semibold" style={{ background: sessionTab === tab ? "#5A83F3" : "transparent", color: sessionTab === tab ? "#fff" : "#717171" }}>{tab === "upcoming" ? "Upcoming" : "Past"}</button>))}

@@ -41,28 +41,26 @@ function LandingOrLogin({ onLogin }: { onLogin: () => void }) {
   const [showLogin, setShowLogin] = useState(false);
   if (showLogin) return <LoginPage onLogin={onLogin} />;
   return (
-    <div className="text-sm" style={{ background: "#181820", minHeight: "100vh", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
-      <nav className="flex justify-between items-center px-8 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-        <span className="text-lg font-bold text-white">Whetstone</span>
-        <div className="flex items-center gap-4">
-          <a href="/privacy" className="text-xs" style={{ color: "#717171", textDecoration: "none" }}>Privacy</a>
-          <a href="/terms" className="text-xs" style={{ color: "#717171", textDecoration: "none" }}>Terms</a>
+    <div style={{ background: "#181820", minHeight: "100vh" }}>
+      <nav className="flex justify-between items-center px-10 py-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <span style={{ fontSize: 20, fontWeight: 700, color: "#fff", letterSpacing: "-0.01em" }}>Whetstone</span>
+        <div className="flex items-center gap-5">
+          <a href="/privacy" style={{ color: "#717171", fontSize: 14, textDecoration: "none" }}>Privacy</a>
+          <a href="/terms" style={{ color: "#717171", fontSize: 14, textDecoration: "none" }}>Terms</a>
           <button onClick={() => setShowLogin(true)}
-            className="px-4 py-2 rounded-lg border-none cursor-pointer text-xs font-semibold"
-            style={{ background: "#5A83F3", color: "#fff" }}>Sign In</button>
+            style={{ padding: "9px 24px", borderRadius: 8, border: "none", background: "#5A83F3", color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Sign In</button>
         </div>
       </nav>
-      <div className="text-center py-16 px-6" style={{ maxWidth: 700, margin: "0 auto" }}>
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-5 text-xl font-bold" style={{ background: "#ebebeb", color: "#111" }}>W</div>
-        <h1 className="text-3xl font-bold text-white mb-3">Whetstone Admissions Portal</h1>
-        <p className="text-sm mb-8" style={{ color: "#a0a0a0", lineHeight: 1.7, maxWidth: 500, margin: "0 auto" }}>
+      <div style={{ maxWidth: 700, margin: "0 auto", padding: "80px 24px 48px", textAlign: "center" }}>
+        <div className="flex items-center justify-center mx-auto" style={{ width: 56, height: 56, borderRadius: 14, background: "#ebebeb", color: "#111", fontSize: 24, fontWeight: 800, marginBottom: 28 }}>W</div>
+        <h1 style={{ fontSize: 36, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em", lineHeight: 1.2, marginBottom: 16, fontStyle: "normal" }}>Whetstone Admissions Portal</h1>
+        <p style={{ fontSize: 16, color: "#a0a0a0", lineHeight: 1.7, maxWidth: 540, margin: "0 auto 40px" }}>
           A comprehensive college admissions coaching platform for students, parents, and mentors. Plan your day, track tasks, manage sessions, organize essays, and stay on top of your application journey.
         </p>
         <button onClick={() => setShowLogin(true)}
-          className="px-6 py-3 rounded-lg border-none cursor-pointer text-sm font-semibold"
-          style={{ background: "#5A83F3", color: "#fff" }}>Sign In to Your Account</button>
+          style={{ padding: "12px 32px", borderRadius: 10, border: "none", background: "#5A83F3", color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer" }}>Sign In to Your Account</button>
       </div>
-      <div className="grid grid-cols-3 gap-4 px-6 pb-12" style={{ maxWidth: 800, margin: "0 auto" }}>
+      <div className="grid grid-cols-3 gap-5 pb-16" style={{ maxWidth: 820, margin: "0 auto", padding: "0 24px 64px" }}>
         {[
           { icon: "📋", title: "Task Management", desc: "Track deadlines and application milestones." },
           { icon: "📅", title: "Session Scheduling", desc: "Book sessions with Google & Apple Calendar sync." },
@@ -71,18 +69,18 @@ function LandingOrLogin({ onLogin }: { onLogin: () => void }) {
           { icon: "🎓", title: "School Research", desc: "Compare schools with admissions stats." },
           { icon: "📊", title: "Progress Tracking", desc: "Monitor academics, scores, and activities." },
         ].map(f => (
-          <div key={f.title} className="rounded-xl p-4" style={{ background: "#1e1e1e", border: "1px solid #2a2a2a" }}>
-            <div className="text-xl mb-2">{f.icon}</div>
-            <div className="text-xs font-semibold text-white mb-1">{f.title}</div>
-            <div className="text-[11px]" style={{ color: "#717171", lineHeight: 1.5 }}>{f.desc}</div>
+          <div key={f.title} className="rounded-xl" style={{ background: "#1e1e1e", border: "1px solid #2a2a2a", padding: "20px" }}>
+            <div style={{ fontSize: 22, marginBottom: 10 }}>{f.icon}</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#e8e8e8", marginBottom: 6 }}>{f.title}</div>
+            <div style={{ fontSize: 13, color: "#717171", lineHeight: 1.6 }}>{f.desc}</div>
           </div>
         ))}
       </div>
-      <div className="flex justify-between items-center px-8 py-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-        <span className="text-[10px]" style={{ color: "#505050" }}>© 2026 Whetstone Admissions</span>
-        <div className="flex gap-4">
-          <a href="/privacy" className="text-[10px]" style={{ color: "#505050", textDecoration: "none" }}>Privacy Policy</a>
-          <a href="/terms" className="text-[10px]" style={{ color: "#505050", textDecoration: "none" }}>Terms of Service</a>
+      <div className="flex justify-between items-center px-10 py-5" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <span style={{ fontSize: 12, color: "#505050" }}>© 2026 Whetstone Admissions</span>
+        <div className="flex gap-5">
+          <a href="/privacy" style={{ fontSize: 12, color: "#505050", textDecoration: "none" }}>Privacy Policy</a>
+          <a href="/terms" style={{ fontSize: 12, color: "#505050", textDecoration: "none" }}>Terms of Service</a>
         </div>
       </div>
     </div>
@@ -565,11 +563,8 @@ export default function Home() {
 
   return (
     <div
-      className="flex h-screen text-sm overflow-hidden"
-      style={{
-        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-        color: "#a0a0a0",
-      }}
+      className="flex h-screen overflow-hidden"
+      style={{ color: "#a0a0a0" }}
     >
       <Sidebar
         role={role}

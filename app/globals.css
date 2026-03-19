@@ -41,6 +41,7 @@ body {
   background: var(--color-bg);
   color: var(--color-body);
   font-family: var(--font-sans);
+  font-size: 14px;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
 }
