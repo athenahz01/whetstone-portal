@@ -310,7 +310,9 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
   // ── All deadlines flattened ──
   const allDeadlines = useMemo(() => {
     const items = students.flatMap((s) =>
-      s.dl.map((d) => ({
+      s.dl
+        .filter((d: any) => !d.studentOnly) // Hide student-private tasks from staff
+        .map((d) => ({
         ...d,
         studentName: s.name,
         studentId: s.id,
@@ -723,14 +725,14 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
                           onBlur={() => setEditingCell(null)}
                           className="text-xs rounded px-1.5 py-1 border-none outline-none font-semibold"
                           style={{ background: "#333", color: "#ebebeb" }}>
-                          {["pending", "in-progress", "completed", "overdue", "blocked"].map((s) => (
+                          {["pending", "in-progress", "completed", "blocked"].map((s) => (
                             <option key={s} value={s}>{s === "pending" ? "Planned" : s === "in-progress" ? "In Progress" : s.charAt(0).toUpperCase() + s.slice(1)}</option>
                           ))}
                         </select>
                       ) : (
                         <div onClick={() => canEdit && setEditingCell({ id: deadlineId, field: "status" })} className="cursor-pointer">
                           <Tag color={getStatusColor(d.status)}>
-                            {isOverdue ? Math.abs(d.days) + "d late" : d.days === 0 ? "Today" : d.days + "d"}
+                            {d.status === "completed" ? "Complete" : d.status === "overdue" ? `${Math.abs(d.days)}d late` : d.status === "urgent" ? "Urgent" : d.status === "in-progress" ? "In Progress" : d.status === "blocked" ? "Blocked" : `${d.days}d`}
                           </Tag>
                         </div>
                       )}
@@ -926,8 +928,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
                 <select name="status" defaultValue={editTask.status} style={inputStyle}>
                   <option value="pending">Planned</option>
                   <option value="in-progress">In Progress</option>
-                  <option value="completed">Completed</option>
-                  <option value="overdue">Overdue</option>
+                  <option value="completed">Complete</option>
                   <option value="blocked">Blocked</option>
                 </select>
               </FormField>

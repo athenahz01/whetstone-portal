@@ -39,15 +39,16 @@ const PRIORITY_COLORS: Record<string, string> = {
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  pending: "To Do",
+  pending: "Planned",
   "in-progress": "In Progress",
+  urgent: "Urgent",
   overdue: "Overdue",
   completed: "Complete",
   blocked: "Blocked",
 };
 
 type SortField = "due" | "priority" | "title" | "specialist" | "status";
-type FilterStatus = "all" | "pending" | "in-progress" | "overdue" | "completed" | "blocked";
+type FilterStatus = "all" | "pending" | "in-progress" | "urgent" | "overdue" | "completed" | "blocked";
 
 export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = false, headerRight }: DeadlinesViewProps) {
   const [specialists, setSpecialists] = useState<string[]>([]);
@@ -405,7 +406,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
         <div className="flex items-center gap-3 mb-4 flex-wrap">
           {/* Status filter toggles — multi-select */}
           <div className="flex gap-1.5">
-            {(["pending", "in-progress", "overdue", "blocked", "completed"] as const).map((s) => {
+            {(["pending", "in-progress", "urgent", "overdue", "blocked", "completed"] as const).map((s) => {
               const isOn = activeFilters.has(s);
               return (
                 <button key={s}
@@ -635,7 +636,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
             <div className="grid grid-cols-3 gap-3">
               <FormField label="Status">
                 <select name="status" defaultValue={editingDeadline.status} style={inputStyle}>
-                  <option value="pending">To Do</option>
+                  <option value="pending">Planned</option>
                   <option value="in-progress">In Progress</option>
                   <option value="completed">Complete</option>
                   <option value="blocked">Blocked</option>

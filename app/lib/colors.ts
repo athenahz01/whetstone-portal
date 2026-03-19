@@ -17,8 +17,9 @@ export function getCategoryColor(cat: string): string {
 export function getStatusColor(status: string): string {
   const map: Record<string, string> = {
     overdue: "#e55b5b",
-    "in-progress": "#e5a83b",
-    "In Progress": "#e5a83b",
+    urgent: "#e5a83b",
+    "in-progress": "#5A83F3",
+    "In Progress": "#5A83F3",
     pending: "#717171",
     Planned: "#717171",
     completed: "#4aba6a",

@@ -81,12 +81,20 @@ export async function fetchAllStudents(): Promise<Student[]> {
           const today = new Date();
           today.setHours(0, 0, 0, 0);
           const diffDays = dueDate ? Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+          // Auto-derive status: completed stays, otherwise check days
+          let derivedStatus = d.status as string;
+          if (derivedStatus !== "completed") {
+            if (diffDays < 0) derivedStatus = "overdue";
+            else if (diffDays === 0) derivedStatus = "urgent";
+            else if (derivedStatus === "overdue" || derivedStatus === "urgent") derivedStatus = "pending";
+          }
+
           return {
             id: d.id,
             title: d.title,
             due: d.due,
             cat: d.category,
-            status: d.status as "overdue" | "in-progress" | "pending" | "completed" | "blocked",
+            status: derivedStatus as "overdue" | "urgent" | "in-progress" | "pending" | "completed" | "blocked",
             days: diffDays,
             specialist: d.specialist || "",
             googleDocLink: d.google_doc_link || "",

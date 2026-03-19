@@ -59,14 +59,14 @@ export function StaffDashboard({
 
   const allDeadlines = students.flatMap((s) => s.dl.filter((d: any) => !d.studentOnly).map((d) => ({ ...d, sn: s.name, sid: s.id })));
 
-  // Urgent: overdue (days < 0 or status overdue) + due today, exclude completed
+  // Urgent: overdue + urgent (due today), exclude completed
   const urgent = allDeadlines.filter((d) =>
-    d.status !== "completed" && (d.status === "overdue" || d.days < 0 || d.days === 0)
+    d.status !== "completed" && (d.status === "overdue" || d.status === "urgent" || d.days < 0 || d.days === 0)
   );
 
-  // Next 3 days: due in 1-3 days, not completed/overdue
+  // Next 3 days: due in 1-3 days, not completed/overdue/urgent
   const next3Days = allDeadlines.filter((d) =>
-    d.days >= 1 && d.days <= 3 && d.status !== "completed" && d.status !== "overdue"
+    d.days >= 1 && d.days <= 3 && d.status !== "completed" && d.status !== "overdue" && d.status !== "urgent"
   );
 
   // At risk: last login ≥36 hours
@@ -180,7 +180,7 @@ export function StaffDashboard({
                   <div className="text-xs text-sub">{d.sn}</div>
                 </div>
                 <span className="text-xs font-bold flex-shrink-0" style={{ color: "#e55b5b" }}>
-                  {d.days < 0 ? `${Math.abs(d.days)}d late` : "Today"}
+                  {d.days < 0 ? `${Math.abs(d.days)}d late` : d.days === 0 ? "Urgent" : "Today"}
                 </span>
               </div>
             ))}

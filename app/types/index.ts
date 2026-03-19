@@ -12,7 +12,7 @@ export interface Deadline {
   title: string;
   due: string;
   cat: string;
-  status: "overdue" | "in-progress" | "pending" | "completed" | "blocked";
+  status: "overdue" | "urgent" | "in-progress" | "pending" | "completed" | "blocked";
   days: number;
   specialist?: string;
   googleDocLink?: string;
