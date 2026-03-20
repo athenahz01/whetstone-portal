@@ -22,6 +22,29 @@ const STATUS_LABELS: Record<string, string> = {
   urgent: "Urgent", overdue: "Overdue", completed: "Completed",
 };
 
+// Bundle individual UC campuses into one folder
+const UC_CAMPUSES = [
+  "university of california-berkeley", "university of california-los angeles",
+  "university of california-san diego", "university of california-davis",
+  "university of california-irvine", "university of california-santa barbara",
+  "university of california-santa cruz", "university of california-riverside",
+  "university of california-merced",
+  "uc berkeley", "uc los angeles", "ucla", "uc san diego", "ucsd",
+  "uc davis", "uc irvine", "uc santa barbara", "ucsb", "uc santa cruz",
+  "ucsc", "uc riverside", "ucr", "uc merced",
+];
+const UC_FOLDER = "University of California Applications";
+
+function normalizeSchoolFolder(name: string): string {
+  if (!name) return "General";
+  if (name === UC_FOLDER) return UC_FOLDER;
+  if (UC_CAMPUSES.includes(name.toLowerCase().trim())) return UC_FOLDER;
+  return name;
+}
+
+// Default folders that always appear in the creation list
+const SYSTEM_FOLDERS = ["General", "Common App", "Coalition App", UC_FOLDER, "UCAS Application (UK)"];
+
 interface EssayLabProps { student: Student; readOnly?: boolean; onRefresh?: () => void; }
 
 export function EssayLab({ student, readOnly = false, onRefresh }: EssayLabProps) {
@@ -30,12 +53,37 @@ export function EssayLab({ student, readOnly = false, onRefresh }: EssayLabProps
   const [saving, setSaving] = useState(false);
   const [expandedSchools, setExpandedSchools] = useState<Set<string>>(new Set(["General"]));
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [showAddFolder, setShowAddFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [addToFolder, setAddToFolder] = useState<string | null>(null);
 
   const essays = student.dl.filter(d => d.cat.toLowerCase() === "essays" && !d.internalOnly);
-  const bySchool = new Map<string, Deadline[]>();
-  essays.forEach(e => { const s = e.schoolName || "General"; if (!bySchool.has(s)) bySchool.set(s, []); bySchool.get(s)!.push(e); });
-  const schoolOrder = Array.from(bySchool.keys()).sort((a, b) => a === "General" ? -1 : b === "General" ? 1 : a.localeCompare(b));
-  const toggleSchool = (s: string) => setExpandedSchools(prev => { const n = new Set(prev); n.has(s) ? n.delete(s) : n.add(s); return n; });
+
+  // Group essays into folders (normalizing UC campuses)
+  const byFolder = new Map<string, Deadline[]>();
+  essays.forEach(e => {
+    const folder = normalizeSchoolFolder(e.schoolName || "General");
+    if (!byFolder.has(folder)) byFolder.set(folder, []);
+    byFolder.get(folder)!.push(e);
+  });
+
+  // Build folder order: General first, then alphabetical
+  const activeFolders = Array.from(byFolder.keys()).sort((a, b) =>
+    a === "General" ? -1 : b === "General" ? 1 : a.localeCompare(b)
+  );
+
+  // Collect all unique school names from the student's school list (for suggestions)
+  const studentSchoolNames = student.schools.map(s => s.name);
+  // Build available folders: active + system + student schools (deduped)
+  const allFolderOptions = Array.from(new Set([
+    ...activeFolders,
+    ...SYSTEM_FOLDERS,
+    ...studentSchoolNames.map(n => normalizeSchoolFolder(n)),
+  ])).sort((a, b) => a === "General" ? -1 : b === "General" ? 1 : a.localeCompare(b));
+
+  const toggleSchool = (s: string) => setExpandedSchools(prev => {
+    const n = new Set(prev); n.has(s) ? n.delete(s) : n.add(s); return n;
+  });
 
   const totalEssays = essays.length;
   const completed = essays.filter(e => e.status === "completed").length;
@@ -44,62 +92,100 @@ export function EssayLab({ student, readOnly = false, onRefresh }: EssayLabProps
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true);
     const f = new FormData(e.target as HTMLFormElement);
+    const folder = addToFolder || f.get("schoolName") as string || "General";
     await addDeadline(student.id, {
       title: f.get("title") as string, due: f.get("due") as string, category: "essays",
       status: "pending", days: 0,
       google_doc_link: f.get("googleDocLink") as string || undefined,
-      school_name: f.get("schoolName") as string || undefined,
+      school_name: folder,
     });
-    setSaving(false); setShowCreate(false); if (onRefresh) onRefresh();
+    setSaving(false); setShowCreate(false); setAddToFolder(null);
+    setExpandedSchools(prev => new Set([...prev, folder]));
+    if (onRefresh) onRefresh();
   };
 
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault(); if (!editing) return; setSaving(true);
     const f = new FormData(e.target as HTMLFormElement);
+    const rawSchool = f.get("schoolName") as string || "";
     await updateDeadline(editing.id, {
       title: f.get("title") as string, due: f.get("due") as string,
       status: f.get("status") as string,
       google_doc_link: f.get("googleDocLink") as string || "",
-      school_name: f.get("schoolName") as string || "",
+      school_name: normalizeSchoolFolder(rawSchool) || "General",
       description: f.get("description") as string || "",
     });
     setSaving(false); setEditing(null); if (onRefresh) onRefresh();
   };
 
-  const handleDelete = async (id: number) => { await deleteDeadline(id); setConfirmDeleteId(null); setEditing(null); if (onRefresh) onRefresh(); };
+  const handleDelete = async (id: number) => {
+    await deleteDeadline(id); setConfirmDeleteId(null); setEditing(null); if (onRefresh) onRefresh();
+  };
+
+  const handleCreateFolder = () => {
+    if (!newFolderName.trim()) return;
+    const folder = normalizeSchoolFolder(newFolderName.trim()) || newFolderName.trim();
+    setExpandedSchools(prev => new Set([...prev, folder]));
+    setShowAddFolder(false);
+    setAddToFolder(folder);
+    setShowCreate(true);
+    setNewFolderName("");
+  };
 
   return (
     <div>
       <PageHeader title="Essay Lab"
-        sub={`${totalEssays} essays · ${completed} completed · ${inProgress} in progress · ${schoolOrder.length} schools`}
-        right={!readOnly && (<button onClick={() => setShowCreate(true)} className="px-4 py-2 rounded-full border-none cursor-pointer text-xs font-semibold" style={{ background: "#5A83F3", color: "#fff" }}>+ Add Essay</button>)} />
+        sub={`${totalEssays} essays · ${completed} completed · ${inProgress} in progress · ${activeFolders.length} folders`}
+        right={!readOnly && (
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowAddFolder(true)}
+              className="px-4 py-2 rounded-full cursor-pointer text-xs font-semibold"
+              style={{ background: "transparent", color: "#5A83F3", border: "1.5px solid #5A83F3" }}>+ New Folder</button>
+            <button onClick={() => { setAddToFolder(null); setShowCreate(true); }}
+              className="px-4 py-2 rounded-full border-none cursor-pointer text-xs font-semibold"
+              style={{ background: "#5A83F3", color: "#fff" }}>+ Add Essay</button>
+          </div>
+        )} />
       <div className="p-5 px-6">
-        {totalEssays === 0 ? (
-          <Card><p className="text-sm text-sub text-center py-8">No essays yet.{!readOnly && " Click \"+ Add Essay\" to create your first essay task."}</p></Card>
+        {totalEssays === 0 && activeFolders.length === 0 ? (
+          <Card><p className="text-sm text-sub text-center py-8">No essays yet.{!readOnly && " Create a folder or click \"+ Add Essay\" to get started."}</p></Card>
         ) : (
           <div className="flex flex-col gap-3">
-            {schoolOrder.map(school => {
-              const schoolEssays = bySchool.get(school) || [];
-              const isExpanded = expandedSchools.has(school);
-              const schoolCompleted = schoolEssays.filter(e => e.status === "completed").length;
+            {activeFolders.map(folder => {
+              const folderEssays = byFolder.get(folder) || [];
+              const isExpanded = expandedSchools.has(folder);
+              const folderCompleted = folderEssays.filter(e => e.status === "completed").length;
+              // Surface shared doc link at folder level
+              const docLinks = folderEssays.filter(e => e.googleDocLink).map(e => e.googleDocLink!);
+              const sharedDoc = docLinks.length > 0 ? docLinks[0] : null;
+
               return (
-                <Card key={school} noPadding>
-                  <button onClick={() => toggleSchool(school)}
+                <Card key={folder} noPadding>
+                  <button onClick={() => toggleSchool(folder)}
                     className="w-full flex items-center justify-between px-5 py-3.5 bg-transparent border-none cursor-pointer text-left"
                     style={{ borderBottom: isExpanded ? "1px solid #333" : "none" }}>
                     <div className="flex items-center gap-3">
-                      <span className="text-xs" style={{ color: isExpanded ? "#5A83F3" : "#505050" }}>{isExpanded ? "▼" : "▶"}</span>
-                      <span className="text-sm font-bold text-heading">{school}</span>
-                      <span className="text-xs text-sub">{schoolEssays.length} {schoolEssays.length === 1 ? "essay" : "essays"}</span>
+                      <span style={{ fontSize: 16, color: isExpanded ? "#5A83F3" : "#505050" }}>
+                        {isExpanded ? "📂" : "📁"}
+                      </span>
+                      <span className="text-sm font-bold text-heading">{folder}</span>
+                      <span className="text-xs text-sub">{folderEssays.length} {folderEssays.length === 1 ? "essay" : "essays"}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      {schoolCompleted === schoolEssays.length && schoolEssays.length > 0
+                      {sharedDoc && (
+                        <button onClick={(e) => { e.stopPropagation(); window.open(sharedDoc, "_blank"); }}
+                          className="text-[10px] font-semibold px-2 py-1 rounded-lg border-none cursor-pointer"
+                          style={{ background: "rgba(90,131,243,0.08)", color: "#5A83F3" }}>📄 Open Doc</button>
+                      )}
+                      {folderCompleted === folderEssays.length && folderEssays.length > 0
                         ? <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(74,186,106,0.08)", color: "#4aba6a" }}>All complete</span>
-                        : <span className="text-[10px] text-sub">{schoolCompleted}/{schoolEssays.length} done</span>}
+                        : folderEssays.length > 0
+                          ? <span className="text-[10px] text-sub">{folderCompleted}/{folderEssays.length} done</span>
+                          : <span className="text-[10px] text-faint">Empty</span>}
                     </div>
                   </button>
                   {isExpanded && (<div>
-                    {schoolEssays.sort((a, b) => a.due.localeCompare(b.due)).map(essay => (
+                    {folderEssays.sort((a, b) => a.due.localeCompare(b.due)).map(essay => (
                       <div key={essay.id} onClick={() => !readOnly && setEditing(essay)}
                         className="flex items-center justify-between px-5 py-3 border-b border-line hover:bg-mist transition-colors"
                         style={{ cursor: readOnly ? "default" : "pointer" }}>
@@ -117,7 +203,7 @@ export function EssayLab({ student, readOnly = false, onRefresh }: EssayLabProps
                           {essay.googleDocLink && (
                             <button onClick={(e) => { e.stopPropagation(); window.open(essay.googleDocLink, "_blank"); }}
                               className="text-[11px] font-semibold px-2.5 py-1 rounded-lg border-none cursor-pointer"
-                              style={{ background: "rgba(90,131,243,0.08)", color: "#5A83F3" }}>📄 Open Doc</button>
+                              style={{ background: "rgba(90,131,243,0.08)", color: "#5A83F3" }}>📄 Doc</button>
                           )}
                           <Tag color={getStatusColor(essay.status)}>{STATUS_LABELS[essay.status] || essay.status}</Tag>
                           <span className="text-xs text-sub" style={{ minWidth: 65, textAlign: "right" }}>
@@ -126,6 +212,16 @@ export function EssayLab({ student, readOnly = false, onRefresh }: EssayLabProps
                         </div>
                       </div>
                     ))}
+                    {/* Inline add button at bottom of folder */}
+                    {!readOnly && (
+                      <button
+                        onClick={() => { setAddToFolder(folder); setShowCreate(true); }}
+                        className="w-full flex items-center gap-2 px-5 py-2.5 bg-transparent border-none cursor-pointer text-left hover:bg-mist transition-colors"
+                        style={{ color: "#505050" }}>
+                        <span style={{ fontSize: 13 }}>+</span>
+                        <span className="text-xs">Add essay to {folder}</span>
+                      </button>
+                    )}
                   </div>)}
                 </Card>
               );
@@ -134,40 +230,54 @@ export function EssayLab({ student, readOnly = false, onRefresh }: EssayLabProps
         )}
       </div>
 
+      {/* Create Essay Modal */}
       {showCreate && (
-        <Modal title="Add Essay" onClose={() => setShowCreate(false)}>
+        <Modal title={addToFolder ? `Add Essay to ${addToFolder}` : "Add Essay"} onClose={() => { setShowCreate(false); setAddToFolder(null); }}>
           <form onSubmit={handleCreate}>
             <FormField label="Essay Name"><input required name="title" placeholder="e.g. Common App Essay - Draft 1" style={inputStyle} /></FormField>
             <div className="grid grid-cols-2 gap-3">
-              <FormField label="School">
-                <input name="schoolName" placeholder="e.g. Stanford University" style={inputStyle} list="school-suggestions" />
-                <datalist id="school-suggestions">
-                  {student.schools.map(s => <option key={s.name} value={s.name} />)}
-                  <option value="General" /><option value="Common App" /><option value="Coalition App" />
-                </datalist>
+              <FormField label="Folder">
+                {addToFolder ? (
+                  <div className="flex items-center gap-2">
+                    <div style={{ ...inputStyle, background: "#1e1e1e", display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 14 }}>📁</span>
+                      <span>{addToFolder}</span>
+                    </div>
+                    <input type="hidden" name="schoolName" value={addToFolder} />
+                  </div>
+                ) : (
+                  <select name="schoolName" defaultValue="General" style={inputStyle}>
+                    {allFolderOptions.map(f => (
+                      <option key={f} value={f}>{f}</option>
+                    ))}
+                  </select>
+                )}
               </FormField>
               <FormField label="Due Date"><input required name="due" type="date" style={inputStyle} /></FormField>
             </div>
-            <FormField label="Google Doc Link (optional)"><input name="googleDocLink" type="url" placeholder="https://docs.google.com/document/d/..." style={inputStyle} /></FormField>
+            <FormField label="Google Doc Link (optional)">
+              <input name="googleDocLink" type="url" placeholder="https://docs.google.com/document/d/..." style={inputStyle} />
+            </FormField>
             <div className="flex justify-end gap-2 mt-3">
-              <Button onClick={() => setShowCreate(false)}>Cancel</Button>
+              <Button onClick={() => { setShowCreate(false); setAddToFolder(null); }}>Cancel</Button>
               <Button primary type="submit">{saving ? "Creating..." : "Add Essay"}</Button>
             </div>
           </form>
         </Modal>
       )}
 
+      {/* Edit Essay Modal */}
       {editing && (
         <Modal title="Edit Essay" onClose={() => setEditing(null)}>
           <form onSubmit={handleEdit}>
             <FormField label="Essay Name"><input required name="title" defaultValue={editing.title} style={inputStyle} /></FormField>
             <div className="grid grid-cols-2 gap-3">
-              <FormField label="School">
-                <input name="schoolName" defaultValue={editing.schoolName || ""} style={inputStyle} list="school-suggestions-edit" />
-                <datalist id="school-suggestions-edit">
-                  {student.schools.map(s => <option key={s.name} value={s.name} />)}
-                  <option value="General" /><option value="Common App" /><option value="Coalition App" />
-                </datalist>
+              <FormField label="Folder">
+                <select name="schoolName" defaultValue={normalizeSchoolFolder(editing.schoolName || "General")} style={inputStyle}>
+                  {allFolderOptions.map(f => (
+                    <option key={f} value={f}>{f}</option>
+                  ))}
+                </select>
               </FormField>
               <FormField label="Due Date"><input required name="due" type="date" defaultValue={editing.due} style={inputStyle} /></FormField>
             </div>
@@ -186,6 +296,54 @@ export function EssayLab({ student, readOnly = false, onRefresh }: EssayLabProps
         </Modal>
       )}
 
+      {/* New Folder Modal */}
+      {showAddFolder && (
+        <Modal title="New Folder" onClose={() => { setShowAddFolder(false); setNewFolderName(""); }}>
+          <FormField label="Folder Name">
+            <input
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              placeholder="e.g. MIT, Stanford, UC Applications..."
+              style={inputStyle}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleCreateFolder(); } }}
+              autoFocus
+            />
+          </FormField>
+          <p className="text-[11px] text-sub mt-1 mb-3" style={{ lineHeight: 1.5 }}>
+            Quick picks:
+          </p>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {SYSTEM_FOLDERS.filter(f => !activeFolders.includes(f)).map(f => (
+              <button key={f} onClick={() => setNewFolderName(f)}
+                className="px-3 py-1.5 rounded-full border cursor-pointer text-[11px] font-medium"
+                style={{
+                  background: newFolderName === f ? "rgba(90,131,243,0.1)" : "transparent",
+                  borderColor: newFolderName === f ? "#5A83F3" : "#333",
+                  color: newFolderName === f ? "#5A83F3" : "#a0a0a0",
+                }}>
+                {f}
+              </button>
+            ))}
+            {studentSchoolNames.filter(n => !activeFolders.includes(normalizeSchoolFolder(n)) && !SYSTEM_FOLDERS.includes(normalizeSchoolFolder(n))).slice(0, 6).map(n => (
+              <button key={n} onClick={() => setNewFolderName(n)}
+                className="px-3 py-1.5 rounded-full border cursor-pointer text-[11px] font-medium"
+                style={{
+                  background: newFolderName === n ? "rgba(90,131,243,0.1)" : "transparent",
+                  borderColor: newFolderName === n ? "#5A83F3" : "#333",
+                  color: newFolderName === n ? "#5A83F3" : "#a0a0a0",
+                }}>
+                {n}
+              </button>
+            ))}
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button onClick={() => { setShowAddFolder(false); setNewFolderName(""); }}>Cancel</Button>
+            <Button primary onClick={handleCreateFolder}>Create Folder</Button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Delete confirm */}
       {confirmDeleteId !== null && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)" }}>
           <div className="rounded-2xl border border-line p-6 w-full max-w-sm mx-4" style={{ background: "#1e1e1e" }}>
