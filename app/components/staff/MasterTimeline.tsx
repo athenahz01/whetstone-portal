@@ -1,4 +1,5 @@
 "use client";
+import { authFetch } from "../../lib/supabase";
 
 import { Student } from "../../types";
 import { PageHeader } from "../ui/PageHeader";
@@ -230,7 +231,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
 
   // Fetch staff names for specialist dropdown
   useEffect(() => {
-    fetch("/api/admin/users").then(r => r.json()).then(data => {
+    authFetch("/api/admin/users").then(r => r.json()).then(data => {
       const names = (data.users || [])
         .filter((u: any) => u.role === "strategist" && u.name && u.name !== "—")
         .map((u: any) => u.name)

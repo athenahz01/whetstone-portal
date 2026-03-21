@@ -1,4 +1,5 @@
 "use client";
+import { authFetch } from "../../lib/supabase";
 
 import { Test } from "../../types";
 import { Card } from "../ui/Card";
@@ -90,7 +91,7 @@ export function Testing({ tests, setTests, readOnly = false, studentId }: Testin
 
     if (studentId) {
       try {
-        await fetch("/api/save-test", {
+        await authFetch("/api/save-test", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -117,7 +118,7 @@ export function Testing({ tests, setTests, readOnly = false, studentId }: Testin
     if (!confirm("Delete this test score?")) return;
     if (studentId) {
       try {
-        await fetch("/api/save-test", {
+        await authFetch("/api/save-test", {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ testId }),

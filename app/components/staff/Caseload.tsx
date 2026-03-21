@@ -1,4 +1,5 @@
 "use client";
+import { authFetch } from "../../lib/supabase";
 
 import { Student } from "../../types";
 import { Card } from "../ui/Card";
@@ -55,7 +56,7 @@ export function Caseload({ students: studentsProp, onSelectStudent, onNavigate, 
 
   // Fetch staff members for team multiselect
   useEffect(() => {
-    fetch("/api/admin/users")
+    authFetch("/api/admin/users")
       .then((r) => r.json())
       .then((data) => {
         const userList = data.users || data || [];
@@ -126,7 +127,7 @@ export function Caseload({ students: studentsProp, onSelectStudent, onNavigate, 
 
     // Step 2: Create auth account for the student
     try {
-      const res = await fetch("/api/invite-user", {
+      const res = await authFetch("/api/invite-user", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, name, role: "student", studentId }),

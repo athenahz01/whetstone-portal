@@ -1,4 +1,5 @@
 "use client";
+import { authFetch } from "../../lib/supabase";
 
 import { useState, useEffect } from "react";
 import { Deadline } from "../../types";
@@ -54,7 +55,7 @@ export function DeadlinesView({ deadlines, studentId, onRefresh, readOnly = fals
   const [specialists, setSpecialists] = useState<string[]>([]);
 
   useEffect(() => {
-    fetch("/api/admin/users")
+    authFetch("/api/admin/users")
       .then(r => r.json())
       .then(data => {
         setSpecialists(

@@ -1,4 +1,5 @@
 "use client";
+import { authFetch } from "../../lib/supabase";
 
 import { Student } from "../../types";
 import { Card } from "../ui/Card";
@@ -40,7 +41,7 @@ export function SessionPrep({ student, onRefresh, readOnly = false }: SessionPre
 
   const loadBookingRequests = async () => {
     try {
-      const res = await fetch(`/api/booking-requests?studentId=${student.id}`);
+      const res = await authFetch(`/api/booking-requests?studentId=${student.id}`);
       const data = await res.json();
       setBookingRequests(data.requests || []);
     } catch { setBookingRequests([]); }
@@ -51,7 +52,7 @@ export function SessionPrep({ student, onRefresh, readOnly = false }: SessionPre
 
   const loadCommits = async () => {
     try {
-      const res = await fetch(`/api/closing-commits?studentId=${student.id}`);
+      const res = await authFetch(`/api/closing-commits?studentId=${student.id}`);
       const data = await res.json();
       setCommits(data.commits || []);
     } catch { setCommits([]); }
@@ -62,7 +63,7 @@ export function SessionPrep({ student, onRefresh, readOnly = false }: SessionPre
       Promise.all([
         fetchCounselorEventsForStudent(student.id),
         fetchStudentSessions(student.id),
-        fetch(`/api/booking-requests?studentId=${student.id}`).then(r => r.json()).then(d => d.requests || []).catch(() => []),
+        authFetch(`/api/booking-requests?studentId=${student.id}`).then(r => r.json()).then(d => d.requests || []).catch(() => []),
       ]).then(([counselorEvs, bookedSessions, brs]) => {
         // Merge session_notes from booking requests into matching events
         const brMap = new Map<string, any>();
@@ -112,7 +113,7 @@ export function SessionPrep({ student, onRefresh, readOnly = false }: SessionPre
 
   // Fetch strategist list dynamically from all user accounts
   useEffect(() => {
-    fetch("/api/admin/users")
+    authFetch("/api/admin/users")
       .then(r => r.json())
       .then(data => {
         const strats = (data.users || [])
@@ -151,7 +152,7 @@ export function SessionPrep({ student, onRefresh, readOnly = false }: SessionPre
     try {
       if (editingCommit) {
         // Update existing commit
-        await fetch("/api/closing-commits", {
+        await authFetch("/api/closing-commits", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -164,7 +165,7 @@ export function SessionPrep({ student, onRefresh, readOnly = false }: SessionPre
         });
       } else {
         // Create new commit
-        await fetch("/api/closing-commits", {
+        await authFetch("/api/closing-commits", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -256,7 +257,7 @@ export function SessionPrep({ student, onRefresh, readOnly = false }: SessionPre
                             <div className="text-sm text-heading">{r.counter_date} at {r.counter_start_time}</div>
                             {r.counter_note && <div className="text-xs text-sub mt-1">{r.counter_note}</div>}
                             <button onClick={async () => {
-                              await fetch("/api/booking-requests", {
+                              await authFetch("/api/booking-requests", {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({ action: "accept_counter", requestId: r.id }),
@@ -313,7 +314,7 @@ export function SessionPrep({ student, onRefresh, readOnly = false }: SessionPre
                     const toggleStatus = async () => {
                       if (!isBooked || !rawId) return;
                       const newStatus = isCompleted ? "pending" : "completed";
-                      await fetch("/api/session", {
+                      await authFetch("/api/session", {
                         method: "PATCH",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ id: rawId, status: newStatus }),
@@ -324,7 +325,7 @@ export function SessionPrep({ student, onRefresh, readOnly = false }: SessionPre
                     const deleteSession = async () => {
                       if (!isBooked || !rawId) return;
                       if (!confirm("Delete this session?")) return;
-                      await fetch(`/api/session?id=${rawId}`, { method: "DELETE" });
+                      await authFetch(`/api/session?id=${rawId}`, { method: "DELETE" });
                       reloadEvents();
                     };
 
@@ -396,7 +397,7 @@ export function SessionPrep({ student, onRefresh, readOnly = false }: SessionPre
                                   onBlur={async (e) => {
                                     const val = e.target.value;
                                     if (ev.bookingRequestId || ev.brId) {
-                                      await fetch("/api/booking-requests", {
+                                      await authFetch("/api/booking-requests", {
                                         method: "POST",
                                         headers: { "Content-Type": "application/json" },
                                         body: JSON.stringify({ action: "update_notes", requestId: ev.bookingRequestId || ev.brId, student_notes: val }),
@@ -486,7 +487,7 @@ export function SessionPrep({ student, onRefresh, readOnly = false }: SessionPre
                     {/* Delete button */}
                     <button onClick={async () => {
                       if (!confirm("Delete this commit?")) return;
-                      await fetch(`/api/closing-commits?id=${c.id}`, { method: "DELETE" });
+                      await authFetch(`/api/closing-commits?id=${c.id}`, { method: "DELETE" });
                       loadCommits();
                     }}
                       className="w-7 h-7 rounded-full flex items-center justify-center border-none cursor-pointer"
@@ -615,7 +616,7 @@ export function SessionPrep({ student, onRefresh, readOnly = false }: SessionPre
             onBook={async (data) => {
               setBookingSaving(true);
               try {
-                const res = await fetch("/api/booking-requests", {
+                const res = await authFetch("/api/booking-requests", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({

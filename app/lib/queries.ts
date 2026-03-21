@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { supabase, authFetch } from "./supabase";
 import { Student, Honor } from "../types";
 
 export async function fetchAllStudents(): Promise<Student[]> {
@@ -327,7 +327,7 @@ export async function updateDeadline(
   }
 ): Promise<boolean> {
   try {
-    const res = await fetch("/api/update-deadline", {
+    const res = await authFetch("/api/update-deadline", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ deadlineId, ...data }),

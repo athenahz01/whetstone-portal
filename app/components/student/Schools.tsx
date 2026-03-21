@@ -1,4 +1,5 @@
 "use client";
+import { authFetch } from "../../lib/supabase";
 import { useState, useEffect, useCallback } from "react";
 import { Student } from "../../types";
 import { Card } from "../ui/Card";
@@ -38,7 +39,7 @@ export function Schools({ student, readOnly = false, onRefresh }: SchoolsProps) 
 
   const addToList = async (name: string, type: string) => {
     setAdding(true);
-    await fetch("/api/student-schools", {
+    await authFetch("/api/student-schools", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "add", studentId: student.id, name, type }),
@@ -48,7 +49,7 @@ export function Schools({ student, readOnly = false, onRefresh }: SchoolsProps) 
   };
 
   const removeFromList = async (schoolId: number) => {
-    await fetch("/api/student-schools", {
+    await authFetch("/api/student-schools", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "delete", schoolId }),
@@ -57,7 +58,7 @@ export function Schools({ student, readOnly = false, onRefresh }: SchoolsProps) 
   };
 
   const updateType = async (schoolId: number, newType: string) => {
-    await fetch("/api/student-schools", {
+    await authFetch("/api/student-schools", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "update", schoolId, type: newType }),
@@ -69,7 +70,7 @@ export function Schools({ student, readOnly = false, onRefresh }: SchoolsProps) 
   useEffect(() => {
     student.schools.forEach(s => {
       if (!schoolCache[s.name]) {
-        fetch("/api/schools?q=" + encodeURIComponent(s.name))
+        authFetch("/api/schools?q=" + encodeURIComponent(s.name))
           .then(r => r.json())
           .then(data => {
             const match = (data.schools || []).find((sc: SchoolData) => sc.name.toLowerCase() === s.name.toLowerCase()) || (data.schools || [])[0];
@@ -84,7 +85,7 @@ export function Schools({ student, readOnly = false, onRefresh }: SchoolsProps) 
     if (q.length < 2) { setResults([]); return; }
     setSearching(true);
     try {
-      const res = await fetch("/api/schools?q=" + encodeURIComponent(q));
+      const res = await authFetch("/api/schools?q=" + encodeURIComponent(q));
       const data = await res.json();
       setResults(data.schools || []);
     } catch { setResults([]); }
@@ -101,7 +102,7 @@ export function Schools({ student, readOnly = false, onRefresh }: SchoolsProps) 
     setQuery(""); setResults([]);
     if (s.programs && s.programs.length > 0) { setDetail(s); return; }
     try {
-      const res = await fetch("/api/schools?id=" + s.id);
+      const res = await authFetch("/api/schools?id=" + s.id);
       const data = await res.json();
       setDetail(data.schools?.[0] || s);
     } catch { setDetail(s); }

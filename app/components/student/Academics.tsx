@@ -8,7 +8,7 @@ import { MetricCard } from "../ui/MetricCard";
 import { PageHeader } from "../ui/PageHeader";
 import { Modal } from "../ui/Modal";
 import { FormField } from "../ui/FormField";
-import { supabase } from "../../lib/supabase";
+import { supabase, authFetch } from "../../lib/supabase";
 import { useState, useEffect } from "react";
 
 // Inline GPA editor with save indicator
@@ -23,7 +23,7 @@ function GpaInput({ label, defaultVal, max, color, studentId, readOnly }: {
     if (isNaN(num) || num === defaultVal) return;
     setStatus("saving");
     try {
-      const res = await fetch("/api/update-student", {
+      const res = await authFetch("/api/update-student", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ studentId, gpa: num }),

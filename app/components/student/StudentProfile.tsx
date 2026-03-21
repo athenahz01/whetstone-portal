@@ -1,4 +1,5 @@
 "use client";
+import { authFetch } from "../../lib/supabase";
 
 import { Student } from "../../types";
 import { Card } from "../ui/Card";
@@ -21,7 +22,7 @@ export function StudentProfile({ student, readOnly = false }: StudentProfileProp
     if (readOnly) return;
     setSaveStatus("saving");
     try {
-      await fetch("/api/update-student", {
+      await authFetch("/api/update-student", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ studentId: student.id, [field]: value }),

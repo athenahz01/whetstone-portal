@@ -1,4 +1,5 @@
 "use client";
+import { authFetch } from "../../lib/supabase";
 
 import { useState, useEffect, useMemo } from "react";
 import { Student } from "../../types";
@@ -47,7 +48,7 @@ export function StaffDashboard({
   // Fetch actual booking requests from API — for pending count + upcoming sessions
   useEffect(() => {
     if (!strategistEmail) return;
-    fetch(`/api/booking-requests?strategistEmail=${encodeURIComponent(strategistEmail)}`)
+    authFetch(`/api/booking-requests?strategistEmail=${encodeURIComponent(strategistEmail)}`)
       .then((r) => r.json())
       .then((d) => {
         const reqs = d.requests || [];

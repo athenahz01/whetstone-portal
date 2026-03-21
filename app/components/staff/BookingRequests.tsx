@@ -1,4 +1,5 @@
 "use client";
+import { authFetch } from "../../lib/supabase";
 import { useState, useEffect } from "react";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
@@ -29,7 +30,7 @@ export function BookingRequests({ strategistEmail, profileId }: BookingRequestsP
   const loadRequests = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/booking-requests?strategistEmail=${encodeURIComponent(strategistEmail)}`);
+      const res = await authFetch(`/api/booking-requests?strategistEmail=${encodeURIComponent(strategistEmail)}`);
       const data = await res.json();
       setRequests(data.requests || []);
     } catch { setRequests([]); }
@@ -38,7 +39,7 @@ export function BookingRequests({ strategistEmail, profileId }: BookingRequestsP
 
   // Load students for create modal
   useEffect(() => {
-    fetch("/api/admin/users").then(r => r.json()).then(data => {
+    authFetch("/api/admin/users").then(r => r.json()).then(data => {
       const userList = data.users || data || [];
       const studentUsers = (Array.isArray(userList) ? userList : [])
         .filter((u: any) => u.role === "student" || u.studentId)
@@ -52,7 +53,7 @@ export function BookingRequests({ strategistEmail, profileId }: BookingRequestsP
   // Sync GCal meetings into sessions (fire-and-forget on mount)
   useEffect(() => {
     if (profileId) {
-      fetch("/api/gcal-session-sync", {
+      authFetch("/api/gcal-session-sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ profileId }),
@@ -62,23 +63,23 @@ export function BookingRequests({ strategistEmail, profileId }: BookingRequestsP
 
   const handleApprove = async (id: number) => {
     setProcessing(true);
-    await fetch("/api/booking-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "approve", requestId: id }) });
+    await authFetch("/api/booking-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "approve", requestId: id }) });
     loadRequests(); setProcessing(false);
   };
   const handleDecline = async (id: number) => {
     if (!confirm("Decline this booking request?")) return;
-    await fetch("/api/booking-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "decline", requestId: id }) });
+    await authFetch("/api/booking-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "decline", requestId: id }) });
     loadRequests();
   };
   const handleDeleteSession = async (id: number) => {
     if (!confirm("Delete this session?")) return;
-    await fetch("/api/booking-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "delete", requestId: id }) });
+    await authFetch("/api/booking-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "delete", requestId: id }) });
     loadRequests();
   };
   const handleCounter = async () => {
     if (!counterModal || !counterDate) return;
     setProcessing(true);
-    await fetch("/api/booking-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "counter", requestId: counterModal.id, newDate: counterDate, newStartTime: counterTime, counterNote }) });
+    await authFetch("/api/booking-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "counter", requestId: counterModal.id, newDate: counterDate, newStartTime: counterTime, counterNote }) });
     setCounterModal(null); setCounterDate(""); setCounterTime(""); setCounterNote("");
     loadRequests(); setProcessing(false);
   };
@@ -88,7 +89,7 @@ export function BookingRequests({ strategistEmail, profileId }: BookingRequestsP
     const f = new FormData(e.target as HTMLFormElement);
     const studentId = Number(f.get("studentId"));
     const studentUser = students.find((s: any) => s.studentId === studentId || s.id === String(studentId));
-    await fetch("/api/booking-requests", {
+    await authFetch("/api/booking-requests", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         action: "request",
@@ -266,13 +267,13 @@ export function BookingRequests({ strategistEmail, profileId }: BookingRequestsP
             <div>
               <div className="text-xs uppercase tracking-widest font-bold mb-2" style={{ color: "#e55b5b" }}>Internal Notes <span className="normal-case tracking-normal font-normal">(staff only)</span></div>
               <textarea defaultValue={detailModal.agenda || ""} placeholder="Private notes — only visible to staff..." rows={4}
-                onBlur={async (e) => { const v = e.target.value; await fetch("/api/booking-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update_notes", requestId: detailModal.id, agenda: v }) }); setDetailModal({ ...detailModal, agenda: v }); }}
+                onBlur={async (e) => { const v = e.target.value; await authFetch("/api/booking-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update_notes", requestId: detailModal.id, agenda: v }) }); setDetailModal({ ...detailModal, agenda: v }); }}
                 style={{ ...IS, resize: "vertical", lineHeight: 1.6, minHeight: 100 }} />
             </div>
             <div>
               <div className="text-xs uppercase tracking-widest font-bold mb-2" style={{ color: "#5A83F3" }}>Mentor Notes <span className="normal-case tracking-normal font-normal">(visible to student & parent)</span></div>
               <textarea defaultValue={detailModal.session_notes || ""} placeholder="Notes shared with student and parents..." rows={4}
-                onBlur={async (e) => { const v = e.target.value; await fetch("/api/booking-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update_notes", requestId: detailModal.id, session_notes: v }) }); setDetailModal({ ...detailModal, session_notes: v }); }}
+                onBlur={async (e) => { const v = e.target.value; await authFetch("/api/booking-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update_notes", requestId: detailModal.id, session_notes: v }) }); setDetailModal({ ...detailModal, session_notes: v }); }}
                 style={{ ...IS, resize: "vertical", lineHeight: 1.6, minHeight: 100 }} />
             </div>
             <div>

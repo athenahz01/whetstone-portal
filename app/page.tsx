@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { supabase } from "./lib/supabase";
+import { supabase, authFetch } from "./lib/supabase";
 import { fetchAllStudents, fetchCounselorEvents, fetchHonors } from "./lib/queries";
 import { LoginPage } from "./components/layout/LoginPage";
 import { Sidebar } from "./components/layout/Sidebar";
@@ -164,7 +164,7 @@ export default function Home() {
     const isStudentOrParent = profile.role === "student" || profile.role === "parent";
 
     if (isStudentOrParent && profile.student_id) {
-      fetch(`/api/student-data?studentId=${profile.student_id}`)
+      authFetch(`/api/student-data?studentId=${profile.student_id}`)
         .then((r) => r.json())
         .then((data) => {
           if (data.student) {
@@ -213,7 +213,7 @@ export default function Home() {
   useEffect(() => {
     if (!session || !profileId) return;
     const updateLogin = () => {
-      fetch("/api/update-login", {
+      authFetch("/api/update-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ profileId }),
@@ -282,7 +282,7 @@ export default function Home() {
       profileLoadedRef.current = true;
 
       // Update last_login timestamp via API (bypasses RLS)
-      fetch("/api/update-login", {
+      authFetch("/api/update-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -293,7 +293,7 @@ export default function Home() {
 
       // Load caseload filter for strategists
       if (data.role === "strategist" && data.email) {
-        fetch(`/api/caseload?strategistEmail=${encodeURIComponent(data.email)}`)
+        authFetch(`/api/caseload?strategistEmail=${encodeURIComponent(data.email)}`)
           .then(r => r.json())
           .then(d => {
             const ids = (d.assignments || []).map((a: any) => a.student_id);

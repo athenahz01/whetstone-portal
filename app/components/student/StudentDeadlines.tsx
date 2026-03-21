@@ -1,4 +1,5 @@
 "use client";
+import { authFetch } from "../../lib/supabase";
 
 import { Student, Deadline, School, Session } from "../../types";
 import { Card } from "../ui/Card";
@@ -108,7 +109,7 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
   // Load Close & Commit data
   useEffect(() => {
     if (s.id) {
-      fetch(`/api/closing-commits?studentId=${s.id}`)
+      authFetch(`/api/closing-commits?studentId=${s.id}`)
         .then(r => r.json())
         .then(d => setCommits(d.commits || []))
         .catch(() => setCommits([]));
@@ -574,7 +575,7 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
             const f = new FormData(e.target as HTMLFormElement);
             const actionsRaw = f.get("actions") as string;
             const actions = actionsRaw.split("\n").filter(Boolean).map((t, i) => ({ text: t.trim(), due: "" }));
-            await fetch("/api/closing-commits", {
+            await authFetch("/api/closing-commits", {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -586,7 +587,7 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
               }),
             });
             // Reload commits
-            const res = await fetch(`/api/closing-commits?studentId=${s.id}`);
+            const res = await authFetch(`/api/closing-commits?studentId=${s.id}`);
             const data = await res.json();
             setCommits(data.commits || []);
             setSaving(false); setEditingCommit(null);

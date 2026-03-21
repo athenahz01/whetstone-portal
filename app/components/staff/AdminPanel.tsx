@@ -1,4 +1,5 @@
 "use client";
+import { authFetch } from "../../lib/supabase";
 import { useState, useEffect } from "react";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
@@ -36,12 +37,12 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
 
   const IS: React.CSSProperties = { width:"100%", padding:"10px 14px", background:"#1e1e1e", border:"1.5px solid #333", borderRadius:10, color:"#ebebeb", fontSize:14, outline:"none", boxSizing:"border-box" };
 
-  const loadUsers = async () => { setLoading(true); try { const r = await fetch("/api/admin/users"); const d = await r.json(); setUsers(d.users||[]); } catch { setUsers([]); } setLoading(false); };
+  const loadUsers = async () => { setLoading(true); try { const r = await authFetch("/api/admin/users"); const d = await r.json(); setUsers(d.users||[]); } catch { setUsers([]); } setLoading(false); };
   useEffect(() => { loadUsers(); loadAllCaseloads(); }, []);
 
   const loadAllCaseloads = async () => {
     try {
-      const res = await fetch("/api/caseload");
+      const res = await authFetch("/api/caseload");
       const data = await res.json();
       const map: Record<string, number[]> = {};
       for (const a of (data.assignments || [])) {
@@ -84,11 +85,11 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
       if (!studentId) { setError("Failed to create student record."); setSaving(false); return; }
     }
     try {
-      const res = await fetch("/api/invite-user", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ email, name, role:selectedRole, studentId, childEmail:selectedRole==="parent"?(f.get("childEmail") as string):null }) });
+      const res = await authFetch("/api/invite-user", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ email, name, role:selectedRole, studentId, childEmail:selectedRole==="parent"?(f.get("childEmail") as string):null }) });
       const data = await res.json();
       if (!res.ok) { setError(data.error||"Failed."); setSaving(false); return; }
       if (data.tempPassword) {
-        await fetch("/api/admin/users", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ action:"reset_password", userId:data.userId, password:data.tempPassword }) });
+        await authFetch("/api/admin/users", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ action:"reset_password", userId:data.userId, password:data.tempPassword }) });
         setCreateResult({ email, password:data.tempPassword, name });
       }
     } catch { setError("Network error."); }
@@ -97,7 +98,7 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
 
   const handleResetPw = async () => {
     if (!showResetPw) return; setResetting(true);
-    const res = await fetch("/api/admin/users", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ action:"reset_password", userId:showResetPw.id, autoGenerate:pwMode==="auto", password:pwMode==="manual"?manualPw:undefined }) });
+    const res = await authFetch("/api/admin/users", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ action:"reset_password", userId:showResetPw.id, autoGenerate:pwMode==="auto", password:pwMode==="manual"?manualPw:undefined }) });
     const data = await res.json();
     if (data.success) { setResetResult(data.password); loadUsers(); } else setError(data.error||"Failed");
     setResetting(false);
@@ -106,18 +107,18 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
   const handleEditUser = async (e: React.FormEvent) => {
     e.preventDefault(); if (!showEditUser) return; setSaving(true);
     const f = new FormData(e.target as HTMLFormElement);
-    await fetch("/api/admin/users", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ action:"update_user", userId:showEditUser.id, name:f.get("name") as string, email:f.get("email") as string, role:f.get("role") as string }) });
+    await authFetch("/api/admin/users", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ action:"update_user", userId:showEditUser.id, name:f.get("name") as string, email:f.get("email") as string, role:f.get("role") as string }) });
     setSaving(false); setShowEditUser(null); loadUsers();
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Permanently delete this user?")) return;
-    await fetch("/api/admin/users", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ action:"delete_user", userId:id }) });
+    await authFetch("/api/admin/users", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ action:"delete_user", userId:id }) });
     loadUsers(); onRefresh();
   };
 
   const handleToggle = async (u: AdminUser) => {
-    await fetch("/api/admin/users", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ action:"toggle_status", userId:u.id, suspend:u.status==="active" }) });
+    await authFetch("/api/admin/users", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ action:"toggle_status", userId:u.id, suspend:u.status==="active" }) });
     loadUsers();
   };
 
@@ -212,7 +213,7 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
                     setShowCaseload(strat);
                     // Load assignments for this strategist
                     setCaseloadLoading(true);
-                    fetch(`/api/caseload?strategistEmail=${encodeURIComponent(strat.email)}`)
+                    authFetch(`/api/caseload?strategistEmail=${encodeURIComponent(strat.email)}`)
                       .then(r => r.json())
                       .then(d => {
                         const ids = (d.assignments || []).map((a: any) => a.student_id);
@@ -311,7 +312,7 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
                       // Optimistic update
                       const newAssigned = isAssigned ? assigned.filter(id => id !== s.id) : [...assigned, s.id];
                       setCaseloadAssignments(prev => ({ ...prev, [showCaseload!.email]: newAssigned }));
-                      await fetch("/api/caseload", {
+                      await authFetch("/api/caseload", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ action: "toggle", strategistEmail: showCaseload!.email, studentId: s.id }),
@@ -335,7 +336,7 @@ export function AdminPanel({ students, onRefresh }: AdminPanelProps) {
           <div className="flex justify-between mt-4 pt-3 border-t border-line">
             <button onClick={async () => {
               setCaseloadAssignments(prev => ({ ...prev, [showCaseload!.email]: [] }));
-              await fetch("/api/caseload", {
+              await authFetch("/api/caseload", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ action: "set", strategistEmail: showCaseload!.email, studentIds: [] }),

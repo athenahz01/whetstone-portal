@@ -16,65 +16,69 @@ export interface AuthUser {
 }
 
 /**
- * Extract and verify the Supabase session from the request cookies.
+ * Extract and verify the Supabase session from the request.
+ * Checks Authorization header first (Bearer token), then falls back to cookies.
  * Returns the authenticated user's profile or null.
  */
 export async function getAuthUser(request: NextRequest): Promise<AuthUser | null> {
-  // Supabase JS stores the session in a cookie named sb-<project_ref>-auth-token
-  // The cookie value is a JSON-encoded array: [access_token, refresh_token]
-  // Find the auth cookie
-  const cookies = request.cookies;
   let accessToken: string | null = null;
 
-  for (const [name, cookie] of cookies) {
-    if (name.startsWith("sb-") && name.endsWith("-auth-token")) {
-      try {
-        // Cookie value may be base64-encoded JSON or raw JSON
-        let raw = cookie.value;
-        // Try to decode if it's base64
-        try {
-          const decoded = Buffer.from(raw, "base64").toString("utf-8");
-          if (decoded.startsWith("[") || decoded.startsWith("{")) raw = decoded;
-        } catch {}
-
-        const parsed = JSON.parse(raw);
-        // Could be [access_token, refresh_token] or { access_token, refresh_token }
-        if (Array.isArray(parsed)) {
-          accessToken = parsed[0];
-        } else if (parsed.access_token) {
-          accessToken = parsed.access_token;
-        }
-      } catch {
-        // Cookie might be chunked across multiple cookies (sb-...-auth-token.0, .1, etc.)
-        continue;
-      }
-    }
+  // 1. Check Authorization header (preferred — set by authFetch on client)
+  const authHeader = request.headers.get("authorization") || request.headers.get("Authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    accessToken = authHeader.slice(7);
   }
 
-  // Handle chunked cookies (Supabase splits large cookies)
+  // 2. Fall back to cookies (for cases where cookies are set, e.g. SSR)
   if (!accessToken) {
-    const chunks: string[] = [];
-    let i = 0;
-    while (true) {
-      const chunk = cookies.get(`sb-${getProjectRef()}-auth-token.${i}`);
-      if (!chunk) break;
-      chunks.push(chunk.value);
-      i++;
-    }
-    if (chunks.length > 0) {
-      try {
-        let raw = chunks.join("");
+    const cookies = request.cookies;
+
+    for (const [name, cookie] of cookies) {
+      if (name.startsWith("sb-") && name.endsWith("-auth-token")) {
         try {
-          const decoded = Buffer.from(raw, "base64").toString("utf-8");
-          if (decoded.startsWith("[") || decoded.startsWith("{")) raw = decoded;
-        } catch {}
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
-          accessToken = parsed[0];
-        } else if (parsed.access_token) {
-          accessToken = parsed.access_token;
+          let raw = cookie.value;
+          try {
+            const decoded = Buffer.from(raw, "base64").toString("utf-8");
+            if (decoded.startsWith("[") || decoded.startsWith("{")) raw = decoded;
+          } catch {}
+
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            accessToken = parsed[0];
+          } else if (parsed.access_token) {
+            accessToken = parsed.access_token;
+          }
+        } catch {
+          continue;
         }
-      } catch {}
+      }
+    }
+
+    // Handle chunked cookies (Supabase splits large cookies)
+    if (!accessToken) {
+      const chunks: string[] = [];
+      let i = 0;
+      while (true) {
+        const chunk = cookies.get(`sb-${getProjectRef()}-auth-token.${i}`);
+        if (!chunk) break;
+        chunks.push(chunk.value);
+        i++;
+      }
+      if (chunks.length > 0) {
+        try {
+          let raw = chunks.join("");
+          try {
+            const decoded = Buffer.from(raw, "base64").toString("utf-8");
+            if (decoded.startsWith("[") || decoded.startsWith("{")) raw = decoded;
+          } catch {}
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            accessToken = parsed[0];
+          } else if (parsed.access_token) {
+            accessToken = parsed.access_token;
+          }
+        } catch {}
+      }
     }
   }
 

@@ -1,3 +1,4 @@
+import { authFetch } from "./supabase";
 export function getGoogleAuthUrl(profileId: string) {
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
@@ -22,7 +23,7 @@ export function getGoogleAuthUrl(profileId: string) {
   
   export async function pushToGoogleCalendar(profileId: string, title: string, date: string, description?: string, startMinutes?: number, durationMinutes?: number, colorKey?: string) {
     try {
-      const res = await fetch("/api/calendar/sync", {
+      const res = await authFetch("/api/calendar/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ profileId, title, date, description, startMinutes, durationMinutes, colorKey }),
@@ -37,7 +38,7 @@ export function getGoogleAuthUrl(profileId: string) {
   // Update an existing Whetstone event in GCal (for repositioning)
   export async function updateGoogleCalendarEvent(profileId: string, title: string, date: string, startMinutes: number, durationMinutes: number, colorKey?: string) {
     try {
-      const res = await fetch("/api/calendar/sync", {
+      const res = await authFetch("/api/calendar/sync", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ profileId, title, date, startMinutes, durationMinutes, colorKey }),
@@ -51,7 +52,7 @@ export function getGoogleAuthUrl(profileId: string) {
   
   export async function pullFromGoogleCalendar(profileId: string) {
     try {
-      const res = await fetch(`/api/calendar/sync?profileId=${profileId}`);
+      const res = await authFetch(`/api/calendar/sync?profileId=${profileId}`);
       if (!res.ok) return [];
       const data = await res.json();
       return (data.events || [])
@@ -77,7 +78,7 @@ export function getGoogleAuthUrl(profileId: string) {
   // Pull Whetstone-created events from GCal to detect time changes made in GCal
   export async function pullWhetstoneEventsFromGcal(profileId: string) {
     try {
-      const res = await fetch(`/api/calendar/sync?profileId=${profileId}`);
+      const res = await authFetch(`/api/calendar/sync?profileId=${profileId}`);
       if (!res.ok) return [];
       const data = await res.json();
       return (data.events || [])
@@ -150,7 +151,7 @@ export function getGoogleAuthUrl(profileId: string) {
 
   async function pullExistingWhetstoneEvents(profileId: string) {
     try {
-      const res = await fetch(`/api/calendar/sync?profileId=${profileId}`);
+      const res = await authFetch(`/api/calendar/sync?profileId=${profileId}`);
       if (!res.ok) return [];
       const data = await res.json();
       return (data.events || [])

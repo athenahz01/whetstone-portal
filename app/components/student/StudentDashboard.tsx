@@ -1,4 +1,5 @@
 "use client";
+import { authFetch } from "../../lib/supabase";
 
 import { Student, Goal, Deadline } from "../../types";
 import { Card } from "../ui/Card";
@@ -39,7 +40,7 @@ export function StudentDashboard({
       Promise.all([
         fetchCounselorEventsForStudent(student.id),
         fetchStudentSessions(student.id),
-        fetch(`/api/booking-requests?studentId=${student.id}`).then(r => r.json()).then(d => d.requests || []).catch(() => []),
+        authFetch(`/api/booking-requests?studentId=${student.id}`).then(r => r.json()).then(d => d.requests || []).catch(() => []),
       ]).then(([evs, sess, brs]) => {
         // Add confirmed booking requests as session events
         const sessionTitles = new Set([...evs, ...sess].map((s: any) => s.title || s.session_name));
@@ -53,7 +54,7 @@ export function StudentDashboard({
         setCounselorEvents([...evs, ...sess, ...brEvents]);
       });
       // Fetch latest closing commit
-      fetch(`/api/closing-commits?studentId=${student.id}`)
+      authFetch(`/api/closing-commits?studentId=${student.id}`)
         .then(r => r.json())
         .then(d => { if (d.commits?.length > 0) setLatestCommit(d.commits[0]); })
         .catch(() => {});
@@ -83,7 +84,7 @@ export function StudentDashboard({
 
   const quickComplete = async (d: Deadline) => {
     try {
-      await fetch("/api/update-student", {
+      await authFetch("/api/update-student", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "complete_task", taskId: d.id }),
