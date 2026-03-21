@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthUser, unauthorized } from "../../lib/auth";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -8,6 +9,9 @@ const supabase = createClient(
 
 // GET: fetch all closing commits for a student
 export async function GET(request: NextRequest) {
+  const authUser = await getAuthUser(request);
+  if (!authUser) return unauthorized();
+
   const studentId = request.nextUrl.searchParams.get("studentId");
   if (!studentId) return NextResponse.json({ error: "Missing studentId" }, { status: 400 });
 
@@ -28,6 +32,9 @@ export async function GET(request: NextRequest) {
 
 // POST: save a new closing commit
 export async function POST(request: NextRequest) {
+  const authUser = await getAuthUser(request);
+  if (!authUser) return unauthorized();
+
   const body = await request.json();
   const { studentId, activeRecall, actions, sessionType, specialist } = body;
 

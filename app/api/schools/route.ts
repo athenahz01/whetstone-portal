@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthUser, unauthorized } from "../../lib/auth";
 import { createClient } from "@supabase/supabase-js";
 
 const API_KEY = process.env.SCORECARD_API_KEY || "DEMO_KEY";
@@ -59,6 +60,9 @@ const INTL_SCHOOLS = [
 
 // GET /api/schools?q=harvard  or  GET /api/schools?id=166027
 export async function GET(request: NextRequest) {
+  const auth_GET = await getAuthUser(request);
+  if (!auth_GET) return unauthorized();
+
   const q = request.nextUrl.searchParams.get("q");
   const id = request.nextUrl.searchParams.get("id");
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthUser, isStrategist, unauthorized, forbidden } from "../../lib/auth";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -8,6 +9,10 @@ const supabase = createClient(
 
 // POST: Scan a staff member's GCal for meetings with students and create session records
 export async function POST(request: NextRequest) {
+  const authUser = await getAuthUser(request);
+  if (!authUser) return unauthorized();
+  if (!isStrategist(authUser)) return forbidden("Strategist access required");
+
   const { profileId } = await request.json();
   if (!profileId) return NextResponse.json({ error: "Missing profileId" }, { status: 400 });
 

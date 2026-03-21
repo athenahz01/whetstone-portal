@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthUser, unauthorized } from "../../lib/auth";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -8,6 +9,9 @@ const supabase = createClient(
 
 // DELETE a session
 export async function DELETE(request: NextRequest) {
+  const authUser = await getAuthUser(request);
+  if (!authUser) return unauthorized();
+
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
 
@@ -26,6 +30,9 @@ export async function DELETE(request: NextRequest) {
 
 // PATCH to update session status
 export async function PATCH(request: NextRequest) {
+  const authUser = await getAuthUser(request);
+  if (!authUser) return unauthorized();
+
   const body = await request.json();
   const { id, status } = body;
 

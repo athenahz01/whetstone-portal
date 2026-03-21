@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthUser, unauthorized } from "../../../lib/auth";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -70,6 +71,9 @@ const GCAL_TO_COLOR_KEY: Record<string, string> = Object.fromEntries(
 );
 
 export async function POST(request: NextRequest) {
+  const authUserPOST = await getAuthUser(request);
+  if (!authUserPOST) return unauthorized();
+
   const body = await request.json();
   const { profileId, title, date, description, startMinutes, durationMinutes, colorKey } = body;
 
@@ -149,6 +153,9 @@ export async function POST(request: NextRequest) {
 
 // PULL: Get events from Google Calendar
 export async function GET(request: NextRequest) {
+  const authUserGET = await getAuthUser(request);
+  if (!authUserGET) return unauthorized();
+
   const profileId = request.nextUrl.searchParams.get("profileId");
   if (!profileId) {
     return NextResponse.json({ error: "Missing profileId" }, { status: 400 });

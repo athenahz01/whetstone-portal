@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { getAuthUser, isStrategist, unauthorized, forbidden } from "../../lib/auth";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,7 +12,11 @@ function generateTempPassword() {
   return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const authUser = await getAuthUser(req);
+  if (!authUser) return unauthorized();
+  if (!isStrategist(authUser)) return forbidden("Only strategists can invite students");
+
   try {
     const { email, name, studentId } = await req.json();
 

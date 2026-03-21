@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthUser, canAccessStudent, unauthorized, forbidden } from "../../lib/auth";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -7,6 +8,9 @@ const supabase = createClient(
 );
 
 export async function POST(request: NextRequest) {
+  const authUser = await getAuthUser(request);
+  if (!authUser) return unauthorized();
+
   const body = await request.json();
 
   // Handle task completion action
@@ -21,6 +25,8 @@ export async function POST(request: NextRequest) {
   if (!studentId) {
     return NextResponse.json({ error: "Missing studentId" }, { status: 400 });
   }
+
+  if (!canAccessStudent(authUser, studentId)) return forbidden();
 
   const updateData: Record<string, unknown> = {};
   if (fields.gpa !== undefined) updateData.gpa = fields.gpa;

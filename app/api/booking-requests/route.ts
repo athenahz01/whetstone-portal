@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthUser, unauthorized } from "../../lib/auth";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -19,6 +20,9 @@ async function getStrategistEmail(name: string): Promise<string | null> {
 
 // GET: fetch booking requests for a user (student or strategist)
 export async function GET(request: NextRequest) {
+  const authUser = await getAuthUser(request);
+  if (!authUser) return unauthorized();
+
   const studentId = request.nextUrl.searchParams.get("studentId");
   const strategistEmail = request.nextUrl.searchParams.get("strategistEmail");
 
@@ -45,6 +49,9 @@ export async function GET(request: NextRequest) {
 
 // POST: create or update booking requests
 export async function POST(request: NextRequest) {
+  const authUser = await getAuthUser(request);
+  if (!authUser) return unauthorized();
+
   const body = await request.json();
   const { action } = body;
 

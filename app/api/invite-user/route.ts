@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { getAuthUser, isAdmin, unauthorized, forbidden } from "../../lib/auth";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -13,7 +14,11 @@ function generateTempPassword() {
   ).join("");
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const authUser = await getAuthUser(req);
+  if (!authUser) return unauthorized();
+  if (!isAdmin(authUser)) return forbidden("Admin access required");
+
   try {
     const { email, name, role, studentId, childEmail } = await req.json();
 

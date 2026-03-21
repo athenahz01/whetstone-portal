@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthUser, unauthorized } from "../../lib/auth";
 
 const API_KEY = "FNiEPcbqYrmPyhPJbOvFcjjdVROiHKfUJnTjRGhl";
 const BASE = "https://api.data.gov/ed/collegescorecard/v1/schools.json";
 
 export async function GET(request: NextRequest) {
+  const authUser = await getAuthUser(request);
+  if (!authUser) return unauthorized();
+
   const query = request.nextUrl.searchParams.get("q");
   const schoolId = request.nextUrl.searchParams.get("id");
 

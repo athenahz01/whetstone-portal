@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthUser, canAccessStudent, unauthorized, forbidden } from "../../lib/auth";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -8,7 +9,7 @@ const supabase = createClient(
 
 // GET /api/student-data?studentId=123
 // Returns full student record with all child data (activities, deadlines, etc.)
-// Uses service role key to bypass RLS — safe because we verify the caller's profile
+// Uses service role key to bypass RLS — caller verified via auth cookie
 export async function GET(request: NextRequest) {
   const studentId = request.nextUrl.searchParams.get("studentId");
   if (!studentId) {
@@ -16,6 +17,11 @@ export async function GET(request: NextRequest) {
   }
 
   const sid = parseInt(studentId);
+
+  // Auth check
+  const authUser = await getAuthUser(request);
+  if (!authUser) return unauthorized();
+  if (!canAccessStudent(authUser, sid)) return forbidden("You can only access your own student data");
 
   const [studentRes, schoolsRes, dlRes, tasksRes, coursesRes, testsRes, actsRes, goalsRes, sessRes, honorsRes] =
     await Promise.all([

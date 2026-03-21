@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthUser, unauthorized } from "../../lib/auth";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -8,6 +9,9 @@ const supabase = createClient(
 
 // GET: fetch caseload assignments
 export async function GET(request: NextRequest) {
+  const authUser = await getAuthUser(request);
+  if (!authUser) return unauthorized();
+
   const strategistEmail = request.nextUrl.searchParams.get("strategistEmail");
 
   // Try to fetch from caseload_assignments table
@@ -29,6 +33,10 @@ export async function GET(request: NextRequest) {
 
 // POST: update caseload assignments
 export async function POST(request: NextRequest) {
+  const authUserPost = await getAuthUser(request);
+  if (!authUserPost) return unauthorized();
+  if (authUserPost.role !== "strategist") return NextResponse.json({ error: "Strategist access required" }, { status: 403 });
+
   const body = await request.json();
   const { action, strategistEmail, studentIds } = body;
 

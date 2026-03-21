@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthUser, isAdmin, unauthorized, forbidden } from "../../../lib/auth";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -6,11 +7,12 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Admin emails that have full access
-const ADMIN_EMAILS = ["athena@whetstoneadmissions.com", "ren@whetstoneadmissions.com"];
-
 // GET: List all users with their profile data and last sign in
 export async function GET(request: NextRequest) {
+  const authUser = await getAuthUser(request);
+  if (!authUser) return unauthorized();
+  if (!isAdmin(authUser)) return forbidden("Admin access required");
+
   const { data: { users }, error } = await supabase.auth.admin.listUsers();
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -44,6 +46,10 @@ export async function GET(request: NextRequest) {
 
 // POST: Perform admin actions
 export async function POST(request: NextRequest) {
+  const authUser = await getAuthUser(request);
+  if (!authUser) return unauthorized();
+  if (!isAdmin(authUser)) return forbidden("Admin access required");
+
   const body = await request.json();
   const { action, userId, ...params } = body;
 
