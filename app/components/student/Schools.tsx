@@ -113,7 +113,7 @@ export function Schools({ student, readOnly = false, onRefresh }: SchoolsProps) 
   return (
     <div>
       <PageHeader title="Schools" sub={student.schools.length + " schools on your list"} />
-      <div className="p-5 px-6">
+      <div className="p-4 md:p-5 px-4 md:px-6">
         <div className="mb-6 relative">
           <input value={query} onChange={(e) => setQuery(e.target.value)}
             placeholder="Search for a college or university..."

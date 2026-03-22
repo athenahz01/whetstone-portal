@@ -144,9 +144,9 @@ export function StaffDashboard({
         }
       />
 
-      <div className="p-5 px-6">
+      <div className="p-4 md:p-5 px-4 md:px-6">
         {/* ── Top Row: 5 Stat Cards ── */}
-        <div className="grid grid-cols-5 gap-3.5 mb-5">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-3.5 mb-5">
           <StatCard label="Active Students" value={students.length} sub="Assigned & active" />
           <StatCard label="Urgent" value={urgent.length} sub={urgent.length === 0 ? "All clear" : "Overdue + today"} danger={urgent.length > 0} />
           <StatCard label="Next 3 Days" value={next3Days.length} sub="Due soon" />
@@ -163,7 +163,7 @@ export function StaffDashboard({
         </div>
 
         {/* ── Main Grid: Urgent (left) + Upcoming Sessions (right) ── */}
-        <div className="grid grid-cols-2 gap-3.5 mb-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-3.5 mb-5">
           {/* Urgent — overdue + due today, capped at 6 */}
           <Card style={urgent.length > 0 ? { borderTop: "3px solid #e55b5b" } : {}}>
             <div className="flex justify-between mb-3.5">

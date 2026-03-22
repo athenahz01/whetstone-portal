@@ -213,7 +213,7 @@ export function SessionPrep({ student, onRefresh, readOnly = false }: SessionPre
         }
       />
 
-      <div className="p-5 px-6" style={{ maxWidth: 860 }}>
+      <div className="p-4 md:p-5 px-4 md:px-6" style={{ maxWidth: 860 }}>
         {/* Unified tab row: Upcoming | Past | Close & Commit */}
         <div className="flex gap-0.5 mb-5 p-0.5 rounded-full" style={{ background: "#1e1e1e", display: "inline-flex" }}>
           {([
@@ -543,7 +543,7 @@ export function SessionPrep({ student, onRefresh, readOnly = false }: SessionPre
           ) : (
             <>
               {/* Session info */}
-              <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                 <FormField label="Session type">
                   <select value={sessionType} onChange={(e) => setSessionType(e.target.value as any)} style={inputStyle}>
                     <option value="online">💻 Online</option>
@@ -720,7 +720,7 @@ function CalBookingForm({ student, specialists, inputStyle, onBook, saving }: {
           <input value={sessionName || `Session with ${specialist}`} onChange={(e) => setSessionName(e.target.value)} style={inputStyle} />
         </FormField>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <FormField label="Type">
             <div className="flex gap-3 mt-1">
               {(["individual", "recurring"] as const).map((t) => (

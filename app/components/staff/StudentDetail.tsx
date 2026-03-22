@@ -318,7 +318,7 @@ export function StudentDetail({ student: s, onBack, onRefresh, profileId }: Stud
           </div>
         }
       />
-      <div className="p-5 px-6">
+      <div className="p-4 md:p-5 px-4 md:px-6">
         {/* ── Metric Cards ─────────────────────────────────────────────── */}
         <div className="grid grid-cols-5 gap-3 mb-5">
           <MetricCard

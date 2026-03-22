@@ -33,7 +33,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: "#111" }}>
-      <div className="border border-line rounded-2xl p-10" style={{ width: 420, background: "#1e1e1e", boxShadow: "0 4px 24px rgba(0,0,0,0.3)" }}>
+      <div className="w-full max-w-[420px] border border-line rounded-2xl p-6 md:p-10 mx-4" style={{ background: "#1e1e1e", boxShadow: "0 4px 24px rgba(0,0,0,0.3)" }}>
         {/* Logo */}
         <div className="text-center mb-8">
           <img src="/whetstone-logo.svg" alt="Whetstone" className="mx-auto mb-2" style={{ height: 48, objectFit: "contain" }} />

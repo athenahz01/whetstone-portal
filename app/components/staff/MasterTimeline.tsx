@@ -791,7 +791,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
         <Modal title="Create Event" onClose={() => setShowModal(false)}>
           <form onSubmit={handleAddEvent}>
             <FormField label="Event Title"><input required name="title" placeholder="e.g. Essay Review Session" style={inputStyle} /></FormField>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <FormField label="Date"><input required name="date" type="date" style={inputStyle} /></FormField>
               <FormField label="Category">
                 <select name="category" style={inputStyle}>
@@ -855,7 +855,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
             setSaving(false); setShowDeadlineModal(false); setPrefillStudent(null); setPrefillDate("");
           }}>
             <FormField label="Task Name"><input required name="title" placeholder="e.g. Finish Stanford draft v1" style={inputStyle} /></FormField>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <FormField label="Student">
                 <select required name="student" defaultValue={prefillStudent || ""} style={inputStyle}>
                   {students.map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}
@@ -914,7 +914,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
             setSaving(false); setEditTask(null);
           }}>
             <FormField label="Task Name"><input required name="title" defaultValue={editTask.title} style={inputStyle} /></FormField>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <FormField label="Due Date"><input required name="due" type="date" defaultValue={editTask.due} style={inputStyle} /></FormField>
               <FormField label="Category">
                 <select name="category" defaultValue={editTask.cat} style={inputStyle}>
@@ -924,7 +924,7 @@ export function MasterTimeline({ students, onSelectStudent, onNavigate, profileI
                 </select>
               </FormField>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <FormField label="Status">
                 <select name="status" defaultValue={editTask.status} style={inputStyle}>
                   <option value="pending">Planned</option>

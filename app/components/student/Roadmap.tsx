@@ -136,7 +136,7 @@ export function Roadmap({ tasks, setTasks, deadlines = [], studentId, onRefresh,
           <PageHeader title="Tasks" sub="Timeline view — tasks by month."
             right={<div className="flex items-center gap-3">{readOnly && <span className="text-xs px-3 py-1.5 rounded-full font-semibold" style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}>View Only</span>}{viewToggle}</div>}
           />
-          <div className="p-6 px-8">
+          <div className="p-4 md:p-6 px-4 md:px-8">
             {timelineMonths.length === 0 ? (
               <div className="text-sm text-sub text-center py-12">No tasks to show on timeline.</div>
             ) : (
@@ -192,7 +192,7 @@ export function Roadmap({ tasks, setTasks, deadlines = [], studentId, onRefresh,
           <PageHeader title="Tasks" sub="Track your deadlines and schedule."
             right={<div className="flex items-center gap-3">{readOnly && <span className="text-xs px-3 py-1.5 rounded-full font-semibold" style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}>View Only</span>}{viewToggle}</div>}
           />
-          <div className="p-6 px-8">
+          <div className="p-4 md:p-6 px-4 md:px-8">
             <WeeklyCalendar rows={calendarRows} />
           </div>
         </>

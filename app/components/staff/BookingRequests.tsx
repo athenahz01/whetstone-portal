@@ -140,7 +140,7 @@ export function BookingRequests({ strategistEmail, profileId }: BookingRequestsP
           </button>
         }
       />
-      <div className="p-5 px-6">
+      <div className="p-4 md:p-5 px-4 md:px-6">
         {/* Tabs */}
         <div className="flex gap-0.5 mb-5 p-0.5 rounded-full" style={{ background: "#1e1e1e", display: "inline-flex" }}>
           {([
@@ -302,11 +302,11 @@ export function BookingRequests({ strategistEmail, profileId }: BookingRequestsP
             <FormField label="Session Name">
               <input required name="sessionName" placeholder="e.g. Essay Review with Jack" style={IS} />
             </FormField>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <FormField label="Date"><input required name="date" type="date" style={IS} /></FormField>
               <FormField label="Start Time"><input name="startTime" type="time" style={IS} /></FormField>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <FormField label="Session Type">
                 <select name="sessionType" style={IS}>
                   <option value="strategy">Strategy Meeting</option>

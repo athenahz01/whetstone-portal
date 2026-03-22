@@ -42,25 +42,25 @@ function LandingOrLogin({ onLogin }: { onLogin: () => void }) {
   if (showLogin) return <LoginPage onLogin={onLogin} />;
   return (
     <div style={{ background: "#181820", minHeight: "100vh" }}>
-      <nav className="flex justify-between items-center px-10 py-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+      <nav className="flex justify-between items-center px-5 md:px-10 py-4 md:py-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <span style={{ fontSize: 20, fontWeight: 700, color: "#fff", letterSpacing: "-0.01em" }}>Whetstone</span>
-        <div className="flex items-center gap-5">
-          <a href="/privacy" style={{ color: "#717171", fontSize: 14, textDecoration: "none" }}>Privacy</a>
-          <a href="/terms" style={{ color: "#717171", fontSize: 14, textDecoration: "none" }}>Terms</a>
+        <div className="flex items-center gap-3 md:gap-5">
+          <a href="/privacy" className="hidden md:inline" style={{ color: "#717171", fontSize: 14, textDecoration: "none" }}>Privacy</a>
+          <a href="/terms" className="hidden md:inline" style={{ color: "#717171", fontSize: 14, textDecoration: "none" }}>Terms</a>
           <button onClick={() => setShowLogin(true)}
             style={{ padding: "9px 24px", borderRadius: 8, border: "none", background: "#5A83F3", color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Sign In</button>
         </div>
       </nav>
-      <div style={{ maxWidth: 700, margin: "0 auto", padding: "80px 24px 48px", textAlign: "center" }}>
+      <div className="px-5 md:px-6 py-12 md:py-20 text-center" style={{ maxWidth: 700, margin: "0 auto" }}>
         <div className="flex items-center justify-center mx-auto" style={{ width: 56, height: 56, borderRadius: 14, background: "#ebebeb", color: "#111", fontSize: 24, fontWeight: 800, marginBottom: 28 }}>W</div>
-        <h1 style={{ fontSize: 36, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em", lineHeight: 1.2, marginBottom: 16, fontStyle: "normal" }}>Whetstone Admissions Portal</h1>
-        <p style={{ fontSize: 16, color: "#a0a0a0", lineHeight: 1.7, maxWidth: 540, margin: "0 auto 40px" }}>
+        <h1 className="text-2xl md:text-4xl" style={{ fontWeight: 700, color: "#fff", letterSpacing: "-0.02em", lineHeight: 1.2, marginBottom: 16, fontStyle: "normal" }}>Whetstone Admissions Portal</h1>
+        <p className="text-sm md:text-base" style={{ color: "#a0a0a0", lineHeight: 1.7, maxWidth: 540, margin: "0 auto 40px" }}>
           A comprehensive college admissions coaching platform for students, parents, and mentors. Plan your day, track tasks, manage sessions, organize essays, and stay on top of your application journey.
         </p>
         <button onClick={() => setShowLogin(true)}
           style={{ padding: "12px 32px", borderRadius: 10, border: "none", background: "#5A83F3", color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer" }}>Sign In to Your Account</button>
       </div>
-      <div className="grid grid-cols-3 gap-5 pb-16" style={{ maxWidth: 820, margin: "0 auto", padding: "0 24px 64px" }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-5 px-5 md:px-6 pb-12 md:pb-16" style={{ maxWidth: 820, margin: "0 auto" }}>
         {[
           { icon: "📋", title: "Task Management", desc: "Track deadlines and application milestones." },
           { icon: "📅", title: "Session Scheduling", desc: "Book sessions with Google & Apple Calendar sync." },
@@ -76,7 +76,7 @@ function LandingOrLogin({ onLogin }: { onLogin: () => void }) {
           </div>
         ))}
       </div>
-      <div className="flex justify-between items-center px-10 py-5" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+      <div className="flex flex-col md:flex-row justify-between items-center gap-2 px-5 md:px-10 py-4 md:py-5" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
         <span style={{ fontSize: 12, color: "#505050" }}>© 2026 Whetstone Admissions</span>
         <div className="flex gap-5">
           <a href="/privacy" style={{ fontSize: 12, color: "#505050", textDecoration: "none" }}>Privacy Policy</a>
@@ -563,7 +563,7 @@ export default function Home() {
 
   return (
     <div
-      className="flex h-screen overflow-hidden"
+      className="flex h-screen overflow-hidden md:flex-row flex-col"
       style={{ color: "#a0a0a0" }}
     >
       <Sidebar
@@ -598,7 +598,7 @@ export default function Home() {
           alert("Sync complete! Check your Google Calendar.");
         }}
       />
-      <main className="flex-1 min-w-0 overflow-auto bg-bg">{renderMain()}</main>
+      <main className="flex-1 min-w-0 overflow-auto bg-bg pt-[52px] md:pt-0">{renderMain()}</main>
     </div>
   );
 }

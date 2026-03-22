@@ -66,7 +66,7 @@ export function StudentProfile({ student, readOnly = false }: StudentProfileProp
         }
       />
 
-      <div className="p-5 px-6" style={{ maxWidth: 860 }}>
+      <div className="p-4 md:p-5 px-4 md:px-6" style={{ maxWidth: 860 }}>
         {/* Student header card */}
         <Card style={{ padding: 24, marginBottom: 20 }}>
           <div className="flex items-center gap-5">

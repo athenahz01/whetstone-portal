@@ -759,9 +759,9 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                   <p className="text-sm text-sub mt-1 m-0">Select a task on the left, then click a quadrant to assign it.</p>
                 </div>
               </div>
-              <div className="flex gap-5">
+              <div className="flex flex-col md:flex-row gap-4 md:gap-5">
                 {/* Unassigned */}
-                <div style={{ width: 220, flexShrink: 0 }}>
+                <div className="w-full md:w-[220px] flex-shrink-0">
                   <div className="text-[10px] font-bold text-sub uppercase tracking-widest mb-2">Unassigned ({unassigned.length})</div>
                   <div className="flex flex-col gap-1.5">
                     {unassigned.length === 0 ? (
@@ -777,7 +777,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
                 </div>
 
                 {/* Matrix - 2x2 grid: DO(tl) SCHEDULE(tr) DELEGATE(bl) DELETE(br) */}
-                <div className="flex-1 grid grid-cols-2 gap-3">
+                <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
                   {QUADRANT_ORDER.map((key) => {
                     const cfg = QUADRANT_CONFIG[key];
                     const placed = tasks.filter((t) => t.quadrant === key);
@@ -835,7 +835,7 @@ export function Receptacle({ studentId, profileId, gcalConnected, googleEvents =
               </div>
             </div>
 
-            <div className="flex gap-4" style={{ alignItems: "flex-start" }}>
+            <div className="flex flex-col md:flex-row gap-4" style={{ alignItems: "flex-start" }}>
               {/* ── 3-Day Calendar (free-form positioning) ── */}
               <div ref={calRef} style={{ flex: 1, ...card, padding: 0, overflow: "hidden", minWidth: 0 }}>
                 {/* Nav */}

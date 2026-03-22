@@ -146,7 +146,7 @@ export function EssayLab({ student, readOnly = false, onRefresh }: EssayLabProps
               style={{ background: "#5A83F3", color: "#fff" }}>+ Add Essay</button>
           </div>
         )} />
-      <div className="p-5 px-6">
+      <div className="p-4 md:p-5 px-4 md:px-6">
         {totalEssays === 0 && activeFolders.length === 0 ? (
           <Card><p className="text-sm text-sub text-center py-8">No essays yet.{!readOnly && " Create a folder or click \"+ Add Essay\" to get started."}</p></Card>
         ) : (
@@ -235,7 +235,7 @@ export function EssayLab({ student, readOnly = false, onRefresh }: EssayLabProps
         <Modal title={addToFolder ? `Add Essay to ${addToFolder}` : "Add Essay"} onClose={() => { setShowCreate(false); setAddToFolder(null); }}>
           <form onSubmit={handleCreate}>
             <FormField label="Essay Name"><input required name="title" placeholder="e.g. Common App Essay - Draft 1" style={inputStyle} /></FormField>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <FormField label="Folder">
                 {addToFolder ? (
                   <div className="flex items-center gap-2">
@@ -271,7 +271,7 @@ export function EssayLab({ student, readOnly = false, onRefresh }: EssayLabProps
         <Modal title="Edit Essay" onClose={() => setEditing(null)}>
           <form onSubmit={handleEdit}>
             <FormField label="Essay Name"><input required name="title" defaultValue={editing.title} style={inputStyle} /></FormField>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <FormField label="Folder">
                 <select name="schoolName" defaultValue={normalizeSchoolFolder(editing.schoolName || "General")} style={inputStyle}>
                   {allFolderOptions.map(f => (

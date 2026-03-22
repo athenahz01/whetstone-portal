@@ -162,7 +162,7 @@ export function Academics({ student, courses, setCourses, readOnly = false, grad
           )
         }
       />
-      <div className="p-5 px-6">
+      <div className="p-4 md:p-5 px-4 md:px-6">
         {!gradStudentMode && (
           <>
         {/* GPA Metrics — editable */}

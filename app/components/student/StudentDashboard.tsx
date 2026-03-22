@@ -100,11 +100,11 @@ export function StudentDashboard({
         sub={new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric", timeZone: timezone })}
         right={readOnly ? <span className="text-xs px-3 py-1.5 rounded-full font-semibold" style={{ background: "rgba(82,139,255,0.06)", color: "#7aabff" }}>View Only</span> : null}
       />
-      <div className="p-5 px-6">
-        {/* 2-column layout */}
-        <div className="flex gap-5">
+      <div className="p-4 md:p-5 px-4 md:px-6">
+        {/* 2-column layout — stacks on mobile */}
+        <div className="flex flex-col md:flex-row gap-4 md:gap-5">
           {/* ── Left column: Tasks + Recent Activity ── */}
-          <div className="flex flex-col gap-5" style={{ flex: "3" }}>
+          <div className="flex flex-col gap-4 md:gap-5" style={{ flex: "3" }}>
             <Card>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="m-0 text-base font-bold text-heading">Tasks</h3>
@@ -161,7 +161,7 @@ export function StudentDashboard({
           </div>
 
           {/* ── Right column: Sessions + Plan/Close ── */}
-          <div className="flex flex-col gap-5" style={{ flex: "2" }}>
+          <div className="flex flex-col gap-4 md:gap-5" style={{ flex: "2" }}>
             <Card>
               <div className="flex items-center justify-between mb-3"><h3 className="m-0 text-sm font-bold text-heading">Sessions</h3><button onClick={() => onNavigate("prep")} className="text-xs font-semibold bg-transparent border-none cursor-pointer" style={{ color: "#5A83F3" }}>View all →</button></div>
               <div className="flex gap-0.5 mb-3 p-0.5 rounded-full" style={{ background: "#1e1e1e", display: "inline-flex" }}>

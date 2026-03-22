@@ -133,7 +133,7 @@ export function Honors({ honors, setHonors, readOnly = false, studentId }: Honor
         }
       />
 
-      <div className="p-5 px-6">
+      <div className="p-4 md:p-5 px-4 md:px-6">
         <div className="rounded-xl overflow-hidden border border-line bg-white">
           {slots.map((honor, i) => {
             const isOpen = openSlot === i;

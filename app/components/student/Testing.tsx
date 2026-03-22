@@ -147,7 +147,7 @@ export function Testing({ tests, setTests, readOnly = false, studentId }: Testin
           )
         }
       />
-      <div className="p-5 px-6">
+      <div className="p-4 md:p-5 px-4 md:px-6">
         {/* SAT Superscore */}
         {superscore && (
           <Card style={{ marginBottom: 14, borderTop: "3px solid #7c3aed" }}>
@@ -312,7 +312,7 @@ export function Testing({ tests, setTests, readOnly = false, studentId }: Testin
       {showModal && (
         <Modal title="Log Test Score" onClose={() => { setShowModal(false); setMathScore(""); setEnglishScore(""); setTestType("SAT"); }}>
           <form onSubmit={handleSubmit}>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <FormField label="Test Type">
                 <select name="t" style={inputStyle} value={testType} onChange={(e) => setTestType(e.target.value)}>
                   <option>SAT</option>
@@ -328,7 +328,7 @@ export function Testing({ tests, setTests, readOnly = false, studentId }: Testin
 
             {testType === "SAT" && (
               <>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <FormField label="Math Score">
                     <input required name="math" type="number" min="200" max="800" placeholder="200–800" style={inputStyle} value={mathScore} onChange={(e) => setMathScore(e.target.value)} />
                   </FormField>
@@ -349,7 +349,7 @@ export function Testing({ tests, setTests, readOnly = false, studentId }: Testin
             )}
 
             {testType === "ACT" && (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <FormField label="English (1-36)">
                   <input required name="actEnglish" type="number" min="1" max="36" placeholder="1–36" style={inputStyle} />
                 </FormField>
@@ -366,7 +366,7 @@ export function Testing({ tests, setTests, readOnly = false, studentId }: Testin
             )}
 
             {testType === "AP" && (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <FormField label="AP Subject">
                   <select name="subject" required style={inputStyle}>
                     <option value="">Select subject...</option>

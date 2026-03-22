@@ -2,7 +2,7 @@
 
 import { getGoogleAuthUrl } from "../../lib/calendar";
 import { isMentor } from "../../lib/constants";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const TIMEZONES = [
   { label: "Eastern (ET)", value: "America/New_York" },
@@ -55,6 +55,21 @@ export function Sidebar({
   studentType = "undergraduate",
 }: SidebarProps) {
   const [showTz, setShowTz] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  // Close mobile drawer when view changes
+  const handleNav = (v: string) => {
+    setView(v);
+    if (isMobile) setMobileOpen(false);
+  };
 
   const nav =
     role === "strategist"
@@ -121,6 +136,183 @@ export function Sidebar({
   const currentTzLabel =
     TIMEZONES.find((t) => t.value === timezone)?.label || timezone || "Eastern (ET)";
 
+  // ── Mobile: top bar + slide-out drawer ──
+  if (isMobile) {
+    return (
+      <>
+        {/* Fixed top bar */}
+        <div
+          className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3"
+          style={{
+            background: "linear-gradient(180deg, #0b1120 0%, #0f172a 100%)",
+            borderBottom: "1px solid rgba(148,163,184,0.12)",
+          }}
+        >
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="bg-transparent border-none cursor-pointer p-1"
+            style={{ color: "#f8fafc", fontSize: 22 }}
+          >
+            ☰
+          </button>
+          <img src="/whetstone-logo.svg" alt="Whetstone" style={{ height: 24, objectFit: "contain" }} />
+          <div
+            className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold"
+            style={{ background: "rgba(255,255,255,0.06)", color: "#e2e8f0", border: "1px solid rgba(255,255,255,0.08)" }}
+          >
+            {userInitials}
+          </div>
+        </div>
+
+        {/* Overlay */}
+        {mobileOpen && (
+          <div
+            className="fixed inset-0 z-50"
+            style={{ background: "rgba(0,0,0,0.6)" }}
+            onClick={() => setMobileOpen(false)}
+          />
+        )}
+
+        {/* Slide-out drawer */}
+        <aside
+          className="fixed top-0 left-0 bottom-0 z-50 flex flex-col overflow-y-auto transition-transform duration-200"
+          style={{
+            width: 260,
+            background: "linear-gradient(180deg, #0b1120 0%, #0f172a 100%)",
+            borderRight: "1px solid rgba(148,163,184,0.12)",
+            transform: mobileOpen ? "translateX(0)" : "translateX(-100%)",
+          }}
+        >
+          {/* Drawer header */}
+          <div className="flex items-center justify-between px-4 py-4 border-b" style={{ borderColor: "rgba(148,163,184,0.12)" }}>
+            <img src="/whetstone-logo.svg" alt="Whetstone" style={{ height: 28, objectFit: "contain" }} />
+            <button
+              onClick={() => setMobileOpen(false)}
+              className="bg-transparent border-none cursor-pointer text-lg"
+              style={{ color: "#94a3b8" }}
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Role label */}
+          <div
+            className="px-4 pt-3.5 pb-1 text-[10px] uppercase tracking-widest font-bold"
+            style={{ color: "#94a3b8" }}
+          >
+            {role === "student"
+              ? "Student"
+              : role === "parent"
+              ? "Parent"
+              : isAdmin
+              ? "Admin"
+              : isMentor(userEmail || "")
+              ? "Mentor"
+              : "Specialist"}
+            {role === "parent" && (
+              <span className="ml-1.5 text-[9px] opacity-60 normal-case tracking-normal">
+                (view only)
+              </span>
+            )}
+          </div>
+
+          {/* Nav */}
+          <nav className="flex-1" style={{ padding: "6px 8px" }}>
+            {nav.map(([id, label]) => (
+              <button
+                key={id}
+                onClick={() => handleNav(id)}
+                className="w-full flex items-center rounded-xl cursor-pointer text-sm mb-1 border transition-all duration-100"
+                style={{
+                  padding: "12px 14px",
+                  justifyContent: "flex-start",
+                  background: view === id ? "rgba(255,255,255,0.07)" : "transparent",
+                  borderColor: view === id ? "rgba(148,163,184,0.16)" : "transparent",
+                  color: view === id ? "#f8fafc" : "#94a3b8",
+                  fontWeight: view === id ? 600 : 500,
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
+
+          {/* Calendar */}
+          {profileId && (
+            <div className="px-3 mb-2">
+              {gcalConnected ? (
+                <div className="flex items-center justify-between px-2 py-1.5 rounded-lg mb-1" style={{ background: "rgba(74,186,106,0.08)", border: "1px solid rgba(74,186,106,0.15)" }}>
+                  <span className="text-[11px] font-medium" style={{ color: "#4aba6a" }}>📅 Calendar synced</span>
+                  <button onClick={async () => { if (onSyncCalendar) await onSyncCalendar(); }}
+                    className="text-[10px] font-semibold bg-transparent border-none cursor-pointer px-1.5 py-0.5 rounded"
+                    style={{ color: "#717171" }}>🔄</button>
+                </div>
+              ) : (
+                <button onClick={() => { window.location.href = getGoogleAuthUrl(profileId); }}
+                  className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg cursor-pointer text-[11px] font-medium border-none mb-1"
+                  style={{ background: "rgba(255,255,255,0.04)", color: "#94a3b8" }}>
+                  📅 Connect Google Calendar
+                </button>
+              )}
+              <button onClick={() => {
+                  const feedUrl = `${window.location.origin}/api/ical-feed?token=${profileId}`;
+                  const webcalUrl = feedUrl.replace("https://", "webcal://").replace("http://", "webcal://");
+                  window.open(webcalUrl, "_self");
+                }}
+                className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg cursor-pointer text-[11px] font-medium border-none whitespace-nowrap"
+                style={{ background: "rgba(255,255,255,0.04)", color: "#94a3b8" }}>
+                🍎 Apple Calendar Sync
+              </button>
+            </div>
+          )}
+
+          {/* Timezone */}
+          <div className="px-3 mb-2">
+            <button
+              onClick={() => setShowTz(!showTz)}
+              className="w-full flex items-center justify-between px-2 py-2 rounded-lg cursor-pointer text-xs border-none"
+              style={{ background: "rgba(255,255,255,0.04)", color: "#cbd5e1" }}
+            >
+              <span>🕐 {currentTzLabel}</span>
+              <span style={{ fontSize: 10 }}>{showTz ? "▲" : "▼"}</span>
+            </button>
+            {showTz && (
+              <div className="mt-1 rounded-lg overflow-hidden" style={{ background: "#111827", border: "1px solid rgba(148,163,184,0.12)", maxHeight: 200, overflowY: "auto" }}>
+                {TIMEZONES.map((tz) => (
+                  <button key={tz.value} onClick={() => { onTimezoneChange?.(tz.value); setShowTz(false); }}
+                    className="w-full text-left px-3 py-2 border-none cursor-pointer text-xs"
+                    style={{ background: timezone === tz.value ? "rgba(255,255,255,0.07)" : "transparent", color: timezone === tz.value ? "#f8fafc" : "#94a3b8" }}>
+                    {tz.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* User + sign out */}
+          <div className="p-3 border-t" style={{ borderColor: "rgba(148,163,184,0.12)" }}>
+            <div className="flex items-center gap-2.5 px-1 py-1.5 mb-2">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                style={{ background: "rgba(255,255,255,0.06)", color: "#e2e8f0", border: "1px solid rgba(255,255,255,0.08)" }}>
+                {userInitials}
+              </div>
+              <div>
+                <div className="text-sm font-medium" style={{ color: "#f8fafc" }}>{userName}</div>
+                <div className="text-xs" style={{ color: "#94a3b8" }}>{userRole}</div>
+              </div>
+            </div>
+            <button onClick={onSignOut}
+              className="w-full py-2 rounded-md cursor-pointer text-xs border-none"
+              style={{ background: "#1e293b", color: "#cbd5e1" }}>
+              Sign Out
+            </button>
+          </div>
+        </aside>
+      </>
+    );
+  }
+
+  // ── Desktop: original sidebar ──
   return (
     <aside
       className="bg-navy flex flex-col flex-shrink-0 overflow-hidden transition-all duration-200"
